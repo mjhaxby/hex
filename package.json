@@ -34,10 +34,26 @@
     "appId": "com.mjhaxby.hex",
     "mac": {
       "category": "public.app-category.education",
-      "icon": "buildResources/icon.icns"
+      "icon": "buildResources/icon.icns",
+      "target": {
+        "target": "default",
+        "arch": [
+          "x64",
+          "arm64"
+        ]
+      }
     },
     "win": {
-      "icon": "buildResources/icon.png"
+      "icon": "buildResources/icon.png",
+      "target": [
+        {
+           "target": "nsis",
+             "arch": [
+               "x64",
+               "ia32"
+              ]
+         }
+       ]
     }
   }
 }

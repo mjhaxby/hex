@@ -1,5 +1,5 @@
 Arguments: 
-  /opt/homebrew/Cellar/node/18.6.0/bin/node /opt/homebrew/Cellar/yarn/1.22.19/libexec/bin/yarn.js app:dir --win
+  /opt/homebrew/Cellar/node/18.6.0/bin/node /opt/homebrew/Cellar/yarn/1.22.19/libexec/bin/yarn.js app:dist
 
 PATH: 
   /opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/TeX/texbin:/Library/Apple/usr/bin
@@ -14,7 +14,7 @@ Platform:
   darwin arm64
 
 Trace: 
-  SyntaxError: /Users/morgan/Dropbox/Dev/Electron/Hex/package.json: Unexpected token [ in JSON at position 796
+  SyntaxError: /Users/morgan/Dropbox/Dev/Electron/Hex/package.json: Unexpected token t in JSON at position 789
       at JSON.parse (<anonymous>)
       at /opt/homebrew/Cellar/yarn/1.22.19/libexec/lib/cli.js:1629:59
       at Generator.next (<anonymous>)
@@ -28,8 +28,8 @@ npm manifest:
     "description": "Learning activity creator.",
     "main": "main.js",
     "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1",
-      "start": "electron main.js"
+      "app:dir": "electron-builder --dir",
+      "app:dist": "electron-builder"
     },
     "repository": {
       "type": "git",
@@ -43,6 +43,7 @@ npm manifest:
     "license": "ISC",
     "devDependencies": {
       "electron": "^19.0.1",
+      "electron-builder": "^23.3.3",
       "electron-packager": "^15.5.1"
     },
     "fontend": {
@@ -57,17 +58,28 @@ npm manifest:
       "appId": "com.mjhaxby.hex",
       "mac": {
         "category": "public.app-category.education",
-        "icon": "buildResources/icon.icns"
+        "icon": "buildResources/icon.icns",
+        target: {
+          target: 'default',
+          arch: [
+            'x64',
+            'arm64'
+          ]
+        }
       },
       "win": {
-        "arch:" ["x64"],
-        "icon": "buildResources/icon.png"
+        "icon": "buildResources/icon.png",
+        "target": [
+          {
+             "target": "nsis",
+               "arch": [
+                 "x64",
+                 "ia32"
+                ]
+           }
+         ]
       }
-  },
-  "scripts": {
-    "app:dir": "electron-builder --dir",
-    "app:dist": "electron-builder"
-  }
+    }
   }
 
 yarn manifest: 
