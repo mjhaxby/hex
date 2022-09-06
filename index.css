@@ -1,0 +1,152 @@
+@font-face{
+  font-family: "ShareTech";
+  src: url("ShareTech-Regular.ttf");
+}
+
+@font-face{
+  font-family: "ShareTechMono";
+  src: url("ShareTechMono-Regular.ttf")
+}
+
+body{
+  font-family: "ShareTech", Arial;
+  text-align: center;
+  background: #F2F3EB;
+  height: 100vh;
+  overflow-y: hidden;
+}
+
+button {
+  overflow: visible;
+}
+
+button, select {
+  text-transform: none;
+}
+
+button, input, select, textarea {
+  color: #5A5A5A;
+  font: inherit;
+  margin: 0;
+}
+
+input {
+  line-height: normal;
+}
+
+textarea {
+  overflow: auto;
+}
+
+
+
+input[type='text'], [type='email'], select, textarea {
+  background: none;
+  border: none;
+  border-bottom: solid 2px #474544;
+  color: #474544;
+  font-size: 1.000em;
+  font-weight: 400;
+  letter-spacing: 1px;
+  margin: 0em 0 1.875em 0;
+  padding: 0 0 0.875em 0;
+  /* text-transform: uppercase; */
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  -o-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-transition: all 0.3s;
+  -moz-transition: all 0.3s;
+  -ms-transition: all 0.3s;
+  -o-transition: all 0.3s;
+  transition: all 0.3s;
+}
+
+select {
+  background: url('down.png') no-repeat right;
+  outline: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  padding: 20px;
+  padding-right: 32px;
+  text-transform: lowercase;
+}
+
+select::-ms-expand {
+  display: none;
+}
+
+textarea{
+  background: #ddded7;
+  font-family: "ShareTechMono","Courier New";
+}
+
+table{
+  margin: auto;
+}
+
+td{
+  padding: 5px;
+}
+
+button {
+  background: none;
+  border: solid 2px #474544;
+  color: #474544;
+  cursor: pointer;
+  display: inline-block;
+  outline: none;
+  padding: 20px 35px;
+  /* text-transform: uppercase; */
+  -webkit-transition: all 0.3s;
+  -moz-transition: all 0.3s;
+  -ms-transition: all 0.3s;
+  -o-transition: all 0.3s;
+  transition: all 0.3s;
+}
+
+button:hover {
+  background: #474544;
+  color: #F2F3EB;
+}
+
+#hex-logo{
+  width: 80px;
+  height: 80px;
+  margin: auto;
+}
+
+#inputBox{
+  height: calc(100% - 430px);
+  min-height: 100px;
+  width: 85%;
+  line-height: 150%;
+  resize: none;
+}
+
+#controlsEtc{
+  height: 200px;
+}
+
+#previewTitle{
+  visibility: hidden;
+}
+
+#previewArea{
+  border: solid 2px #474544;
+  width: 80%;
+  margin: auto;
+  visibility: hidden;
+}
+
+#swapBtn{
+  cursor: pointer;
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Fire
+}

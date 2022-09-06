@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+
+    <title>Hex</title>
+    <script src="index.js"  charset="utf-8"></script>
+    <link rel="stylesheet" href="index.css">
+  </head>
+  <body onload="pageLoad()">
+    <img id="hex-logo" src="hex.svg">
+    <br>
+    <textarea id="inputBox" rows="8" cols="50" onkeyup="preview()" onchange="preview()"></textarea>
+    <div id="controlsEtc">
+      <div id="buttons">
+        <select name="activityType" id="activitySlct" onchange="preview()">
+          <!-- TODO: create the activity type list automatically based on the file names in the activities folder -->
+          <option value="blockbusters">Blockbusters</option>
+          <option value="match">Match</option>
+          <option value="crack_the_code">Crack the code</option>
+          <option value="backs_to_the_board">Back to the board</option>
+          <option value="anagram">Anagram</option>
+          <option value="dobble">Dobble</option>
+          <option value="crossword">Crossword</option>  <!--https://mitchum.blog/building-a-crossword-puzzle-generator-with-javascript/-->
+          <option value="cards">Cards</option>
+          <option value="magnet_board">Magnet board</option>
+          <option value="sort">Sort</option>
+          <option value="timeout">Timeout</option>
+          <option value="codemames">Codenames</option>
+          <option value="decisions">Decisions</option>
+          <option value="treasure_hunt">Treasure Hunt</option>
+          <option value="find_someone_who">Find someone who</option>
+        </select>
+        <button id="runBtn" onclick="run()">run</button>
+        <button id="exportBtn" onclick="exporter()">export</button>
+      </div>
+      <h2 id="previewTitle">Preview</h2>
+      <div id="previewArea">
+      </div>
+      <small><p>Node.js <span id="node-version"></span>,
+      Chromium <span id="chrome-version"></span>,
+      and Electron <span id="electron-version"></span></p>
+      <p>Created by mjhaxby</p></small>
+    </div>
+  </body>
+</html>
