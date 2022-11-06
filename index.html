@@ -6,42 +6,58 @@
 
     <title>Hex</title>
     <script src="index.js"  charset="utf-8"></script>
+    <script src="tableManager.js"  charset="utf-8"></script>
     <link rel="stylesheet" href="index.css">
   </head>
   <body onload="pageLoad()">
-    <img id="hex-logo" src="hex.svg">
-    <br>
-    <textarea id="inputBox" rows="8" cols="50" onkeyup="preview()" onchange="preview()"></textarea>
-    <div id="controlsEtc">
+    <div id="topArea">
+      <img id="hex-logo" src="hex.svg">
       <div id="buttons">
-        <select name="activityType" id="activitySlct" onchange="preview()">
+        <select name="activityType" id="activitySlct" onchange="selectActivity()">
           <!-- TODO: create the activity type list automatically based on the file names in the activities folder -->
-          <option value="blockbusters">Blockbusters</option>
+          <!-- <option value="blockbusters">Blockbusters</option>
           <option value="match">Match</option>
           <option value="crack_the_code">Crack the code</option>
           <option value="backs_to_the_board">Back to the board</option>
           <option value="anagram">Anagram</option>
           <option value="dobble">Dobble</option>
-          <option value="crossword">Crossword</option>  <!--https://mitchum.blog/building-a-crossword-puzzle-generator-with-javascript/-->
-          <option value="cards">Cards</option>
+          <option value="crossword">Crossword</option>  <!--https://mitchum.blog/building-a-crossword-puzzle-generator-with-javascript/--> -->
+          <!-- <option value="cards">Cards</option>
           <option value="magnet_board">Magnet board</option>
           <option value="sort">Sort</option>
           <option value="timeout">Timeout</option>
           <option value="codemames">Codenames</option>
           <option value="decisions">Decisions</option>
           <option value="treasure_hunt">Treasure Hunt</option>
-          <option value="find_someone_who">Find someone who</option>
+          <option value="find_someone_who">Find someone who</option> -->
         </select>
         <button id="runBtn" onclick="run()">run</button>
         <button id="exportBtn" onclick="exporter()">export</button>
       </div>
-      <h2 id="previewTitle">Preview</h2>
-      <div id="previewArea">
+    </div>
+    <br>
+    <!-- <textarea id="inputBox" rows="8" cols="50"></textarea> -->
+    <div id="inputBox">
+      <table>
+        <tbody id="tableBody">
+          <tr id="lastRow">
+            <th class="numCol"></th>
+            <td><div class="addBottom miniBtn" onclick="addRow(numRows+1)">+</div></td>
+            <td><div class="addBottom miniBtn" onclick="addRow(numRows+1)">+</div></td>
+          </tr>
+      </tbody>
+      </table>
+    </div>
+    <div id="controlsEtc">
+      <h2 id="settingsTitle" onclick="showSettings()"><img id="showSettingsButton" src="down.png"></img>activity settings</h2>
+      <div id="settingsArea">
       </div>
       <small><p>Node.js <span id="node-version"></span>,
       Chromium <span id="chrome-version"></span>,
-      and Electron <span id="electron-version"></span></p>
-      <p>Created by mjhaxby</p></small>
+      and Electron <span id="electron-version"></span> • Created by mjhaxby</p></small>
     </div>
   </body>
+  <script>
+    document.body.addEventListener('pointerdown', deselectAll, true); // unselect when clicking anywhere
+  </script>
 </html>

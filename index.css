@@ -38,9 +38,7 @@ textarea {
   overflow: auto;
 }
 
-
-
-input[type='text'], [type='email'], select, textarea {
+input[type='text'], [type='email'], [type='number'], select, textarea {
   background: none;
   border: none;
   border-bottom: solid 2px #474544;
@@ -48,8 +46,8 @@ input[type='text'], [type='email'], select, textarea {
   font-size: 1.000em;
   font-weight: 400;
   letter-spacing: 1px;
-  margin: 0em 0 1.875em 0;
-  padding: 0 0 0.875em 0;
+  margin: 0em 0 0.5em 0;
+  padding: 0 0 0 0;
   /* text-transform: uppercase; */
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -63,12 +61,49 @@ input[type='text'], [type='email'], select, textarea {
   transition: all 0.3s;
 }
 
+input[type='number']{
+  width: 8ch;
+  text-align: center;
+}
+
+input[type='checkbox']{
+  appearance: none;
+  background-color: #ddded7;
+  margin: 0.5em;
+  font: inherit;
+  /* color: #474544; */
+  width: 1em;
+  height: 1em;
+  border: none;
+  border-bottom: solid 2px #474544;
+  /* transform: translateY(0.15em); */
+  display: inline-grid;
+  place-content: center;
+}
+
+input[type="checkbox"]::before {
+  content: "";
+  width: 0.65em;
+  height: 0.65em;
+  opacity: 0;
+  transition: 0.25s ease-in-out;
+  box-shadow: inset 1em 1em #474544;
+  /* Windows High Contrast Mode */
+  background-color: CanvasText;
+  transform-origin: bottom left;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%)
+}
+
+input[type="checkbox"]:checked::before {
+  opacity: 1;
+}
+
 select {
   background: url('down.png') no-repeat right;
   outline: none;
   -moz-appearance: none;
   -webkit-appearance: none;
-  padding: 20px;
+  padding: 10px;
   padding-right: 32px;
   text-transform: lowercase;
 }
@@ -84,10 +119,64 @@ textarea{
 
 table{
   margin: auto;
+  width: 100%;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
-td{
+td, th{
   padding: 5px;
+  vertical-align: top;
+  /* margin-left: 0.3em;
+  margin-right: 0.3em; */
+  border-left: 0.5em;
+  border-right: 0.5em;
+  border-style: solid;
+  border-color: #ddded7;
+  transition: all 0.3s;
+}
+
+input[type='text'].invalid{
+  border-bottom: solid 2px #cc6d3d;
+}
+
+.selected{
+  background-color: #474544;
+  color: #F2F3EB;
+}
+
+input[type='text'].selected{
+  border-bottom: solid 2px #F2F3EB;
+  color: #F2F3EB;
+}
+
+/* possibly don't need the whole, half, third, quarter… */
+/* td .whole{
+  width: 100%;
+}
+
+td .half{
+  width: 50%;
+}
+
+td .third{
+  width: 33%;
+}
+
+td .quarter{
+  width: 25%;
+} */
+
+.numCol, .addCol{
+  width: 50px;
+}
+
+.colHeader{
+  transform: translateY(0.3em);
 }
 
 button {
@@ -97,7 +186,7 @@ button {
   cursor: pointer;
   display: inline-block;
   outline: none;
-  padding: 20px 35px;
+  padding: 10px 35px;
   /* text-transform: uppercase; */
   -webkit-transition: all 0.3s;
   -moz-transition: all 0.3s;
@@ -111,25 +200,186 @@ button:hover {
   color: #F2F3EB;
 }
 
+button:disabled, button:disabled:hover{
+  color: #DEDED7;
+  border: solid 2px #DEDED7;
+  background: none;
+}
+
+label{
+  text-transform: lowercase;
+  padding-right: 0.5em;
+}
+
+.inputCell{
+  width: 100%;
+  display: inline-block;
+  margin: auto;
+}
+
+.rowNumber{
+  width: 50%;
+  margin-bottom: -50%;
+}
+
+.colName{
+  display: inline-block;
+  padding: 5px;
+  /* enable the following if later it should be possible to click on the column name */
+  /* position: relative; */
+  /* z-index: 999; */
+}
+
+.unused{
+  opacity: 0.5;
+}
+
+.miniBtn{
+  padding: 0;
+  margin: 0;
+  border: none;
+  position: relative;
+  font-size: 0.9em;
+  cursor: default;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  transition: 0.3s;
+  opacity: inherit;
+  z-index: 999;
+}
+
+.addAbove, .removeRow{
+  float: right;
+  width: 30%;
+}
+
+.addBefore, .removeCol{
+  display: inline-block;
+  opacity: 0;
+  transition: 0.3s;
+}
+
+.miniBtn:hover{
+  background: none;
+  color: inherit;
+}
+
+.miniBtn:hover{
+  transform: scale(2,2);
+}
+
+.miniBtn:active{
+  opacity: 0.5;
+}
+
+.swapBtn{
+  font-size: 1em;
+  position: relative;
+  color: #5A5A5A;
+  z-index: 999;
+  float: left;
+  margin-top: 0.25em;
+  margin-left: -1.15em;
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Fire */
+}
+
+.swapBtn:active{
+  transform: scale(-2,2);
+}
+
+.rowControls{
+  opacity: 0;
+  transition: 0.3s;
+  margin-bottom: -0.25em;
+}
+
+.selectAreaCol, .selectAreaRow{
+  position: relative;
+  padding: 3px;
+  z-index: 1;
+  transition: 0.3s;
+  background-color: #474544;
+  opacity: 0;
+  float: left;
+}
+
+.selectAreaCol.selected, .selectAreaRow.selected{
+  opacity: 0.05;
+}
+
+.selectAreaCol{
+  margin-left: -2.5px; /* to compensate padding */
+  margin-top: -1.5em;
+  height: 100%;
+  width: 100%;
+}
+
+.selectAreaRow{
+  margin-top: -2.25em;
+  height: 2em;
+  width: 100%;
+}
+
+.selectAreaCol:hover, .selectAreaRow:hover{
+  /* background-color: #474544; */
+  opacity: 0.1;
+}
+
 #hex-logo{
   width: 80px;
   height: 80px;
   margin: auto;
+  float: left;
+}
+
+#topArea{
+  width: 90%;
+  margin: auto;
+  height: 80px;
+}
+
+#buttons{
+  position: relative;
+  top: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
 }
 
 #inputBox{
-  height: calc(100% - 430px);
+  display: inline-block;
+  position: relative;
+  box-sizing: border-box; /* to stop padding adding width */
+  border: none;
+  border-bottom: solid 2px #474544;
+  color: #474544;
+  background: #ddded7;
+  font-family: "ShareTechMono","Courier New";
+  clear: both;
+  height: calc(100% - 250px);
   min-height: 100px;
-  width: 85%;
-  line-height: 150%;
-  resize: none;
+  width: 90%;
+  transition: 0.5s;
+  margin: 0em 0 0.875em 0;
+  padding: 0 0 0.875em 0;
+  overflow: scroll;
 }
+
 
 #controlsEtc{
   height: 200px;
 }
 
-#previewTitle{
+/* #previewTitle{
   visibility: hidden;
 }
 
@@ -138,15 +388,34 @@ button:hover {
   width: 80%;
   margin: auto;
   visibility: hidden;
+} */
+
+#settingsTitle{
+  cursor: default;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
-#swapBtn{
-  cursor: pointer;
-  -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-     -khtml-user-select: none; /* Konqueror HTML */
-       -moz-user-select: none; /* Old versions of Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
-                                  supported by Chrome, Edge, Opera and Fire
+#showSettingsButton{
+  display: inline-block;
+  vertical-align: middle;
+  height: 24px;
+  transition: 0.5s;
+}
+
+#settingsArea{
+  border: none;
+  box-sizing: border-box; /* to stop padding adding width */
+  border-bottom: solid 2px #474544;
+  width: 90%;
+  margin: auto;
+  height: 0;
+  background: #E8E9E1;
+  clear: both;
+  transition: 0.5s;
+  overflow: scroll;
 }
