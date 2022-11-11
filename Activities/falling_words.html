@@ -462,6 +462,7 @@
       var words = []
       var moveWordInterval // global variable so we can cancel it
       var adjustTimeout // global variable so that this is automtically cancelled when set again
+      var autoGuessTimeout // global variable so that this is automtically cancelled when set again
       var score = 0
 
       window.odometerOptions = {
@@ -509,7 +510,7 @@
       }
 
       function checkSoundsAndStart(){
-        if (goodSound.readyState == 4 && badSound.readyState == 4){
+        if (typeof goodSound !== 'undefined' && typeof badSound !== 'undefined' &&  goodSound.readyState == 4 && badSound.readyState == 4){
           enableGameStart()
         } else {
           console.log('Sounds not ready, try again in a moment…')
@@ -820,14 +821,18 @@
 
       // triggered on enter or on pressing guess
       function giveGuess(answer){
-        let answerEvaluation = getSimilarity(answer)
-        giveFeedback(answerEvaluation.index,answerEvaluation.nearestAnswer)
+        if (answer != '' && !document.getElementById('guessInput').disabled){
+          let answerEvaluation = getSimilarity(answer)
+          giveFeedback(answerEvaluation.index,answerEvaluation.nearestAnswer)
+        }
       }
 
       function autoGiveGuess(answer){
-        let answerEvaluation = getSimilarity(answer)
-        if(answerEvaluation.index == 1){
-          giveFeedback(answerEvaluation.index,answerEvaluation.nearestAnswer)
+        if (answer != ''){
+            let answerEvaluation = getSimilarity(answer)
+            if(answerEvaluation.index == 1){
+              giveFeedback(answerEvaluation.index,answerEvaluation.nearestAnswer)
+            }
         }
       }
 
@@ -1015,7 +1020,7 @@
     </div>
     <div id="cardHolder"></div>
     <div id="guessArea">
-      <input type="text" id="guessInput" oninput="autoGiveGuess(this.value)" placeholder="Type your answer here" class="notransition"></input>
+      <input type="text" id="guessInput"  oninput="autoGiveGuess(this.value)" placeholder="Type your answer here" class="notransition"></input>
       <button id="guessButton" class="notransition">Guess</button>
       <button
     </div>

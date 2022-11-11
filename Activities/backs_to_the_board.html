@@ -1083,7 +1083,7 @@
 
       function checkSoundsAndStart(){
         // check that the sounds are ready
-        if (goodSoundLeft.readyState == 4 && badSoundLeft.readyState == 4 && goodSoundRight.readyState == 4 && badSoundRight.readyState == 4 && winSoundLeft.readyState == 4 && winSoundRight.readyState == 4 && popSound.readyState == 4){
+        if (typeof goodSoundLeft !== 'undefined' && goodSoundLeft.readyState == 4 && badSoundLeft.readyState == 4 && goodSoundRight.readyState == 4 && badSoundRight.readyState == 4 && winSoundLeft.readyState == 4 && winSoundRight.readyState == 4 && popSound.readyState == 4){
           // create the sounds object and its counter so we know how many times to play each one
           sounds = {
             left:{
