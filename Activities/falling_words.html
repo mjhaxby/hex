@@ -7,6 +7,7 @@
     "settings":[
       {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait"]},
       {"name":"shuffle","label":"Shuffle","type":"checkbox","default":true},
+      {"name":"soundsEnabled","label":"Sounds","type":"checkbox","default":true},
       {"name":"difficulty","label":"Difficulty","type":"select","options":["Very easy","Easy","Medium","Hard","Ultra","Impossible"],"default":"Easy"},
       {"name":"requiredSimilarity","label":"Required similarity to accept answer (%)","type":"number","default":90,"min":1,"max":100},
       {"name":"loopGame","label":"Loop","type":"selection","options":["Forever","Missed words first","Missed words only","Off"]},
@@ -464,6 +465,7 @@
       var adjustTimeout // global variable so that this is automtically cancelled when set again
       var autoGuessTimeout // global variable so that this is automtically cancelled when set again
       var score = 0
+      soundLoadAttemptCount = 0
 
       window.odometerOptions = {
         format: 'ddd',
@@ -510,10 +512,17 @@
       }
 
       function checkSoundsAndStart(){
-        if (typeof goodSound !== 'undefined' && typeof badSound !== 'undefined' &&  goodSound.readyState == 4 && badSound.readyState == 4){
+        // if sounds are disabled, go ahead and load, else wait until they are defined and ready
+        if (!gameSettings.soundsEnabled || (typeof goodSound !== 'undefined' && typeof badSound !== 'undefined' &&  goodSound.readyState == 4 && badSound.readyState == 4)){
           enableGameStart()
         } else {
           console.log('Sounds not ready, try again in a moment…')
+          soundLoadAttemptCount++
+          // if we've been waiting more than 5 seconds for the sounds to load, just give up on them (they will probably never load)
+          if (soundLoadAttemptCount > 50){
+            gameSettings.soundsEnabled = false // this will trigger game to load without sounds
+            console.log('Sounds are taking too long to load, disabling. Reload the page to try again.')
+          }
           window.setTimeout(checkSoundsAndStart, 100);
         }
       }
@@ -664,7 +673,9 @@
         message.style.opacity = 1
         enableShowAnswers()
         showReset()
-        winSound.play()
+        if (gameSettings.soundsEnabled){
+          winSound.play()
+        }
       }
 
       function showLose(){
@@ -674,7 +685,9 @@
         message.style.opacity = 1
         enableShowAnswers()
         showReset()
-        loseSound.play()
+        if (gameSettings.soundsEnabled){
+          loseSound.play()
+        }
       }
 
       function enableShowAnswers(){
@@ -907,11 +920,15 @@
           guessInput.value = ''
           guessInput.focus() // it lost it when we disabled it
         },500)
-        goodSound.play()
+        if (gameSettings.soundsEnabled){
+          goodSound.play()
+        }
       }
 
       function showCloseEnough(index, nearestAnswer){
-        goodEnoughSound.play()
+        if (gameSettings.soundsEnabled){
+          goodEnoughSound.play()
+        }
         let guessInput = document.getElementById('guessInput')
         let guessButton = document.getElementById('guessButton')
         showColorDistance(index)
@@ -966,7 +983,9 @@
           guessInput.value = ''
           guessInput.focus() // it lost it when we disabled it
         },500)
-        badSound.play()
+        if (gameSettings.soundsEnabled){
+          badSound.play()
+        }
       }
 
       // from https://stackoverflow.com/questions/10473745/compare-strings-javascript-return-of-likely

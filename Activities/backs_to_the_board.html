@@ -7,7 +7,8 @@
     "description":"Two teams of learners, each with one or more leader who stands backs to the board. Learners must explain to their leader(s) the words on the board and get them all before the other team. If they cheat, you can add penalties (they have to guess extra words).",
     "settings":[
       {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Swedish furniture company","Liberty"]},
-      {"name":"penaltyEnabled","label":"Show penalty buttons", "type":"checkbox", "default":true}
+      {"name":"penaltyEnabled","label":"Show penalty buttons", "type":"checkbox", "default":true},
+      {"name":"soundsEnabled","label":"Sounds","type":"checkbox","default":true}
     ],
     "sample_data":[["run"],["sing"],["walk"],["jump"],["laugh"],["draw"],["scream"],["eat"],["drink"],["leave"],["speak"]]
   }
@@ -813,6 +814,8 @@
       var penaltyLeft = 0;
       var penaltyRight = 0;
       var sounds = new Object();
+      var soundsEnabled
+      var soundLoadAttemptCount = 0
       const maxSoundPlay = 3
 
       function problemDiv(data, num, side){
@@ -1057,6 +1060,7 @@
       }
 
       function pageLoad(){
+        soundsEnabled = gameSettings.soundsEnabled
         if (gameSettings.color.toLowerCase() != 'default'){
             document.documentElement.setAttribute('data-theme', gameSettings.color.toLowerCase());
         }
@@ -1082,8 +1086,8 @@
       }
 
       function checkSoundsAndStart(){
-        // check that the sounds are ready
-        if (typeof goodSoundLeft !== 'undefined' && goodSoundLeft.readyState == 4 && badSoundLeft.readyState == 4 && goodSoundRight.readyState == 4 && badSoundRight.readyState == 4 && winSoundLeft.readyState == 4 && winSoundRight.readyState == 4 && popSound.readyState == 4){
+        // check that the sounds are ready (or skip if disabled)
+        if (!soundsEnabled || (typeof goodSoundLeft !== 'undefined' && goodSoundLeft.readyState == 4 && badSoundLeft.readyState == 4 && goodSoundRight.readyState == 4 && badSoundRight.readyState == 4 && winSoundLeft.readyState == 4 && winSoundRight.readyState == 4 && popSound.readyState == 4)){
           // create the sounds object and its counter so we know how many times to play each one
           sounds = {
             left:{
@@ -1115,8 +1119,15 @@
           // now everything is ready, we can enable the start button
           document.getElementById('start').disabled = false
         } else {
-          console.log('Sounds not ready, try again in a moment…')
-          window.setTimeout(checkSoundsAndStart, 100);
+          if (soundLoadAttemptCount > 50){
+            console.log('Tried to load sounds for 5 seconds with no luck. Disabling.')
+            soundsEnabled = false
+          } else {
+            console.log('Sounds not ready, try again in a moment…')
+            soundLoadAttemptCount++
+            window.setTimeout(checkSoundsAndStart, 100);
+          }
+
         }
       }
 
@@ -1141,13 +1152,15 @@
 
       // for a bit more control over the sounds, we'll play them through this function and keep count of how many times to play them
       function playSound(sound, side=null){
-        if (side == null){
-          // sounds[sound].counter++
-          sounds[sound].audio.play()
-          // for now, not bothering with the counter for pop, but it's there if we ever want to use it
-        } else {
-          sounds[side][sound].counter++
-          sounds[side][sound].audio.play()
+        if (soundsEnabled){
+          if (side == null){
+            // sounds[sound].counter++
+            sounds[sound].audio.play()
+            // for now, not bothering with the counter for pop, but it's there if we ever want to use it
+          } else {
+            sounds[side][sound].counter++
+            sounds[side][sound].audio.play()
+          }
         }
       }
 

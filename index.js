@@ -389,6 +389,20 @@ ipcRenderer.on('copyToClipboard', (event, form) => {
   navigator.clipboard.writeText(copyString)
 })
 
+ipcRenderer.on('clearTable', (event) => {
+  if (confirm('This will erase all data in the table and cannot be undone. Are you sure you want to continue?')){
+    clearTable();
+  }
+})
+
+ipcRenderer.on('deleteUnusedRows', (event) => {
+  clearUnusedRowsFromEnd();
+})
+
+ipcRenderer.on('deleteUnusedCols', (event) => {
+  clearUnusedColsFromEnd();
+})
+
 ipcRenderer.on('loadActivities', (event) => { // this is used for reloading the activities from main
   loadActivities()
 })

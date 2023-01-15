@@ -4,11 +4,13 @@
     "cols_max":2,
     "rows_min":1,
     "cols":["Clue","Answer"],
-    "description":"Solve the crossword. This activity is not finished.",
+    "description":"Solve the crossword. A new crossword is generated every time the activity is run. If you want to use the same crossword each time, run the activity until you have a crossword you like, then get the game code by clicking on the icon in the top-right, and copy and paste that into the settings here in hex.",
     "settings":[
       {"name":"color","label":"Color","type":"selector","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait"]},
       {"name":"gridSize","label":"Grid size","type":"number","min":5,"max":50,"default":20},
-      {"name":"showAnswers","label":"Pre-fill answers","type":"checkbox","default":false}
+      {"name":"showAnswers","label":"Pre-fill answers","type":"checkbox","default":false},
+      {"name":"gameCode","label":"Game code","type":"text"},
+      {"name":"showGameCodeButton","label":"Show game code button","type":"checkbox","default":true}
     ],
     "sample_data": [
     ["qualifications taken by British students, usually with a choice of 3-5 subjects studied for two years and finished aged 18","A-levels"],
@@ -256,7 +258,6 @@
       }
 
       button {
-        float: right;
         margin: 1vh;
         background: none;
         font-size: inherit;
@@ -277,6 +278,30 @@
       button:active{
         border: 2px solid var(--fg-color-active);
         color: grey;
+      }
+
+      input[type='text'], [type='email'], [type='number'], select, textarea {
+        background: none;
+        border: none;
+        border-bottom: solid 2px #474544;
+        color: #474544;
+        font-family: ShareTech;
+        font-size: 1.000em;
+        font-weight: 400;
+        letter-spacing: 1px;
+        margin: 0em 0 0.5em 0;
+        padding: 0 0 0 0;
+        /* text-transform: uppercase; */
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        -ms-box-sizing: border-box;
+        -o-box-sizing: border-box;
+        box-sizing: border-box;
+        -webkit-transition: all 0.3s;
+        -moz-transition: all 0.3s;
+        -ms-transition: all 0.3s;
+        -o-transition: all 0.3s;
+        transition: all 0.3s;
       }
 
       #loading{
@@ -310,6 +335,45 @@
         position: absolute;
         bottom: 0;
         right: 0;
+      }
+
+
+      #codeButton{
+        position: absolute;
+        top: 0;
+        right: 0;
+        border: none;
+        transition: 0.3s;
+      }
+
+      #codeButton:hover{
+        border: none;
+        transform: scale(1.2);
+      }
+
+      #codeBox{
+        background-color: var(--bg-color);
+        box-shadow:
+        /* left "border" */
+         inset 1px 0 0 0 var(--fg-color),
+        /* right "border" */
+         inset -1px 0 0 0 var(--fg-color),
+        /* top "border" */
+         inset 0 1px 0 0 var(--fg-color),
+        /* bottom "border" */
+         inset 0 -1px 0 0 var(--fg-color);
+        margin: auto;
+        display: none;
+        width: 50%;
+        padding: 1em;
+      }
+
+      #copyButton, #hideButton{
+        border: 2px solid var(--bg-color);
+      }
+
+      #copyButton:hover, #hideButton:hover{
+        border: 2px solid var(--fg-color);
       }
 
       #total{
@@ -576,6 +640,7 @@
     var words = []
     var adjustTimeout
     var bestGrid
+    var newGameCode
     var totalNumLetters = 0
 
     function pageLoad(){
@@ -589,15 +654,27 @@
       gameData.forEach(function (value, i){
         words.push({ref: i, text: value[1], clue: value[0]})
       })
-      createCrossWordPuzzle(gameSettings.gridSize)
+      gridSize = gameSettings.gridSize
+      createCrossWordPuzzle(gameSettings.gameCode)
+      if (gameSettings.showGameCodeButton){
+        let bestGridAsString = JSON.stringify(bestGrid)
+        newGameCode = btoa(bestGridAsString)
+        document.getElementById('code').value = newGameCode
+      } else {
+        document.getElementById('codeButton').style.display = 'none'
+      }
       removeUnusedCols()
       removeUnusedRows()
       hideLoad()
     }
 
     function hideLoad(){
-      if (bestGrid){
-        document.getElementById('loading').style.display = 'none'
+      if (bestGrid || invalidCode){
+        if (!invalidCode){
+          document.getElementById('loading').style.display = 'none'
+        } else {
+          console.log('Invalid game code.')
+        }
       } else {
         console.log('Grid not ready, try again in a moment…')
         window.setTimeout(hideLoad, 100);
@@ -661,16 +738,18 @@
       if(selectedIndex > 0){ // if we're not already at the beginning of the word
         if(selectedDown){
           if (document.getElementById((currentRow-1)+'_'+currentCol).classList.contains('prefilled')){
-            if (selectedIndex-1 > 0){
-              selectSlot(document.getElementById((currentRow-2)+'_'+currentCol),'down')
+            let nextSlot = findNextAvailableSlot(currentRow,currentCol, false, true)
+            if (nextSlot != -1){ // if there is another not-prefilled slot, go to that, otherwise do nothing
+              selectSlot(document.getElementById(nextSlot+'_'+currentCol),'down')
             }
           } else {
             selectSlot(document.getElementById((currentRow-1)+'_'+currentCol),'down')
           }
         } else {
           if (document.getElementById(currentRow+'_'+(currentCol-1)).classList.contains('prefilled')){
-            if (selectedIndex-1 > 0){
-              selectSlot(document.getElementById(currentRow+'_'+(currentCol-2)),'across')
+            let nextSlot = findNextAvailableSlot(currentRow,currentCol, false)
+            if (nextSlot != -1){ // if there is another not-prefilled slot, go to that, otherwise do nothing
+              selectSlot(document.getElementById(currentRow+'_'+nextSlot),'across')
             }
           } else {
             selectSlot(document.getElementById(currentRow+'_'+(currentCol-1)),'across')
@@ -681,23 +760,58 @@
       }
     }
 
+    function findNextAvailableSlot(currentRow, currentCol,forwards=true, down=false){
+      if(down){
+        if(forwards){
+          for(i=currentRow+1; i<currentRow+words[selectedWord].text.length; i++){
+            if (!document.getElementById(i+'_'+currentCol).classList.contains('prefilled')){
+              return i
+            }
+          }
+        } else { //if going backwards
+          for(i=currentRow-1; i>=0; i--){
+            if (!document.getElementById(i+'_'+currentCol).classList.contains('prefilled')){
+              return i
+            }
+          }
+        }
+      } else { // if across word
+        if(forwards){
+          for(i=currentCol+1; i<currentCol+words[selectedWord].text.length; i++){
+            if (!document.getElementById(currentRow+'_'+i).classList.contains('prefilled')){
+              return i
+            }
+          }
+        } else { //if going backwards
+          for(i=currentCol-1; i>=0; i--){
+            if (!document.getElementById(currentRow+'_'+i).classList.contains('prefilled')){
+              return i
+            }
+          }
+        }
+      }
+      return -1 // none found, don't move
+    }
+
     function selectNext(){
       let selectedEl = document.getElementById(selectedSlot)
       let currentRow = parseInt(selectedEl.getAttribute('data-row'))
       let currentCol = parseInt(selectedEl.getAttribute('data-col'))
       if(selectedIndex < words[selectedWord].text.length-1){ // if we're not already at the end of the word
       if(selectedDown){
-        if (document.getElementById((currentRow+1)+'_'+currentCol).classList.contains('prefilled')){ //TODO: this only accounts for ONE prefilled space in a row!
-          if (selectedIndex+1 < words[selectedWord].text.length-1){
-            selectSlot(document.getElementById((currentRow+2)+'_'+currentCol),'down')
+        if (document.getElementById((currentRow+1)+'_'+currentCol).classList.contains('prefilled')){
+          let nextSlot = findNextAvailableSlot(currentRow,currentCol, true, true)
+          if (nextSlot != -1){ // if there is another not-prefilled slot, go to that, otherwise do nothing
+            selectSlot(document.getElementById(nextSlot+'_'+currentCol),'down')
           }
         } else {
           selectSlot(document.getElementById((currentRow+1)+'_'+currentCol),'down')
         }
       } else {
         if (document.getElementById(currentRow+'_'+(currentCol+1)).classList.contains('prefilled')){
-          if (selectedIndex+1 < words[selectedWord].text.length-1){
-            selectSlot(document.getElementById(currentRow+'_'+(currentCol+2)),'across')
+          let nextSlot = findNextAvailableSlot(currentRow,currentCol)
+          if (nextSlot != -1){ // if there is another not-prefilled slot, go to that, otherwise do nothing
+            selectSlot(document.getElementById(currentRow+'_'+nextSlot),'across')
           }
         } else {
           selectSlot(document.getElementById(currentRow+'_'+(currentCol+1)),'across')
@@ -898,6 +1012,23 @@
       return true;
     };
 
+    function showHideCode(){
+      codeBox = document.getElementById('codeBox')
+      gridEl = document.getElementById('grid')
+      if (codeBox.style.display == 'block'){
+        codeBox.style.display = 'none'
+        gridEl.style.display = 'block'
+      } else {
+        codeBox.style.display = 'block'
+        gridEl.style.display = 'none'
+      }
+    }
+
+    function copyToClipboard(textID){
+      document.getElementById(textID).select();
+      document.execCommand('copy');
+    }
+
     // function checkReadyAndStart(){
     //   if (createCrossWordPuzzle){
     //     createCrossWordPuzzle()
@@ -910,6 +1041,14 @@
   <body>
       	<!-- <a href="https://mitchum.blog/building-a-crossword-puzzle-generator-with-javascript/">Tutorial</a> |
         <a href="https://github.com/mmaynar1/games/tree/master/crossword-puzzle-generator">Github</a> | -->
+    <button id="codeButton" onclick="showHideCode()">⊛</button>
+    <div id="codeBox">
+      <p>This is for activity creators only.</p>
+      <p>If you are trying to solve the crossword, there's nothing to help you here!</p>
+      <input id="code" type="text" readonly></input><br>
+      <button id="copyButton" onclick="copyToClipboard('code')">Copy</button> • <button id="hideButton" onclick="showHideCode()">Close</button>
+      <p style="font-size: 0.7em;">Copy this code into the <strong>hex</strong> settings to recreate this exact same puzzle. This will override any other data passed to the activity.</p>
+    </div>
     <div id="loading"><div id="loadingMessage">loading…</div></div>
     <div id="grid" class="grid"></div>
     <div id="clueBox"></div>
@@ -929,6 +1068,8 @@
     // let generatedGridRefs = [];
     let goodStartingLetters = new Set()
     let bestGridRef = [];
+
+    var invalidCode = false
 
     var slots
     // let slots = (gridSize+2) * (gridSize+2); // plus two to always have an empty one around the edge
@@ -951,9 +1092,9 @@
     // 	}
     // }
 
-    let createCrossWordPuzzle = function()
+    let createCrossWordPuzzle = function(predefinedGridEncoded)
     {
-      gridSize = gameSettings.gridSize
+      // gridSize = gameSettings.gridSize
       let row = 0;
       let column = 0;
 
@@ -1156,6 +1297,7 @@
                         }
                         if (!bestGrid.isLetter(row, column)){ // spaces and punctuation TODO: accents!
                           slot.classList.add('prefilled')
+                          slot.innerHTML = bestGrid.grid[row][column];
                         } else {
                           totalNumLetters++ // this is the best time to count how many of these we have (as we don't want to count spaces)
                         }
@@ -1308,9 +1450,21 @@
             text.split('').filter( char => goodStartingLetters.add(char));
         }
 
+      if (predefinedGridEncoded == ''){
         generateGrids();
-    	bestGrid = getBestGrid( generatedGrids );
-        displayCrosswordPuzzle( bestGrid );
+        bestGrid = getBestGrid( generatedGrids );
+
+      } else {
+        let predefinedGridAsString = atob(predefinedGridEncoded)
+        try {
+          let predefinedGridData = JSON.parse(predefinedGridAsString)
+          bestGrid = new CrosswordPuzzle(predefinedGridData.grid, predefinedGridData.gridRef);
+        } catch(e) {
+          invalidCode = true;
+          document.getElementById('loadingMessage').innerHTML = 'INVALID CODE<br>'+e
+        }
+      }
+      displayCrosswordPuzzle( bestGrid );
     }
 
     function getUnusedWords()
@@ -1337,17 +1491,19 @@
   </script>
   <!-- CROSSWORD.JS -->
   <script>
-      function CrosswordPuzzle()
+      function CrosswordPuzzle(grid = [], gridRef = []) // can be made from existing grid and gridref
       {
       const emptyCell = '_';
-      let grid = Array.from(Array( gridSize ), () => new Array( gridSize ))
-      let gridRef = Array.from(Array( gridSize ), () => new Array( gridSize ))
-      for( let row = 0; row < gridSize; row++ )
-      {
-        for( let column = 0; column < gridSize; column++ )
+      if (grid.length == 0){ // if grid is empty, create it
+        grid = Array.from(Array( gridSize ), () => new Array( gridSize ))
+        gridRef = Array.from(Array( gridSize ), () => new Array( gridSize ))
+        for( let row = 0; row < gridSize; row++ )
         {
-          grid[row][column] = emptyCell;
-          gridRef[row][column] = {horizontal: {}, vertical: {}};
+          for( let column = 0; column < gridSize; column++ )
+          {
+            grid[row][column] = emptyCell;
+            gridRef[row][column] = {horizontal: {}, vertical: {}};
+          }
         }
       }
 

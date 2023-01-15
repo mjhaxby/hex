@@ -1,59 +1,71 @@
-{
-  "name": "hex",
-  "version": "2.0.0-beta",
-  "description": "Learning activity creator.",
-  "main": "main.js",
-  "scripts": {
-    "app:dir": "electron-builder --dir",
-    "app:dist": "electron-builder"
-  },
-  "repository": {
-    "type": "git",
-    "url": "mjhaxby"
-  },
-  "keywords": [
-    "language",
-    "learning"
-  ],
-  "author": "Morgan Haxby",
-  "license": "ISC",
-  "devDependencies": {
-    "electron": "^19.0.1",
-    "electron-builder": "^23.3.3",
-    "electron-packager": "^15.5.1"
-  },
-  "fontend": {
-    "config": {
-      "applicationName": "Hex"
-    }
-  },
-  "dependencies": {
-    "electron-default-menu": "^1.0.2"
-  },
-  "build": {
-    "appId": "com.mjhaxby.hex",
-    "mac": {
-      "category": "public.app-category.education",
-      "icon": "buildResources/icon.icns",
-      "target": {
-        "target": "default",
-        "arch": [
-          "x64",
-          "arm64"
-        ]
+    {
+      "name": "hex",
+      "version": "2.1.0",
+      "description": "Learning activity creator.",
+      "main": "main.js",
+      "scripts": {
+        "app:dir": "electron-builder --dir",
+        "app:dist": "electron-builder"
+      },
+      "repository": {
+        "type": "git",
+        "url": "mjhaxby"
+      },
+      "keywords": [
+        "language",
+        "learning"
+      ],
+      "author": "Morgan Haxby <info@mjhaxby.fr> (http://www.mjhaxby.fr)",
+      "homepage": "https://github.com/mjhaxby/hex",
+      "license": "ISC",
+      "devDependencies": {
+        "electron": "^19.0.1",
+        "electron-builder": "^23.3.3",
+        "electron-packager": "^15.5.1"
+      },
+      "fontend": {
+        "config": {
+          "applicationName": "Hex"
+        }
+      },
+      "dependencies": {
+        "electron-default-menu": "^1.0.2"
+      },
+      "build": {
+        "appId": "com.mjhaxby.hex",
+        "mac": {
+          "category": "public.app-category.education",
+          "icon": "buildResources/icon.icns",
+          "target": {
+            "target": "default",
+            "arch": [
+              "x64",
+              "arm64"
+            ]
+          }
+        },
+        "win": {
+          "icon": "buildResources/icon.png",
+          "target": [
+            {
+               "target": "nsis",
+                 "arch": [
+                   "x64",
+                   "ia32"
+                  ]
+             }
+           ]
+        },
+        "linux": {
+          "desktop": {
+            "StartupNotify": "false",
+            "Encoding": "UTF-8",
+            "MimeType": "x-scheme-handler/deeplink"
+          },
+          "target": ["AppImage", "rpm", "deb"]
+        },
+        "deb": {
+          "priority": "optional"
+        }
       }
-    },
-    "win": {
-      "icon": "buildResources/icon.png",
-      "target": [
-        {
-           "target": "nsis",
-             "arch": [
-               "x64",
-               "ia32"
-              ]
-         }
-       ]
     }
-  }
-}

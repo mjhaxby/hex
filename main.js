@@ -405,6 +405,20 @@ function getTableDataForClipboard(form){
   mainWindow.webContents.send('copyToClipboard', form);
 }
 
+function askToClearTable(){
+  mainWindow.webContents.send('clearTable');
+}
+
+function askToDeleteUnusedRows(){
+  mainWindow.webContents.send('deleteUnusedRows');
+}
+
+function askToDeleteUnusedCols(){
+  mainWindow.webContents.send('deleteUnusedCols');
+}
+
+
+
 // MENU template
 const applicationMenu = Menu.buildFromTemplate([
   // { role: 'appMenu' }
@@ -502,6 +516,19 @@ const applicationMenu = Menu.buildFromTemplate([
         label: 'Copy table as JSON',
         accelerator: process.platform === 'darwin' ? 'Cmd+Shift+Alt+C' : 'Ctrl+Shift+Alt+C',
         click: () => { getTableDataForClipboard('json') }
+      },
+      {
+        label: 'Empty table',
+        accelerator: process.platform === 'darwin' ? 'Cmd+Shift+Delete' : 'Ctrl+Shift+Delete',
+        click: () => { askToClearTable() }
+      },
+      {
+        label: 'Delete unused rows from end',
+        click: () => { askToDeleteUnusedRows() }
+      },
+      {
+        label: 'Delete unused columns from end',
+        click: () => { askToDeleteUnusedCols() }
       }
     ]
   },

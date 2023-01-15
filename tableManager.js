@@ -364,7 +364,7 @@ function updateHoverAndView(el){
 }
 
 function selectCol(e, col){
-  console.log(e.getModifierState('Meta'))
+  // console.log(e.getModifierState('Meta'))
   if (e.getModifierState('Meta') || e.getModifierState('Control')){ // add mode
     var cols = lastSelection.col
     if (!cols.includes(col)){
@@ -377,7 +377,7 @@ function selectCol(e, col){
     }
     lastSelection = { ...selection};
   } else if (e.getModifierState('Shift')) { // add range mode
-    console.log('add range mode')
+    // console.log('add range mode')
     if (col > lastSelection.col[0]){ // if it's higher than the first one
       var cols = [lastSelection.col[0]] // take first col as new array
       for (let i=cols[0]+1; i<=col; i++){ // from next col from first selected to col just selected now
@@ -387,7 +387,7 @@ function selectCol(e, col){
       var cols = [lastSelection.col[lastSelection.col.length-1]] // take highest col as new array
       for (let i=cols[0]; i>=col; i--){ // from highest col selected down to col just selected
         cols.push(i)
-        console.log('adding ' + i)
+        // console.log('adding ' + i)
       }
     }
     selectionProxy.col = cols
@@ -427,7 +427,7 @@ function selectRow(e, row){
     }
     lastSelection = { ...selection};
   } else if (e.getModifierState('Shift')) { // add range mode // TO DO: At the moment this only works if you select a lower and then a higher row, not the other way around
-    console.log('add range mode')
+    // console.log('add range mode')
     if (row > lastSelection.row[0]){ // if it's higher than the first one
       var rows = [lastSelection.row[0]] // take first row as new array
       for (let i=rows[0]+1; i<=row; i++){ // from next row from first selected to row just selected now
@@ -437,7 +437,7 @@ function selectRow(e, row){
       var rows = [lastSelection.row[lastSelection.row.length-1]] // take last row as new array
       for (let i=rows[0]; i>=row; i--){ // from highest row selected down to row just selected
         rows.push(i)
-        console.log('adding ' + i)
+        // console.log('adding ' + i)
       }
     }
     selectionProxy.row = rows
@@ -473,7 +473,7 @@ function deselectAll(){
 }
 
 function handleKeyDownWithSelection(e){
-  console.log(e.getModifierState('Control'))
+  // console.log(e.getModifierState('Control'))
   if (e.key == 'Delete' || (e.key == 'Backspace' && (e.getModifierState('Control') || e.getModifierState('Meta')))){
     if (selection.row.length > 0){
       rowsToDel = selection.row
@@ -547,9 +547,13 @@ function handleCutWithSelection(e){
 
 function resortSelection(key){
   if (key == 'col' && selection.col.length > 0){
-    selection.col = selection.col.sort()
+    selection.col = selection.col.sort(function(a, b) {
+      return a - b; // need this bit or it will sort 10 before 9 (i.e. fail to sort integers above 9)
+    });
   } else if (key == 'row' && selection.row.length > 0){
-    selection.row == selection.row.sort()
+    selection.row == selection.row.sort(function(a, b) {
+      return a - b; // need this bit or it will sort 10 before 9 (i.e. fail to sort integers above 9)
+    });
   }
 }
 
@@ -635,17 +639,21 @@ function swapData(col1, col2){ // at the moment just for an array containing arr
 }
 
 function pasteInData(e, row, col){
-  e.stopPropagation();
-  e.preventDefault();
   let clipboardData = e.clipboardData || window.clipboardData;
   let pastedData = clipboardData.getData('Text');
   let dataAsArray = convertTextBlockToArray(pastedData)
-  convertArrayToTableData(dataAsArray,row,col)
+  // only continue pasting in data if there is more than one row and/or more than one column. Otherwise, paste as normal (text rather than data)
+  // - this allows users to paste a few characters into a cell without replacing that entire cell
+  if (dataAsArray.length > 1 || (dataAsArray.length > 0 && dataAsArray[0].length > 1)){
+    e.stopPropagation();
+    e.preventDefault();
+    convertArrayToTableData(dataAsArray,row,col)
+  }
   // could use e.target or e.srcElement to get row and col instead (something to think about…)
 }
 
 function inputCellKey(e, row, col){
-  console.log('key press ' + e.key + ' at ' + row + ', ' + col)
+  // console.log('key press ' + e.key + ' at ' + row + ', ' + col)
   var charPos = e.target.selectionStart;
   var strLength = e.target.value.length;
   var colToChoose = 1;
@@ -702,7 +710,7 @@ function inputCellKey(e, row, col){
     } else {
       addCol(col+1)
       newFocusId = 'inputCell_'+row+'_'+(col+1)
-      console.log(newFocusId)
+      // console.log(newFocusId)
       newFocus = document.getElementById(newFocusId)
       newFocus.focus()
     }
