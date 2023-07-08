@@ -14,6 +14,26 @@ body{
   background: #F2F3EB;
   height: 100vh;
   overflow-y: hidden;
+  user-select: none
+}
+
+.preload *{
+  animation-duration: 0s !important;
+  -webkit-animation-duration: 0s !important;
+  transition:background-color 0s, opacity 0s, color 0s, width 0s, height 0s, padding 0s, margin 0s !important;
+}
+
+.disabled{
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+hr{
+  border: solid 0.5px #474544;
+  opacity: 50%;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  z-index: -1;
 }
 
 button {
@@ -99,7 +119,7 @@ input[type="checkbox"]:checked::before {
 }
 
 select {
-  background: url('down.png') no-repeat right;
+  background: url('down.svg') no-repeat right;
   outline: none;
   -moz-appearance: none;
   -webkit-appearance: none;
@@ -154,22 +174,11 @@ input[type='text'].selected{
   color: #F2F3EB;
 }
 
-/* possibly don't need the whole, half, third, quarter… */
-/* td .whole{
-  width: 100%;
+.hidden{
+  display: none;
+  visibility: hidden;
+  opacity: 0;
 }
-
-td .half{
-  width: 50%;
-}
-
-td .third{
-  width: 33%;
-}
-
-td .quarter{
-  width: 25%;
-} */
 
 .numCol, .addCol{
   width: 50px;
@@ -215,6 +224,7 @@ label{
   width: 100%;
   display: inline-block;
   margin: auto;
+  text-overflow: ellipsis;
 }
 
 .rowNumber{
@@ -223,8 +233,13 @@ label{
 }
 
 .colName{
+  max-width: calc(100% - 2em);
   display: inline-block;
   padding: 5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  vertical-align: middle;
   /* enable the following if later it should be possible to click on the column name */
   /* position: relative; */
   /* z-index: 999; */
@@ -277,13 +292,14 @@ label{
 }
 
 .swapBtn{
-  font-size: 1em;
+  /* font-size: 1em; */
+  display: block;
   position: relative;
-  color: #5A5A5A;
+  /* color: #5A5A5A; */
   z-index: 999;
   float: left;
-  margin-top: 0.25em;
-  margin-left: -1.15em;
+  margin-top: 0.5em;
+  margin-left: -1.5em;
   -webkit-touch-callout: none; /* iOS Safari */
     -webkit-user-select: none; /* Safari */
      -khtml-user-select: none; /* Konqueror HTML */
@@ -295,6 +311,11 @@ label{
 
 .swapBtn:active{
   transform: scale(-2,2);
+}
+
+.swapIcon{
+  height: 16px;
+  width: 16px;
 }
 
 .rowControls{
@@ -335,6 +356,75 @@ label{
   opacity: 0.1;
 }
 
+.arrow {
+  border: solid black;
+  border-width: 0 2px 2px 0;
+  display: inline-block;
+  padding: 4px;
+}
+
+.arrow.right {
+  transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+}
+
+.arrow.left {
+  transform: rotate(135deg);
+  -webkit-transform: rotate(135deg);
+}
+
+.arrow.up {
+  transform: translateY(2px) rotate(-135deg);
+  -webkit-transform:  translateY(2px) rotate(-135deg);
+}
+
+.arrow.down {
+  transform: translateY(-2px) rotate(45deg);
+  -webkit-transform: translateY(-2px) rotate(45deg);
+}
+
+.infoContainer{
+  position: relative;
+  display: inline-block;
+  transform: translateY(-0.1em)
+}
+
+.infoIcon{
+  border-radius: 50%;
+  width: 0.8em;
+  height: 0.8em;
+  font-size: 0.8em;
+  line-height: 0.7em;
+  color: #F2F3EB;
+  background-color: #474544;
+  border: solid 1px #474544;
+  text-align: center;
+}
+
+.infoBox{
+  visibility: hidden;
+  position: absolute;
+  /* bottom: 100%; */ /* set inline */
+  width: max-content;
+  max-width: 300px;
+  max-height: 200px;
+  padding: 2px;
+  margin: 1px;
+  font-size: 0.9em;
+  overflow: scroll;
+  color: #F2F3EB;
+  background-color: #474544;
+  border: solid 2px #474544;
+  transition: visibility 0.5s, opacity 0.5s;
+  opacity: 0;
+  z-index: 99;
+}
+
+.infoContainer:hover .infoBox{
+  visibility: visible;
+  opacity: 1;  
+}
+
 #hex-logo{
   width: 80px;
   height: 80px;
@@ -352,7 +442,12 @@ label{
   position: relative;
   top: 50%;
   -ms-transform: translateY(-50%);
-  transform: translateY(-50%);
+  transform: translateY(-50%);  
+}
+
+#buttons.leftAlign{
+  margin-left: 90px;
+  text-align: left;
 }
 
 #inputBox{
@@ -377,6 +472,7 @@ label{
 
 #controlsEtc{
   height: 200px;
+  overflow: visible;
 }
 
 /* #previewTitle{
@@ -400,11 +496,75 @@ label{
   user-select: none;
 }
 
+#categoryPicker{
+  background-color: #ddded7;
+  float: left;
+  font-size: 1.25em;
+  font-weight: 600;
+  margin-bottom: 1em;
+}
+
+#advancedExport{
+  display: none;
+  position: relative;  
+}
+/* see more in toggle-switch.css */
+
+#packageIDWrapper{
+  position: relative;
+  display: inline-block;
+}
+
+.setting{
+  width: 100%;
+  -webkit-column-break-inside: avoid;
+}
+
+.hiddenLeft {
+  animation: shrinkToLeft 500ms;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.expandedLeft {
+  animation: expandFromLeft 500ms;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@keyframes expandFromLeft {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}
+
+@keyframes shrinkToLeft {
+  from {
+    opacity: 1;
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  to {
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+}
+
+
 #showSettingsButton{
   display: inline-block;
   vertical-align: middle;
-  height: 24px;
+  /* height: 24px; */
   transition: 0.5s;
+  margin: 0.25em;
 }
 
 #settingsArea{
@@ -417,5 +577,36 @@ label{
   background: #E8E9E1;
   clear: both;
   transition: 0.5s;
-  overflow: scroll;
+  overflow-y: scroll;
+  overflow-x: visible;
+  z-index: 1;
+}
+
+#settingsAreaInner{
+  /* text-align: left; */  
+}
+
+#generateBtn{
+  border: 0;
+  padding: 0;
+  transition: 0.1s  ease-in-out;
+}
+
+#generateBtn:hover{
+  background: transparent;  
+}
+
+#generateBtn:hover #generateIcn{
+  transform: rotate(270deg);
+}
+
+#generateBtn:active{
+  transform: scale(0.75);
+}
+
+#generateIcn{
+  fill: #474544;
+  height: 19px;
+  width: 19px;
+  transition: 0.5s ease-in-out;
 }

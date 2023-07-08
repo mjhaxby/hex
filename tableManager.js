@@ -296,12 +296,12 @@ function colControls(col){
   newColControl += '<div id="col_'+col+'_addBefore" class="addBefore miniBtn" onclick="addCol('+col+')">+</div>'
   newColControl += '<div id="colName_'+col+'" class="colName">'+colName+'</div>'
   newColControl += '<div id="col_'+col+'_remove" class="removeCol miniBtn" onclick="deleteCol('+col+')">-</div>'
-  newColControl += '<div id="selectAreaCol_'+col+'" class="selectAreaCol" onmouseup="selectCol(event, '+col+')">&nbsp;</div>'
+  newColControl += '<div id="selectAreaCol_'+col+'" class="selectAreaCol" title="'+colName+'" onmouseup="selectCol(event, '+col+')">&nbsp;</div>'
   return newColControl
 }
 
 function swapButton(col){
-  var result = '<button class="swapBtn miniBtn" onclick="swapData('+(col-1)+','+col+')">↔︎</button>'
+  var result = '<button class="swapBtn miniBtn" onclick="swapData('+(col-1)+','+col+')"><img class="swapIcon" src="swap.svg"></img></button>'
   return result
 }
 
@@ -638,10 +638,11 @@ function swapData(col1, col2){ // at the moment just for an array containing arr
   }
 }
 
-function pasteInData(e, row, col){
+function pasteInData(e, row, col){  
   let clipboardData = e.clipboardData || window.clipboardData;
   let pastedData = clipboardData.getData('Text');
-  let dataAsArray = convertTextBlockToArray(pastedData)
+  var dataAsArray = returnJSONorArray(pastedData)
+
   // only continue pasting in data if there is more than one row and/or more than one column. Otherwise, paste as normal (text rather than data)
   // - this allows users to paste a few characters into a cell without replacing that entire cell
   if (dataAsArray.length > 1 || (dataAsArray.length > 0 && dataAsArray[0].length > 1)){
@@ -650,6 +651,25 @@ function pasteInData(e, row, col){
     convertArrayToTableData(dataAsArray,row,col)
   }
   // could use e.target or e.srcElement to get row and col instead (something to think about…)
+}
+
+function returnJSONorArray(dataBlock){
+  const regex = /\[?\["([^"]*(?:"[^"]*)*)"(?:,\s*)*\]\]?/;
+  const isJson = regex.test(dataBlock.trim())
+
+  // if the data pasted is in JSON format, parse it
+  if (isJson){
+    try {
+      dataAsArray = JSON.parse(dataBlock.trim())
+    }
+    catch { // if that fails, assume it is tabbed
+      dataAsArray = convertTextBlockToArray(dataBlock)
+    }
+  } else { // if it's not JSON format, assume it is tabbed
+    dataAsArray = convertTextBlockToArray(dataBlock)
+  }
+
+  return dataAsArray
 }
 
 function inputCellKey(e, row, col){
