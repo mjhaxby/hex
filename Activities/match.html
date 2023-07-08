@@ -5,10 +5,17 @@
     "rows_min":1,
     "cols":["Prompt","Answer"],
     "description":"Match two sets of data. You can set traps by leaving either the prompt or the answer blank.",
+    "scorm_support":true,
     "empty_cells_allowed":true,
     "settings":[
-      {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company 1","Swedish furniture company 2","Save the trees","Seaside","Orchid","Café au lait"]},
-      {"name":"fontSize","label":"Font size (%)","type":"number","default":100,"max":500}
+      {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company 1","Swedish furniture company 2","Save the trees","Seaside","Orchid","Café au lait"],"category":"appearance"},
+      {"name":"fontSize","label":"Font size (%)","type":"number","default":100,"max":500,"category":"appearance"},
+      {"name":"viewMode","label":"Default view mode","type":"select","options":["Top and bottom","Side-by-side"],"category":"appearance"},
+      {"name":"allowChangeViewMode","label":"Allow user to switch view mode","type":"checkbox","default":true,"category":"appearance"},
+      {"name":"allowAlphabetize","label":"Allow user to sort dragable cards alphabetically","type":"checkbox","default":true,"category":"behavior"},
+      {"name":"allowReshuffle","label":"Allow user to shuffle cards again","type":"checkbox","default":true,"category":"behavior"},
+      {"name":"checkButton","label":"Check button","type":"text","default":"check","category":"language"},
+      {"name":"pass","label":"Completion % (SCORM only)","type":"number","default":80,"max":100,"category":"behavior"}
     ],
     "sample_data":[["English","England"],["Welsh","Wales"],["Scottish","Scotland"],["Irish","Ireland"],["British","Britain"],["","Weland"],["Scotish",""],["Anglish",""]]
   }
@@ -307,6 +314,8 @@
         display: block;
         transition: all 0.2s ease-in-out;
         vertical-align: top;
+        max-width: 70%;
+        margin: auto;
       }
       .inline{
         display: inline-block;
@@ -325,16 +334,159 @@
 /*          min-height: 30%; */
         text-align: center;
         margin: 10px;
-        transition: 0.5s ease-in-out;
+        transition: all 0.5s ease-in-out, padding 1ms;
         overflow: visible;
         max-height: 10000px /* for animation purposes */
       }
+
+         /* Use the following on the wrappers to put it on the side instead */
+      .leftSide{
+        float: left;
+        /* overflow: auto; */
+        width: calc(45% - 20px);
+        /* max-height: 90vh; */
+        /* position: fixed; I want to do this so that the card container floats along with everything, but it requires the box to be able to scorll which doesn't work with… anything else!! But perhaps one day…*/
+      }
+
+      .rightSide{
+
+        float: right;
+        margin-left: auto;
+        margin-right: auto;
+        width: calc(55% - 20px);   
+        overflow-y: auto; 
+        height: 75vh;     
+        padding-top:20px;
+        --mask: linear-gradient(to bottom, 
+          rgba(0,0,0, 0) 0%, rgba(0,0,0, 1) 5%,   rgba(0,0,0, 1) 90%, 
+            rgba(0,0,0, 0) 95%, rgba(0,0,0, 0) 0
+        ) 100% 50% / 100% 100% repeat-x;
+  
+      /* border: 1px #d8d8d8 dashed; */
+      -webkit-mask: var(--mask); 
+      mask: var(--mask);
+      }
+
+      /* .rightSide:before{
+        content:'';
+        width:calc(100% - 20px);
+        height:10vh;    
+        position:absolute;
+        right:0;
+        bottom:0;
+        background:linear-gradient(transparent 0.5vh, var(--bg-color));
+        z-index: 1;
+      } */
+
       .circle-border {
         width: 300px;
         height: 300px;
         border-radius: 100%;
         padding: 30px;
         background-color: black;
+      }
+
+      /* for shrinker button and more button */
+
+      .triangle-down {
+        width: 0;
+        height: 0;
+        opacity: 0.5;
+        transition: all 0.3s;
+        border-left: 3px solid transparent;
+        border-right: 3px solid transparent;
+        border-top: 6px solid var(--dragable-color-fg); /* #555 */
+        z-index: 1;
+      }
+
+       #shrinker:hover .triangle-down{
+        opacity: 1;
+      }
+
+      .top-left{
+        position: relative;
+        float: left;
+        top: 2;
+        left: 2;
+      }
+
+      .bottom-right{
+        position: relative;
+        float: right;
+        bottom: 0;
+        right: 0;
+      }
+
+      /* Dropdown Button */
+      .drop-btn{
+        background-color: var(--dragable-color-bg);
+        color: var(--dragable-color-fg);
+        opacity: 0.5;
+        height: 10px;
+        width: 20px;        
+        font-size: 20px;
+        text-align: center;
+      }
+
+      .drop-btn-sideMode{
+        transform: rotate(90deg);
+        transform-origin: bottom;
+      }
+
+      #drop-btn-text{
+        transform: translateY(-12px);
+        user-select: none;
+
+      }
+
+      /* The container <div> - needed to position the dropdown content */
+      .dropdown{
+        position: relative;
+        display: inline-block;
+      }
+
+      /* Dropdown Content (Hidden by Default) */
+      .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        background-color: var(--bg-color);
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 100;
+      }
+
+      .dropdown-content-sideMode {
+        left: 20;
+        bottom: 0;
+      }
+
+      /* Links inside the dropdown */
+      .dropdown-content a{
+        color: var(--fg-color);
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        user-select: none;
+      }
+
+      /* Change color of dropdown links on hover */
+      .dropdown-content a:hover {background-color: var(--card-container);}
+
+      /* Show the dropdown menu on hover */
+      .dropdown:hover .dropdown-content {display: block;}
+
+      /* Change the background color of the dropdown button when the dropdown content is shown */
+      .dropdown:hover .drop-btn {
+        background-color: var(--dragable-color-fg);
+        color: var(--dragable-color-bg);
+      }
+
+      #mainWrapper{
+        width: 100%
+        clear: both;
+        overflow: hidden;
+        margin: 0px;
       }
 
       #cardContainer{
@@ -345,13 +497,38 @@
 
       #shrinker{
         background-color: var(--dragable-color-bg);
+      }
+
+      #shrinkClickArea{
+        float: left;
+        background-color: var(--dragable-color-bg);
+      }
+
+      .horizontalClickArea{
+        height: 100%;
+        width: calc(100% - 30px);
+      }
+
+      .verticalClickArea{
+        width: 100%;
+        height: calc(100% - 30px);
+      }
+
+      .horizontalBar{
         height: 10px;
         width: 100%;
+      }
+
+      .verticalBar{
+        float: left;
+        width: 10px;
+        height: 100%;
       }
 
       #controls{
         margin: 10px;
         /*width: 95%;*/
+        z-index: 99;
       }
 
       .recalculateAnimation{
@@ -380,15 +557,213 @@
       }
 
     </style>
-    <script>
-      // var gameData = [["bonjour", "hello"],["au revoir", "goodbye"],["salut", "hello"],["ça va ?", "how are you?"]]
-      // for testing, ["Q", "A"]
-    </script>
-
+    <!-- Scripts for SCORM -->
+            <script type="text/javascript">
+              ///////////////////////////////////////////
+              //Begin ADL-provided API discovery algorithm
+              ///////////////////////////////////////////
+              var findAPITries = 0;
+        
+              function findAPI(win)
+              {
+                 // Check to see if the window (win) contains the API
+                 // if the window (win) does not contain the API and
+                 // the window (win) has a parent window and the parent window
+                 // is not the same as the window (win)
+                 while ( (win.API == null) &&
+                         (win.parent != null) &&
+                         (win.parent != win) )
+                 {
+                    // increment the number of findAPITries
+                    findAPITries++;
+        
+                    // Note: 7 is an arbitrary number, but should be more than sufficient
+                    if (findAPITries > 7)
+                    {
+                       alert("Error finding API -- too deeply nested.");
+                       return null;
+                    }
+        
+                    // set the variable that represents the window being
+                    // being searched to be the parent of the current window
+                    // then search for the API again
+                    win = win.parent;
+                 }
+                 return win.API;
+              }
+        
+              function getAPI()
+              {
+                 // start by looking for the API in the current window
+                 var theAPI = findAPI(window);
+        
+                 // if the API is null (could not be found in the current window)
+                 // and the current window has an opener window
+                 if ( (theAPI == null) &&
+                      (window.opener != null) &&
+                      (typeof(window.opener) != "undefined") )
+                 {
+                    // try to find the API in the current window�s opener
+                    theAPI = findAPI(window.opener);
+                 }
+                 // if the API has not been found
+                 if (theAPI == null)
+                 {
+                    // Alert the user that the API Adapter could not be found
+                    alert("Unable to find an API adapter");
+                 }
+                 return theAPI;
+              }
+        
+        
+              ///////////////////////////////////////////
+              //End ADL-provided API discovery algorithm
+              ///////////////////////////////////////////
+            </script>
+            <script type="text/javascript">
+            var API;
+            var learnerName;
+            var autosave;
+        
+            function doLMSInitialize(){
+              //find and returns the API starting with this window
+              API = getAPI();
+              API.LMSInitialize("");
+              //learnerName = API.LMSGetValue("cmi.core.student_name");//write the welcome message
+              //var welcomeDiv = document.getElementById("welcome");
+              //welcomeDiv.innerHTML = "Welcome " + learnerName + "!";
+        
+              // set up "number of check buttons" interaction
+              API.LMSSetValue("cmi.interactions.0.id",'Check presses')
+              API.LMSSetValue("cmi.interactions.0.type", 'other')
+              API.LMSSetValue("cmi.interactions.0.description", 'Number of times check button pressed')
+        
+              let suspendData = API.LMSGetValue("cmi.suspend_data")
+              if (suspendData!= ""){
+                resumeSession(suspendData)
+              }
+        
+              autosave = setInterval(checkForChanges,3*60*1000) // autosave every 3 minutes, so long as there have been some modifications
+            }
+        
+            // this does not seem to reliably fire. may be better just to regularly save progress
+            function onUnload(){
+              console.log("Unloading!")
+                window.open("https://www.w3schools.com")
+                postProgress()
+            }
+        
+            function resumeSession(suspendData){
+              var data = JSON.parse(suspendData)
+              originalStartTime = Date.parse(data.startTime)
+              attempts = data.checkPresses
+              if (data.seconds != ''){elapsedSeconds = parseFloat(data.seconds)} 
+              reattachCards(data.matches)
+              if (suspendData.sideModeOn){
+                gameSettings.viewMode == 'Side-by-side'
+              } else {
+                gameSettings.viewMode == 'Top and bottom'
+              }
+            }
+        
+            function postAnswer(score){
+              if (score > 0){
+                API.LMSSetValue("cmi.core.score.raw", score);
+                API.LMSSetValue("cmi.core.score.max", "100");
+                API.LMSSetValue("cmi.core.score.min", "0");
+                // API.LMSSetValue("cmi.comments","Attempts: "+attempts) // in postProgress()
+                API.LMSSetValue("cmi.core.lesson_status", "passed");
+                if (score >= gameSettings.pass){API.LMSSetValue("cmi.completion_status", "completed");}
+                // API.LMSCommit(""); // in postProgress()
+              } else {
+                API.LMSSetValue("cmi.core.score.raw", "0");
+                API.LMSSetValue("cmi.core.score.max", "100");
+                API.LMSSetValue("cmi.core.score.min", "0");
+                API.LMSSetValue("cmi.core.lesson_status", "failed");
+              }
+              matches = getAttachedCards(); 
+              postProgress(JSON.stringify(matches)) // adds number of attempts, saves suspend data and commits      
+            }
+        
+            // checks for changes and saves them if there have been some
+            function checkForChanges(){
+              var prev_matches = JSON.stringify(matches);      
+              matches = getAttachedCards();
+              var matchesAsJSON = JSON.stringify(matches)
+              if (prev_matches != matchesAsJSON){
+                postProgress()
+                console.log("Changes detected. Autosaving.")
+              } else {
+                console.log("No changes detected, will check again in 3 minutes.")
+              }
+            }
+        
+            function postProgress(matchesAsJSON){
+              API.LMSSetValue("cmi.interactions.0.student_response",attempts)
+              newElapsedSeconds = elapsedSeconds + ( (Date.now() - timeSincePageLoad) / 1000 );
+              // var formattedTime = formatSecondsForLMS(newElapsedSeconds);
+              API.LMSSetValue('cmi.core.session_time',formatSecondsForSCORM(newElapsedSeconds))
+              // possible to add support for older scorm pages here, using the other function
+              let suspendData = {seconds: newElapsedSeconds, checkPresses: attempts, matches: matches, side: sideModeOn}
+              API.LMSSetValue("cmi.suspend_data",JSON.stringify(suspendData)) // Store progress so far
+              API.LMSCommit("");
+              // TO DO: cancel autosave after x number of error returns?
+              // Maybe:
+              // posted = API.LMSCommit('');
+              // if (!posted) {LMSCommitErrors++} // LMSCommitErrors needs to be declared as global var = 0
+              // if (LMSCommitErrors > 6){clearInterval(autosave)}
+              // TO DO: base64 suspendData to save space. If >4000 characters, don't save
+            }
+        
+            // converts seconds to HHHH:MM:SS.SS
+            function formatSecondsForSCORM(seconds){
+              // get hours and minutes from the seconds
+              let hours = Math.floor((seconds/(60*60)))
+              var secondsRemaining = seconds - (hours*60*60)
+              let minutes = Math.floor((secondsRemaining/60))
+              secondsRemaining -= minutes*60
+                    // we'll add a leading zero differently for the seconds, since we also want decimal places
+              if (secondsRemaining < 10){
+                leadingZero = '0'
+              } else {
+                leadingZero = ''
+              }
+              // pad adds leading zero, toFixed(2) keeps two decimal places
+              return (pad(hours,4) + ':' + pad(minutes,2) +  ':' + leadingZero + secondsRemaining.toFixed(2));
+            }
+        
+            // converts seconds to PTnnH:nM:nS
+            function formatSecondsForSCORM2004(seconds) {
+              var hours = Math.floor(seconds / 3600);
+              var minutes = Math.floor((seconds % 3600) / 60);
+              var remainingSeconds = Math.floor(seconds % 60);
+        
+              var formattedTime = "PT";
+              if (hours > 0) {
+                formattedTime += hours + "H";
+              }
+              if (minutes > 0) {
+                formattedTime += minutes + "M";
+              }
+              if (remainingSeconds > 0 || formattedTime === "PT") {
+                formattedTime += remainingSeconds + "S";
+              }
+        
+              return formattedTime;
+            }
+        
+            function pad(num, size) {
+            num = num.toString();
+            while (num.length < size) num = "0" + num;
+            return num;
+            }
+            </script>
+    <!-- Scripts for activity -->
     <script charset="utf-8">
       var dragableList = []
       var staticList = []
       var cardCount = 0;
+      var totalCount = 0;
       var blankCards = 0; // for static only
       var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
       var scrollPos1 = 0, scrollPos2 = 0, scrollPos3 = 0, scrollPos4 = 0; // for touch devices
@@ -396,18 +771,36 @@
       var hoveredEl
       var cardContainer
       var staticContainer
+      var attempts
+      var matches = []
+      const timeSincePageLoad = Date.now() 
+      var elapsedSeconds = 0
+      var sideModeOn = false
+      var shrunkCardContainer = false
       const listModeMaximum = 12 // above this many static cards, cards will be displayed inline instead of a list
+      var originalListOrderedByDragable = false // we'll use this bool to disable sorting alphabetically if the user put their data in alphabetical order to begin with (it will make matching too easy!)
 
 
       function pageLoad(){
         cardContainer = document.getElementById('cardContainer')
         staticContainer = document.getElementById('staticContainer')
-        applySettings();
-        seperateCards(gameData)
+        seperateCards(gameData) // fills dragableList and staticList
+        // now we'll make a list that has just the words in the dragable list, without the index (which the scorm uses to save positions)
+        var wordsInDragableList = []
+        for (let i = 0; i<dragableList.length; i++){
+          if (dragableList[i].word != ''){
+            wordsInDragableList.push(dragableList[i].word)
+          }
+        }
+        // and use that list to check if they're in a dragable order (we need this later when applying settings)
+        originalListOrderedByDragable = checkListOrder(wordsInDragableList)        
+        // now we can safely shuffle the cards and fill our lists
         shuffleArray(dragableList)
         addCards(staticList)
         addCards(dragableList,true)
         cement(cardContainer)
+        if (gameSettings.scorm){doLMSInitialize()}
+        applySettings();
         window.addEventListener('resize', function(event){
           resetCardContainer()
         });
@@ -430,6 +823,23 @@
             selectedElements[i].classList.remove('notransition')
           }
         }, 1000);
+        if (!gameSettings.allowChangeViewMode){
+          document.getElementById('viewMode').style.display = 'none'
+        }
+        if (originalListOrderedByDragable){gameSettings.allowAlphabetize = false} // automatically turn off sort alphabetically if the originally supplied list was in alphabetical order (if we don't do this, whent the user sorts the dragable cards, they'll be put into the correct order for them)
+        if (!gameSettings.allowAlphabetize){
+          document.getElementById('sort').style.display = 'none'
+        }
+        if (!gameSettings.allowReshuffle){
+          document.getElementById('shuffle').style.display = 'none'
+        }
+        if (!gameSettings.allowChangeViewMode && !gameSettings.allowAlphabetize && !gameSettings.allowReshuffle){
+          document.getElementById('dropdownMenu').style.display = 'none'
+        }
+        if (gameSettings.viewMode == 'Side-by-side'){
+          sideMode()
+        }
+        document.getElementById('check-btn').innerHTML = gameSettings.checkButton
       }
 
       function setColorTheme(theme){
@@ -452,10 +862,122 @@
           container.classList.add('cemented')
       }
 
-      function addCard(word,container,dragable=false){
+      function uncement(container,width=true,height=true){
+          if(width){
+            container.style.removeProperty('width')
+          }
+          if(height){
+            container.style.removeProperty('height')
+          }
+          container.classList.remove('cemented')
+      }
+
+      // the following function is to try to make sure that the menu appears somewhere above the top of the screen.
+      // it'll give up before trying to move it down 300px, which should be impossible anyway
+      // will only do this in side mode and this should be the only time there is a risk of this happening
+      function checkMenuPosition(){        
+        let menu = document.getElementById('drop-cont')
+        menu.style.transform = null
+        if (sideModeOn){
+          var menuPos = menu.getBoundingClientRect();
+        var multiplier = 1
+        do{
+          menu.style.transform = 'translateY('+multiplier*10+'px)'
+          menuPos = menu.getBoundingClientRect();
+          multiplier++
+        } while (menuPos.y < 0 && multiplier < 30)
+        console.log('Moved menu down ' + multiplier*10 + 'px')   
+        }
+      }
+
+      function toggleSideMode(){
+        if(sideModeOn){
+          sideMode(false)
+        } else {
+          sideMode()
+        }
+      }
+
+      function sideMode(set=true){
+        cardsWrapper = document.getElementById('cardWrapper')
+        staticWrapper = document.getElementById('staticWrapper')
+        // cardContainer set at load
+        shrinker = document.getElementById('shrinker')
+        shrinkIcon = document.getElementById('shrinkIcon')
+        shrinkClickArea = document.getElementById('shrinkClickArea')
+        dropBtn = document.getElementById('drop-btn')
+        dropCnt = document.getElementById('drop-cont')
+        sideModeBtn = document.getElementById('sideMode-btn')
+        if (shrunkCardContainer){ // if the card container has been shrunk, we should undo this before changing mode
+          shrinkCardContainer() // actually unshrinks it
+        }
+        if(set){ // if setting
+          sideModeOn = true
+          // put all inline cards into a list
+          for (let card of staticContainer.children){
+            card.classList.remove('inline')
+            if (card.children[0].classList.contains('attached')){
+              shiftCards(card.children[1],card.children[0]) // shove them left or right to put the middle in the centre
+            }
+          }
+          // make card container able to change size again
+          uncement(cardContainer)
+          // add new classes to put two wrappers side-by-side
+          cardsWrapper.classList.add('leftSide')
+          staticWrapper.classList.add('rightSide')
+          // change the shrink location and size
+          shrinker.classList.add('verticalBar')
+          shrinker.classList.remove('horizontalBar')
+          shrinkClickArea.classList.add('verticalClickArea')
+          shrinkClickArea.classList.remove('horizontalClickArea')
+          // fix card container back in place so it doesn't change size
+          cement(cardContainer)
+          // make shrinker height same as card container
+          shrinker.style.height = cardContainer.offsetHeight
+          shrinkIcon.style.transform = 'rotate(90deg)'
+          // rotate more menu
+          dropBtn.classList.add('drop-btn-sideMode')
+          dropCnt.classList.add('dropdown-content-sideMode')
+          // rotate side mode button
+          sideModeBtn.style.transform = 'rotate(90deg)'
+
+        } else { // if turning off side mode
+          sideModeOn = false
+          // put cards back in line if necessary
+          if (staticList.length > listModeMaximum){
+            for (let card of staticContainer.children){ 
+              card.classList.add('inline')
+              card.style.transform = null // remove translations that were to centralise the middle of the card
+
+            }
+          }
+          // make card container able to change size change
+          uncement(cardContainer)
+          // remove classes that put wrappers side by side
+          cardsWrapper.classList.remove('leftSide')
+          staticWrapper.classList.remove('rightSide')
+          // remove changes to shrinker
+          shrinker.style.removeProperty('height')
+          shrinker.classList.remove('verticalBar')
+          shrinker.classList.add('horizontalBar')
+          shrinkClickArea.classList.remove('verticalClickArea')
+          shrinkClickArea.classList.add('horizontalClickArea')
+          shrinkIcon.style = null
+          // put more menu back
+          dropBtn.classList.remove('drop-btn-sideMode')
+          dropCnt.classList.remove('dropdown-content-sideMode')
+          //put side mode button back
+          sideModeBtn.style = null
+          // fix the card container again
+          cement(cardContainer)
+        }
+      }
+
+      function addCard(word,index,container,dragable=false){
         newCard = document.createElement('div')
         newCard.setAttribute('class', 'card')
-        newCard.setAttribute('id', 'card' + cardCount)
+        newCard.setAttribute('id', 'card' + cardCount) //note: not the same as data-index
+        newCard.setAttribute('data-index',index)
         newCard.innerHTML = word
         // newCard.classList.add('notransition') // will be removed afterwards
         if (dragable){
@@ -468,9 +990,11 @@
           // newCard.style.left = position[0]
           // newCard.style.top = position[1]
         } else {
+          newCard.classList.add('static')
           cardWrapper = document.createElement('div')
-          cardWrapper.setAttribute('id', 'cardWrapper' + cardCount)
+          cardWrapper.setAttribute('id', 'cardWrapper' + cardCount) //note: not the same as data-id
           cardWrapper.setAttribute('class', 'cardWrapper')
+          cardWrapper.setAttribute('data-index',index)
           if (staticList.length >= listModeMaximum){
             cardWrapper.classList.add('inline')
           }
@@ -487,8 +1011,8 @@
           container = staticContainer
         }
         for(let i=0;i<wordList.length;i++){
-          if(wordList[i] != ''){
-            addCard(wordList[i],container,dragable)
+          if(wordList[i].word != ''){
+            addCard(wordList[i].word,wordList[i].index,container,dragable)
           } else if (!dragable){
             blankCards++
           }
@@ -496,11 +1020,49 @@
       }
 
       function seperateCards(data){
+        // the items in the dragableList and staticList are given IDs
+        // but to make things not TOO easy for someone to find the answers by browsing the source code
+        // these are hashed (albeit not very securely) and (so that they don't have the same hash)
+        // the letters d and s are added
+        // (it shouldn't matter if there are collisions between the two sets, it's just to not reveal in the HTML which cards are connected)
+        // we're using their original index in the list rather than the word itself, for two reasons
+        // 1. Someone might make a small update to the activity to fix a typo for example. This would break saved scorm states if we used the word for the hash.
+        // 2. There could be two words that are the same, in which case we wouldn't be able to differentiate them!
         for(let i=0;i<data.length;i++){
-          dragableList.push(data[i][1])
-          staticList.push(data[i][0])
+          dragableList.push({word:data[i][1], index: ('d'+i).hashCode()})
+          staticList.push({word:data[i][0], index: ('s'+i).hashCode()})
+          if (data[i][0] != ""){
+            totalCount++
+          }
         }
       }
+
+      // returns an array of all the cards that are currently connected to each other
+      function getAttachedCards(){
+        matches = []
+        for (let i = 0; i<staticContainer.children.length; i++){
+          if (staticContainer.children[i].children.length > 1){
+            matches.push({              
+              static: staticContainer.children[i].children[0].getAttribute('data-index'),
+              dragable: staticContainer.children[i].children[1].getAttribute('data-index')
+            })
+          }
+        }
+        return matches
+      }
+
+      function reattachCards(matches){
+        matches.forEach(match => {
+          dragableCard = document.querySelector('.dragable[data-index="'+match.dragable+'"], .exdragable[data-index="'+match.dragable+'"]')
+          staticCard = document.querySelector('.static[data-index="'+match.static+'"]')
+          if (dragableCard == null | staticCard == null){
+            console.log('Match not found. Dragable: ' + match.dragable + ' Static: ' + match.static)
+          } else {
+            attachCards(dragableCard, staticCard)
+          }
+        })
+      }
+
 
       // use this for magnet board
       // function getNextClearPosition(card,container){
@@ -678,15 +1240,21 @@
           el.classList.add('hovered')
         }
       }
+
+      function shiftCards(dragableCard,staticCard){
+        staticCard.parentElement.style.transform = 'translate(' + ((dragableCard.offsetWidth-staticCard.offsetWidth)/2) + 'px,0px)' // shove them left or right slightly so that the joining point is in the middle
+      }
+
       function attachCards(dragableCard,staticCard){
         staticCard.parentElement.appendChild(dragableCard)
         dragableCard.classList.add('exdragable')
         dragableCard.classList.add('attached')
         dragableCard.classList.remove('dragging')
+        dragableCard.classList.remove('dragable') // this will be here if automatically attaching a card
         staticCard.classList.add('attached')
         staticCard.classList.remove('hovered')
         if(!staticCard.parentElement.classList.contains('inline')){ // if static cards are on seperate lines
-          staticCard.parentElement.style.transform = 'translate(' + ((dragableCard.offsetWidth-staticCard.offsetWidth)/2) + 'px,0px)' // shove them left or right slightly so that the joining point is in the middle
+          shiftCards(dragableCard,staticCard) // shove them left or right slightly so that the joining point is in the middle
         }
         dragableCard.style.top = null
         dragableCard.style.left = null
@@ -741,9 +1309,10 @@
           draggingEls[i].classList.remove('dragging')
         }
         // remove cement class from cardContainer
-        cardContainer.classList.remove('cement')
-        cardContainer.style.width = null
-        cardContainer.style.height = null
+        uncement(cardContainer)
+        if (document.getElementById('shrinker').classList.contains('verticalBar')){
+          document.getElementById('shrinker').style.height = cardContainer.offsetHeight
+        }
         // re-cement
         cement(cardContainer,true,true) //
       }
@@ -751,11 +1320,14 @@
       function getFeedback(){
         matches = checkAllMatches();
         feedbackEl = document.getElementById('feedback')
-        feedbackEl.innerHTML = matches.correct.length + '/' + (cardCount/2)
+        feedbackEl.innerHTML = matches.correct.length + '/' + totalCount
+        scoreAsPercentage = parseInt(Math.round((parseInt(matches.correct.length)/parseInt((cardCount/2)))*100))
         feedbackEl.classList.remove('recalculateAnimation')
         feedbackEl.style.visibility = 'visible'
         void feedbackEl.offsetWidth; // this resets the animation
         feedbackEl.classList.add('recalculateAnimation')
+        attempts++
+        if(gameSettings.scorm){postAnswer(scoreAsPercentage)}
       }
 
       function checkAllMatches(){
@@ -807,14 +1379,51 @@
       }
 
       function shrinkCardContainer(){
-        if (cardContainer.style.transform == null || cardContainer.style.transform == ''){
-          cardContainer.style.transform = 'scaleY(0.01)'
-          cardContainer.parentElement.style = 'max-height: 20px; min-height: 0;'
-          cardContainer.style.pointerEvents = 'none';
-        } else {
-          cardContainer.style.transform = null
+        shrinker = document.getElementById('shrinker')
+        shrinkIcon = document.getElementById('shrinkIcon')
+        if (!shrunkCardContainer){
+          shrunkCardContainer = true
+          if (!sideModeOn){
+            shrinkIcon.style.transform = 'rotate(-180deg)'
+            cardContainer.style.transform = 'scaleY(0.01)'
+            cardContainer.parentElement.style = 'max-height: 20px; min-height: 0;'
+            cardContainer.style.pointerEvents = 'none';
+          } else { // if shrinking to the right
+            shrinkIcon.style.transform = 'rotate(-90deg)'
+            cardContainer.style.transformOrigin = 'left'
+            cardContainer.style.transform = 'scaleX(0.01)  translate(50px)'
+            setTimeout(function(){
+              cardContainer.classList.add('notransition');
+              cardContainer.style.transform = 'scaleX(0.01) translate(1000px)' // so translate part doesn't seem animated
+              setTimeout(function(){cardContainer.classList.remove('notransition')},100)
+          },500)
+          // setTimeout(function(){
+            cardContainer.parentElement.style = 'width: calc(10% + 20px); min-width: 0'
+            staticContainer.parentElement.style = 'width: calc(80% - 20px);'
+          // },500)
+            cardContainer.style.pointerEvents = 'none';
+          }
+        } else { //if unshrinking          
+          shrunkCardContainer = false
+          if (!sideModeOn){ // if unshrinking from the right
+            shrinkIcon.style.transform = null
+            cardContainer.style.transform = null 
+          } else { // if unshrinking from the top
+            shrinkIcon.style.transform = 'rotate(90deg)'
+            cardContainer.classList.add('notransition');
+            cardContainer.style.transform = 'scaleX(0.01)  translate(50px)'
+            setTimeout(function(){
+              cardContainer.classList.remove('notransition');
+              cardContainer.style.transform = null
+            },10)
+          }                
           cardContainer.parentElement.style = null
+          staticContainer.parentElement.style = null
           cardContainer.style.pointerEvents = null
+          setTimeout(function(){
+            cardContainer.style.transformOrigin = null
+          },500)
+          
         }
       }
       function getCalculatedSizeWithoutPadding(element){
@@ -834,17 +1443,41 @@
         return output
       }
 
-      // function shuffleArray(a){
-      //   var dice;
-      //   var holder;
-      //   for (i=a.length-1;i>0;i--){
-      //     dice = getRandomInt(0,i)
-      //     holder = a[dice]
-      //     a[dice] = a[i]
-      //     a[i] = holder
-      //   };
-      //   return a
-      // };
+      function sortDragableCards(){
+        sortDivs(cardContainer.children)
+      }
+
+      function shuffleDragableCards(){
+        shuffleDivs(cardContainer.children)
+      }
+
+      function sortDivs(divs) {
+        Array.prototype.slice.call(divs).sort(function sort (ea, eb) {
+            var a = ea.textContent.trim();
+            var b = eb.textContent.trim();
+            if (a < b) return -1;
+            if (a > b) return 1;
+            return 0;
+        }).forEach(function(div) {
+            div.parentElement.appendChild(div);
+        });
+      }
+
+      function shuffleDivs(divs){
+        shuffleArray(Array.prototype.slice.call(divs)).forEach(function(div) {
+          div.parentElement.appendChild(div);
+      });
+      }
+
+      function checkListOrder(array){
+        sortedArray = Array.prototype.slice.call(array).sort()
+        for (let i = 0; i < sortedArray.length; i++){
+          if (array[i] != sortedArray[i]){
+            return false
+          }
+        }
+        return true
+      }
 
       function shuffleArray(array){
         for (let i = array.length-1; i > 0; i--){
@@ -855,6 +1488,19 @@
         }
         return array
       }
+
+        // To make a very simple (and not very secure hash)
+        String.prototype.hashCode = function() {
+          var hash = 0,
+            i, chr;
+          if (this.length === 0) return hash;
+          for (i = 0; i < this.length; i++) {
+            chr = this.charCodeAt(i);
+            hash = ((hash << 5) - hash) + chr;
+            hash |= 0; // Convert to 32bit integer
+          }
+          return hash;
+        }
 
       function getRandomInt(min, max) {
         min = Math.ceil(min);
@@ -891,15 +1537,29 @@
     </script>
   </head>
   <body>
-      <div class="wrapper notransition"> <!-- no transition will be removed after settings are applied-->
-        <div id="shrinker" onclick="shrinkCardContainer()"></div>
+    <div class="wrapper" id="mainWrapper" style="width: 100%">
+      <div class="wrapper notransition" id="cardWrapper"> <!-- no transition will be removed after settings are applied-->
+        <div id="shrinker" class="horizontalBar">
+          <div id="shrinkIcon" class="triangle-down top-left" onclick="shrinkCardContainer()"></div>
+          <div id="shrinkClickArea" class="horizontalClickArea" onclick="shrinkCardContainer()"></div>   
+          <div id="dropdownMenu" class="dropdown bottom-right">
+            <div id="drop-btn" onmouseover="checkMenuPosition()" class="drop-btn"><div id="drop-btn-text">…</div></div>
+            <div id="drop-cont" class="dropdown-content">
+              <a id="viewMode" onclick="toggleSideMode()"><div id="sideMode-btn">◼︎|◻︎</div></a>
+              <a id="sort" onclick="sortDragableCards()">A→Z</a>
+              <a id="shuffle" onclick="shuffleDragableCards()">🔀</a>              
+            </div>
+          </div>
+                 
+        </div>
         <div id="cardContainer" class="container"></div>
       </div>
-      <div class="wrapper notransition"> <!-- no transition will be removed after settings are applied-->
+      <div class="wrapper notransition" id="staticWrapper"> <!-- no transition will be removed after settings are applied-->
         <div id="staticContainer" class="container"></div>
       </div>
+    </div>
       <div id="controls" class="notransition"><!-- no transition will be removed after settings are applied-->
-        <button class="notransition" onclick="getFeedback();">check</button><!-- no transition will be removed after settings are applied-->
+        <button id="check-btn" class="notransition" onclick="getFeedback();">check</button><!-- no transition will be removed after settings are applied-->
         <div id="feedback" style="visibility:hidden;">0/0</div>
       </div>
     </body>

@@ -5,58 +5,63 @@
     "cols":["Question","Answer","Alternative Answer","===="],
     "description":"Type in the falling words before they hit the ground. When the pile reach the top, you lose. If you press enter, your response may be accepted if it's similar enough to the actual answer. Turn loop mode ‘off’ or ‘missed words only’ to make it possible for the player to win, otherwise the game continues until they lose.",
     "settings":[
-      {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait"]},
-      {"name":"shuffle","label":"Shuffle","type":"checkbox","default":true},
-      {"name":"soundsEnabled","label":"Sounds","type":"checkbox","default":true},
-      {"name":"difficulty","label":"Difficulty","type":"select","options":["Very easy","Easy","Medium","Hard","Ultra","Impossible"],"default":"Easy"},
-      {"name":"requiredSimilarity","label":"Required similarity to accept answer (%)","type":"number","default":90,"min":1,"max":100},
-      {"name":"loopGame","label":"Loop","type":"selection","options":["Forever","Missed words first","Missed words only","Off"]},
-      {"name":"guessButton","label":"Guess button","type":"text","default":"Guess"},
-      {"name":"correctMessage","label":"Correct answer message","type":"text","default":"Yes!"},
-      {"name":"correctEnoughMessage","label":"Acceptable answer message","type":"text","default":"Close enough"},
-      {"name":"incorrectMessage","label":"Incorrect answer message","type":"text","default":"Try again!"},
-      {"name":"startMessage","label":"Start instruction","type":"text","default":"Click anywhere to start."},
-      {"name":"winMessage","label":"Winning message","type":"text","default":"Champion!"},
-      {"name":"loseMessage","label":"Losing message","type":"text","default":"GAME OVER"},
-      {"name":"resetButton","label":"Reset button","type":"text","default":"Reset"},
-      {"name":"showAnswersInstruction","label":"Show answers instruction","type":"text","default":"Click on the fallen words to reveal the answer"}
+      {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait"],"category":"look and feel"},
+      {"name":"shuffle","label":"Shuffle","type":"checkbox","default":true,"category":"gameplay"},
+      {"name":"soundsEnabled","label":"Sounds","type":"checkbox","default":true,"category":"look and feel"},
+      {"name":"mode","label":"Mode","type":"select","options":["Typing","Multiple choice"],"category":"gameplay"},
+      {"name":"sameAnswers","label":"In multiple choice mode, maintain the same options","type":"checkbox","default":true,"info":"When enabled, this will always show the same possible answers in the same order for each falling word. Wrong answers will be selected according to their similarity with the correct answer. The range of answers may not be the same from game-to-game. When disabled, the options will not be the same every time the player sees the same word, but there will still be a preference for more similar answers. If there are fewer than four possible answers in the whole game, the answers will always but the same and in the same order.","category":"gameplay"},
+      {"name":"difficulty","label":"Difficulty","type":"select","options":["Very easy","Easy","Medium","Hard","Ultra","Impossible"],"default":"Easy","category":"gameplay"},
+      {"name":"requiredSimilarity","label":"Required similarity to accept answer (%)","type":"number","default":90,"min":1,"max":100,"info":"Only for typing mode.","category":"gameplay"},
+      {"name":"loopGame","label":"Loop","type":"select","options":["Forever","Missed words first","Missed words only","Off"],"category":"gameplay"},
+      {"name":"guessButton","label":"Guess button","type":"text","default":"Guess","category":"language"},
+      {"name":"correctMessage","label":"Correct answer message","type":"text","default":"Yes!","category":"language"},
+      {"name":"correctEnoughMessage","label":"Acceptable answer message","type":"text","default":"Close enough","category":"language"},
+      {"name":"incorrectMessage","label":"Incorrect answer message","type":"text","default":"Try again!","category":"language"},
+      {"name":"startMessage","label":"Start instruction","type":"text","default":"Click anywhere to start.","category":"language"},
+      {"name":"winMessage","label":"Winning message","type":"text","default":"Champion!","category":"language"},
+      {"name":"loseMessage","label":"Losing message","type":"text","default":"GAME OVER","category":"language"},
+      {"name":"resetButton","label":"Reset button","type":"text","default":"Reset","category":"language"},
+      {"name":"showAnswersInstruction","label":"Show answers instruction","type":"text","default":"Click on the fallen words to reveal the answer","category":"language"}
     ],
-    "sample_data": [
-      ["goes meow","cat"],
-      ["a loyal animal","dog"],
-      ["an animal that swims in a bowl","fish","goldfish"],
-      ["flies at night, eats fruit","bat"],
-      ["hides from cats, eats cheese","mouse","rat"],
-      ["king of the jungle","lion"],
-      ["humans ride them","horse"],
-      ["they are often pink and have a snout","pig"],
-      ["right at the beginning of the phonebook","aardvark"],
-      ["their babies sit in their mother's pouch","kangaroo"],
-      ["they make honey","bee","bees"],
-      ["has a shell it can hide in and walks on land slowly","tortoise"],
-      ["dangerous, white coat","polar bear"],
-      ["no legs, deadly bite","snake","viper","python","cobra"],
-      ["playful, lives in the ocean","dolphin"],
-      ["largest mammal","blue whale"],
-      ["lays eggs that humans eat","chicken"],
-      ["colourful feathers in a fan","peacock"],
-      ["flightless bird in the cold","penguin"],
-      ["amphibian, might be a prince","frog","toad"],
-      ["deadly spider, also an Avenger","black widow","black widow spider"],
-      ["goes moo","cow"],
-      ["goes baa","sheep"],
-      ["bad eyesight, digs holes","mole"],
-      ["walks sideways on the beach","crab"],
-      ["aquatic bird","duck"],
-      ["flies at night, eats mice","owl"],
-      ["long and slippery fish","eel"],
-      ["eats acorns","squirrel"],
-      ["has humps","camel"],
-      ["bird, tall structure for building","crane"],
-      ["bird, symbol of the USA","eagle"],
-      ["common bird in cities","pigeon"],
-      ["common bird by the sea","seagull","gull"],
-      ["jaws","shark"]
+    "sample_datas": [
+      [
+        ["goes meow","cat"],
+        ["a loyal animal","dog"],
+        ["an animal that swims in a bowl","fish","goldfish"],
+        ["flies at night, eats fruit","bat"],
+        ["hides from cats, eats cheese","mouse","rat"],
+        ["king of the jungle","lion"],
+        ["humans ride them","horse"],
+        ["they are often pink and have a snout","pig"],
+        ["right at the beginning of the phonebook","aardvark"],
+        ["their babies sit in their mother's pouch","kangaroo"],
+        ["they make honey","bee","bees"],
+        ["has a shell it can hide in and walks on land slowly","tortoise"],
+        ["dangerous, white coat","polar bear"],
+        ["no legs, deadly bite","snake","viper","python","cobra"],
+        ["playful, lives in the ocean","dolphin"],
+        ["largest mammal","blue whale"],
+        ["lays eggs that humans eat","chicken"],
+        ["colourful feathers in a fan","peacock"],
+        ["flightless bird in the cold","penguin"],
+        ["amphibian, might be a prince","frog","toad"],
+        ["deadly spider, also an Avenger","black widow","black widow spider"],
+        ["goes moo","cow"],
+        ["goes baa","sheep"],
+        ["bad eyesight, digs holes","mole"],
+        ["walks sideways on the beach","crab"],
+        ["aquatic bird","duck"],
+        ["flies at night, eats mice","owl"],
+        ["long and slippery fish","eel"],
+        ["eats acorns","squirrel"],
+        ["has humps","camel"],
+        ["bird, tall structure for building","crane"],
+        ["bird, symbol of the USA","eagle"],
+        ["common bird in cities","pigeon"],
+        ["common bird by the sea","seagull","gull"],
+        ["jaws","shark"]
+      ],
+      [["Ain","01","1"],["Aisne","02","2"],["Allier","03","3"],["Alpes-de-Haute-Provence","04","4"],["Hautes-Alpes","05","5"],["Alpes-Maritimes","06","6"],["Ardèche","07","7"],["Ardennes","08","8"],["Ariège","09","9"],["Aube","10",""],["Aude","11",""],["Aveyron","12",""],["Bouches-du-Rhône","13",""],["Calvados","14",""],["Cantal","15",""],["Charente","16",""],["Charente-Maritime","17",""],["Cher","18",""],["Corrèze","19",""],["Corse-du-Sud","2A",""],["Haute-Corse","2B",""],["Côte-d'Or","21",""],["Côtes-d'Armor","22",""],["Creuse","23",""],["Dordogne","24",""],["Doubs","25",""],["Drôme","26",""],["Eure","27",""],["Eure-et-Loir","28",""],["Finistère","29",""],["Gard","30",""],["Haute-Garonne","31",""],["Gers","32",""],["Gironde","33",""],["Hérault","34",""],["Ille-et-Vilaine","35",""],["Indre","36",""],["Indre-et-Loire","37",""],["Isère","38",""],["Jura","39",""],["Landes","40",""],["Loir-et-Cher","41",""],["Loire","42",""],["Haute-Loire","43",""],["Loire-Atlantique","44",""],["Loiret","45",""],["Lot","46",""],["Lot-et-Garonne","47",""],["Lozère","48",""],["Maine-et-Loire","49",""],["Manche","50",""],["Marne","51",""],["Haute-Marne","52",""],["Mayenne","53",""],["Meurthe-et-Moselle","54",""],["Meuse","55",""],["Morbihan","56",""],["Moselle","57",""],["Nièvre","58",""],["Nord","59",""],["Oise","60",""],["Orne","61",""],["Pas-de-Calais","62",""],["Puy-de-Dôme","63",""],["Pyrénées-Atlantiques","64",""],["Hautes-Pyrénées","65",""],["Pyrénées-Orientales","66",""],["Bas-Rhin","67",""],["Haut-Rhin","68",""],["Rhône","69",""],["Haute-Saône","70",""],["Saône-et-Loire","71",""],["Sarthe","72",""],["Savoie","73",""],["Haute-Savoie","74",""],["Paris","75",""],["Seine-Maritime","76",""],["Seine-et-Marne","77",""],["Yvelines","78",""],["Deux-Sèvres","79",""],["Somme","80",""],["Tarn","81",""],["Tarn-et-Garonne","82",""],["Var","83",""],["Vaucluse","84",""],["Vendée","85",""],["Vienne","86",""],["Haute-Vienne","87",""],["Vosges","88",""],["Yonne","89",""],["Territoire de Belfort","90",""],["Essonne","91",""],["Hauts-de-Seine","92",""],["Seine-Saint-Denis","93",""],["Val-de-Marne","94",""],["Val-d'Oise","95",""]]
     ]
   }
 *HEX SETTINGS END*-->
@@ -366,9 +371,65 @@
         transition: background-color 30s, color 20s, border-color 30s, opacity 0.5s;
       }
 
+      .fallingQuicker{
+        transition:  top 1s, left 0.05s, background-color 30s, color 20s, border-color 30s, opacity 1s;
+      }
+
       .destroyed{
         opacity: 0;
         transition: opacity 3s, top 3s, background-color 0.3s;
+      }
+
+      .MCbuttonWrapper{
+        position: relative;
+        display: inline-block;
+        top: 0;
+        padding: 0.5em;        
+      }
+
+      .MCbutton{
+        /* display: flex;
+        align-items: center;
+        justify-content: center; */
+        position: relative;
+        max-width: 2000px;
+        width: 100%;
+        height: 8vh;
+        line-height: 8vh;        
+        margin: auto;
+        transition: background-color 0.3s, color 0.3s;
+        /* padding-left: 0.5em; */
+        /* padding-right: 0.5em;         */
+        overflow:scroll;
+        white-space: normal;
+        hyphens: auto;
+        text-align: center;
+        /* see .card  */
+      }
+
+      .MCbutton:hover{
+        background-color: var(--fg-color);
+        color: var(--bg-color);
+      }
+
+      .buttonText{
+        display: inline;
+        height: 100%;
+        width: 100%;
+        overflow: scroll;
+        text-align: center;
+      }
+
+      .buttonNum{
+        position: absolute;
+        top: 0;
+        left: 0.5vh;
+        padding: 0.5em;
+        font-size: 2vh;
+        border: solid var(--bg-color) 2px;
+        border-radius: 7px;
+        background-color: var(--fg-color);
+        color: var(--bg-color);
       }
 
 
@@ -456,6 +517,7 @@
       var incorrectColor
       const refreshTime = 50 // in ms (this should match transition time for cards)
       var speed = 5 // num px to move down
+      var extraSpeed = 0 // to temporarily move it down faster
       var waitTime = 0 // time to wait before next word (ms)
       var numWords = 0
       var currentFalling = 0
@@ -465,6 +527,10 @@
       var adjustTimeout // global variable so that this is automtically cancelled when set again
       var autoGuessTimeout // global variable so that this is automtically cancelled when set again
       var score = 0
+      var uniqueAnswers
+      var MultiChoiceMode = false
+      var mcDisabled = false
+      var gameStarted = false
       soundLoadAttemptCount = 0
 
       window.odometerOptions = {
@@ -491,10 +557,10 @@
           waitTime = 1000
         } else if (gameSettings.difficult == 'Ultra'){
           speed = 5
-          waitTime = 500
+          waitTime = 750
         } else if (gameSettings.difficult == 'Impossible'){
           speed = 7
-          waitTime = 0
+          waitTime = 250
         }
         if(gameSettings.shuffle){
           gameData = shuffleArray(gameData)
@@ -508,6 +574,13 @@
           }
           words.push({drop: data[0], answers: answers, correctLastRound: false})
         })
+        if (gameSettings.mode == 'Multiple choice'){
+          MultiChoiceMode = true
+          gameSettings.requiredSimilarity = 100 // makes no sense to allow slightly off answers on multiple choice
+          document.getElementById('guessInput').style.display = 'none';
+          document.getElementById('guessButton').style.display = 'none';
+          createMultipleChoiceOptions();
+        }
         checkSoundsAndStart()
       }
 
@@ -530,10 +603,10 @@
       function enableGameStart(){
         document.getElementById('message').innerHTML = gameSettings.startMessage
         // start the game by clicking
-        document.body.addEventListener('click',startGame)
+        document.body.addEventListener('click', startGame, { once: true });
         // or pressing any key (small delay so it doesn't happen when refreshing)
         setTimeout(function (){
-          document.body.addEventListener('keyup',startGame)
+          document.body.addEventListener('keyup', startGame, { once: true });
         }, 500);
       }
 
@@ -584,25 +657,272 @@
         // the result is essentially the rearrange happens half a second after the user stops changing the window size
       }
 
-      function startGame(){
-        if (gameSettings.shuffle){
-          var hold = shuffleArray(words)
-          words = hold
+      function startGame() {
+        if (!gameStarted) { // if someone is very excited, they might manage to start the game twice, so just as a precaution…
+          console.log('Start game')
+          gameStarted = true
+          mcDisabled = true // disable until dropped
+          if (gameSettings.shuffle) {
+            var hold = shuffleArray(words)
+            words = hold
+          }
+          // the following removed events only fire once, but whichever one wasn't fired, might be fired
+          document.body.removeEventListener('click', startGame, { once: true }) // forget clicking anywhere to start
+          document.body.removeEventListener('keyup', startGame, { once: true }) // forget key up anywhere to start        
+          document.getElementById('message').style.opacity = 0 // hide the message
+
+          if (MultiChoiceMode) {
+            generateMultipleChoiceButtons()
+            window.addEventListener('resize', adjustFontSizeToFit); // possibly unecessary if we're using vh
+            document.body.addEventListener('keyup', function (event) {
+              if (!mcDisabled) {
+                if (event.key == "1" || event.key == "&") {
+                  giveGuess(document.getElementById("mc_button_0").innerHTML, 0);
+                } else if (event.key == "2" || event.key == "é") {
+                  giveGuess(document.getElementById("mc_button_1").innerHTML, 1);
+                } else if ((event.key == "3" || event.key == "\"") && (!uniqueAnswers || uniqueAnswers.length >= 3)) {
+                  giveGuess(document.getElementById("mc_button_2").innerHTML, 2);
+                } else if ((event.key == "4" || event.key == "\'") && (!uniqueAnswers || uniqueAnswers.length >= 4)) {
+                  giveGuess(document.getElementById("mc_button_3").innerHTML, 3);
+                }
+              }
+            });
+          } else {
+            let guessButton = document.getElementById('guessButton')
+            let guessInput = document.getElementById('guessInput')
+            guessInput.focus()
+            guessButton.setAttribute('onclick', 'giveGuess(document.getElementById("guessInput").value)');
+            guessInput.setAttribute('onkeyup', 'javascript: if(event.keyCode == 13) giveGuess(document.getElementById("guessInput").value)')
+          }
+
+          setTimeout(() => {
+            dropWord(words[0]) // drop the first word
+          }, waitTime);
         }
-        document.body.removeEventListener('click',startGame) // forget clicking anywhere to start
-        document.body.removeEventListener('keyup',startGame) // forget key up anywhere to start
-        document.getElementById('message').style.opacity = 0 // hide the message
-        setTimeout(() => {
-          dropWord(words[0]) // drop the first word
-        },waitTime);
-        let guessButton = document.getElementById('guessButton')
-        let guessInput = document.getElementById('guessInput')
-        guessInput.focus()
-        guessButton.setAttribute('onclick','giveGuess(document.getElementById("guessInput").value)');
-        guessInput.setAttribute('onkeyup', 'javascript: if(event.keyCode == 13) giveGuess(document.getElementById("guessInput").value)')
       }
 
-      function shuffleArray(array){
+      function generateMultipleChoiceButtons(){
+        var numButtons = 4
+        var btn
+        const guessArea = document.getElementById('guessArea')
+        if (uniqueAnswers){
+          numButtons = uniqueAnswers.length
+        }
+        for (i = 0; i < numButtons; i++){
+          btnWrapper = document.createElement('div')
+          btn = document.createElement('div')
+          btnText = document.createElement('div')
+          btnNum = document.createElement('div')
+          btnWrapper.setAttribute('class','MCbuttonWrapper')
+          btn.setAttribute('class','card MCbutton')
+          btnText.setAttribute('class','buttonText')
+          btnNum.setAttribute('class','buttonNum')
+          btn.id = 'mc_button_' + i 
+          btnWrapper.style.width = 'calc(' + ((1/numButtons) * 100) + '% - 1em)'
+          btnNum.innerHTML = i+1          
+          btnText.innerHTML = '…'
+          btn.appendChild(btnText)
+          btnWrapper.appendChild(btn)
+          btnWrapper.appendChild(btnNum)
+          guessArea.appendChild(btnWrapper)
+        }
+      }
+
+      function fillMultipleChoiceButtons(word){
+        var btn
+        var choices = []
+        var numButtons = 4
+        const chosenAnswerNum = getRandomInt(word.answers.length)                
+
+        if (uniqueAnswers){
+          numButtons = uniqueAnswers.length
+          choices = uniqueAnswers
+        } else {
+          word.traps[chosenAnswerNum].forEach(trap => {
+          choices.push(trap.trap) // get the actual trap, not it's similarity
+          })
+
+          if(!gameSettings.sameAnswers){          
+            var trys
+            var randomChoiceIndex
+            var randomChoice 
+            let numRandomChoice = getRandomInt(4) // random number 0-3
+            // console.log(`Showing ${numRandomChoice} completely random answers and ${3-numRandomChoice} which are somewhat similar to the correct one`)            
+            for (i = 0; i<numRandomChoice; i++){ // replace some of the answers with completely random ones from the set
+              trys = 0
+              randomChoice = word.answers[chosenAnswerNum] // it won't be this, this is just to make sure the while below works
+              while (randomChoice == word.answers[chosenAnswerNum] && trys < 100){
+                // this will probably only run once
+                // but it will pick a new random one if it manages to pick the actual answer or one that's already on the list
+                // there is a small chance that it will pick an alternative correct answer, but that'll just add an extra surprise for the learner!
+                // todo: give some indication that there were two right answers when they guess correctly in this instance?
+                randomChoiceIndex = getRandomInt(words.length)
+                randomChoice = words[randomChoiceIndex].answers[getRandomInt(words[randomChoiceIndex].answers.length)]                
+
+                if(choices.includes(randomChoice)){ // if we've managed to pick one already on our list
+                  randomChoice = word.answers[chosenAnswerNum] // set it back to the answer, which will force the while to repeat and pick again
+                }
+
+                trys++ // after 100 tries, we will give up trying to find one
+              }
+              if (trys < 100){ // so long as we didn't give up looking, replace one of the traps with a random choice        
+                choices[i] = randomChoice
+                // console.log(`Randomly picked ${randomChoice} as an answer`)
+              }
+            }            
+          }
+
+          // finally add the actual answer
+          choices.push(word.answers[chosenAnswerNum])          
+        }
+        
+        if(gameSettings.answerAnswers){
+          choices.sort() // sort alphabetically
+        } else {
+          choices = shuffleArray(choices) // or shuffle them
+        }
+        
+        for (i = 0; i < numButtons; i++){
+          btn = document.getElementById('mc_button_'+i)
+          btn.children[0].innerHTML = choices[i]
+          btn.setAttribute('onclick','giveGuess("'+choices[i]+'", ' + i + ')')
+          // the answer given to the giveGuess function is whatever is written in the button
+          // it has to work like this, because some questions might have the same answer (there is a small chance of more than one right answer being shown, though two of the exact same answers should never appear)
+        }
+        adjustFontSizeToFit()
+      }
+
+      function adjustFontSizeToFit() {
+          const offsetPercentHeight = 0.9
+          const offsetPercentWidth = 0.8
+          var buttons = document.getElementsByClassName('MCbutton');
+          
+           //reset font size to default
+          for (var i = 0; i < buttons.length; i++) {
+            buttons[i].children[0].style = null
+          }
+          
+          for (var i = 0; i < buttons.length; i++) {
+            var button = buttons[i].children[0];
+            var fontSize = parseFloat(window.getComputedStyle(button).fontSize.replace('px',''))
+            var container = button.parentElement;
+                        
+            // Reduce the font size until the text fits inside the container
+            while ((button.offsetWidth > (container.clientWidth*offsetPercentWidth) || button.offsetHeight > (container.clientHeight*offsetPercentHeight)) && fontSize > 12) {            
+              // console.log(`${button.innerHTML} button is too big button scroll width ${button.scrollWidth} > container client width ${container.clientWidth*offsetPercentWidth} || button scroll height ${button.scrollHeight} > container client height ${container.clientHeight*offsetPercentHeight}`)              
+              fontSize--;
+              console.log(`Trying ${fontSize} px`)
+              button.style.fontSize = fontSize + 'px';
+              var numLines = button.getClientRects().length
+              button.style.lineHeight = 8/numLines + 'vh' // height (in vh) of button, divided by the number of lines
+              button.offsetWidth;
+            }
+
+          }
+        }
+
+      function createMultipleChoiceOptions(){
+        var traps
+        //count number of options
+        uniqueAnswers = findUniqueAnswers()        
+        // if we have more than four unique possible answers in the whole set
+        if (!uniqueAnswers){
+          // find the traps for each answer
+          words.forEach(word => {
+            word.traps = []
+            word.answers.forEach(answer => {
+              if (!uniqueAnswers){
+                traps = findTraps(answer, word.drop)
+              } else {
+                traps = uniqueWords
+              }
+              word.traps.push(traps)
+            })
+          })
+        }
+      }
+
+      function findUniqueAnswers(){
+        var uniqueAnswers = []
+        words.every(word => {
+          word.answers.every(answer => {
+            if (!uniqueAnswers.includes(answer)){
+              uniqueAnswers.push(answer)
+            }
+            if (uniqueAnswers.length > 4){
+              return false // break out of the every
+            }
+            return true
+          })
+          if (uniqueAnswers.length > 4){
+              return false // break out of the every
+            }
+          return true
+        })
+        if (uniqueAnswers.length > 4){
+            return false // we don't want them if there's more than four
+          } else {
+            return uniqueAnswers;
+          }        
+      }
+
+      function findTraps(target,originalDrop){
+
+        var closestAnswers = []
+        var added = false
+
+        // even with the "always the same answers" option, we need to do this because otherwise words towards the end of the array will inevitably be overrepresented.
+        shuffledWords = shuffleArray(words)
+
+        shuffledWords.forEach(word =>{
+          added = false // reset added (we won't add two answers from the same word, because sometimes one is just the plural version or whatever)
+          if(word.drop != originalDrop){ // skip over the original word
+            word.answers.forEach(candidate => {
+              simil = similarity(target, candidate)
+              if (closestAnswers.length >= 3){
+                closestAnswers.forEach(answer => {
+                  if (!added & simil > answer.simil){ // if it's more similar than something else we've already found
+                    closestAnswers.push({trap: candidate, simil: simil}) // add it to the list
+                    added = true // we don't need to add it again
+                  }
+                })
+              } else { // always add it if we don't yet have three
+                closestAnswers.push({trap: candidate, simil: simil})
+                added = true
+              }
+              // trim the closestAnswers list by removing the least similar
+              if (closestAnswers.length > 3){
+                closestAnswers = removeLowestSimilarityCandidate(closestAnswers)
+              }
+            })
+          }
+        })
+        return closestAnswers
+      }
+
+      function removeLowestSimilarityCandidate(arr) {
+        if (arr.length === 0) {
+          return arr; // No objects to remove
+        }
+
+        let minSimilarity = 1; //highest possible
+        let minIndex = 0;
+
+        for (let i = 0; i < arr.length; i++) {
+          if (arr[i].simil < minSimilarity) {
+            minSimilarity = arr[i].simil;
+            minIndex = i;
+          }
+        }
+
+        arr.splice(minIndex, 1); // Remove the object with the lowest simil
+
+        return arr;
+      }
+
+      // shuffles array and returns it as a new one
+      function shuffleArray(originalArray){
+        var array = [].concat(originalArray);
         for (let i = array.length-1; i > 0; i--){
           const j = Math.floor(Math.random() * i)
           const temp = array[i]
@@ -709,6 +1029,7 @@
       function dropWord(word){
         var newWord = document.createElement('div')
         let containerPosition = document.getElementById('dropArea').getBoundingClientRect();
+        mcDisabled = false
         newWord.setAttribute('id','word_'+numWords)
         newWord.setAttribute('class','card falling')
         newWord.setAttribute('data-order',numWords)
@@ -724,9 +1045,15 @@
         moveWordInterval = window.setInterval(function(){
           moveWord(newWord)
         },refreshTime);
+
+        if(MultiChoiceMode){
+          fillMultipleChoiceButtons(word)
+        }
+
         numWords++
       }
 
+      // gets a random number lower than max (including 0)
       function getRandomInt(max) {
         return Math.floor(Math.random() * max);
       }
@@ -734,8 +1061,9 @@
       function moveWord(wordEl){
         let hit = checkPosition(wordEl) // possibly change the return on this function to true/false instead
         if (hit == null){
-          wordEl.style.top = parseFloat(wordEl.style.top.replace('px','')) + speed + 'px'
+          wordEl.style.top = parseFloat(wordEl.style.top.replace('px','')) + (speed + extraSpeed) + 'px'
         } else {
+          extraSpeed = 0 // remove any extra speed
           clearInterval(moveWordInterval)
           words[currentFalling].correctLastRound = false // mark as missed for this round
           if (checkTop(wordEl)){
@@ -767,6 +1095,7 @@
         if (fallingPosition.bottom >= containerPosition.bottom-5){
           fallingEl.classList.add('fallen')
           fallingEl.classList.remove('falling')
+          fallingEl.classList.remove('fallingQuicker')
           fallingEl.style.top = containerPosition.bottom - (fallingPosition.height + 5) // make position neater
           leftPointIndex = (fallingPosition.left-containerPosition.left)/containerPosition.width
           attached = container
@@ -833,10 +1162,10 @@
       }
 
       // triggered on enter or on pressing guess
-      function giveGuess(answer){
-        if (answer != '' && !document.getElementById('guessInput').disabled){
+      function giveGuess(answer, multipleChoiceButton=-1){
+        if (answer != '' && !document.getElementById('guessInput').disabled && !mcDisabled){
           let answerEvaluation = getSimilarity(answer)
-          giveFeedback(answerEvaluation.index,answerEvaluation.nearestAnswer)
+          giveFeedback(answerEvaluation.index,answerEvaluation.nearestAnswer, multipleChoiceButton)
         }
       }
 
@@ -849,21 +1178,21 @@
         }
       }
 
-      function giveFeedback(similarityIndex, nearestAnswer){
+      function giveFeedback(similarityIndex, nearestAnswer, multipleChoiceButton=-1){
         // if it's close enough
         if (similarityIndex >= (parseInt(gameSettings.requiredSimilarity)/100)){
           destroyWord(document.getElementById('word_'+(numWords-1)))
           words[currentFalling].correctLastRound = true
           addScore(similarityIndex)
           if (similarityIndex == 1){
-            showCorrect()
+            showCorrect(multipleChoiceButton)
           } else {
             showCloseEnough(similarityIndex, nearestAnswer)
           }
           clearInterval(moveWordInterval)
           nextWord()
         } else {
-          showWrong(similarityIndex)
+          showWrong(similarityIndex, multipleChoiceButton)
         }
         document.getElementById('guessInput').focus()
       }
@@ -904,21 +1233,34 @@
         document.getElementById('score').innerHTML = score
       }
 
-      function showCorrect(){
+      function showCorrect(multipleChoiceButtonNum){
         let guessInput = document.getElementById('guessInput')
         let hitCard = document.getElementById('word_'+(numWords-1))
-        guessInput.style = 'background-color: var(--correct)'
+        let mcBtn = document.getElementById('mc_button_'+multipleChoiceButtonNum)
+        extraSpeed = 0 // remove any extra speed
+        if (MultiChoiceMode){
+          mcBtn.style = 'background-color: var(--correct); color: var(--fg-color);'
+          mcDisabled = true // to stop answering the next one too early
+        } else { // if typing mode
+          guessInput.style = 'background-color: var(--correct)'          
+          // guessButton.style = 'border: 2px solid var(--correct);'
+          guessButton.innerHTML = gameSettings.correctMessage
+          guessInput.disabled = true;
+        }
+        // for all modes
         hitCard.style.backgroundColor = 'var(--correct)'
-        // guessButton.style = 'border: 2px solid var(--correct);'
-        guessButton.innerHTML = gameSettings.correctMessage
-        guessInput.disabled = true;
+
         setTimeout(function(){
-          guessInput.style = null;
-          // guessButton.style = null;
-          guessButton.innerHTML = gameSettings.guessButton
-          guessInput.disabled = false;
-          guessInput.value = ''
-          guessInput.focus() // it lost it when we disabled it
+          if (MultiChoiceMode){
+            mcBtn.style = null
+          } else { // if typing mode            
+            guessInput.style = null;
+            // guessButton.style = null;
+            guessButton.innerHTML = gameSettings.guessButton
+            guessInput.disabled = false;
+            guessInput.value = ''
+            guessInput.focus() // it lost it when we disabled it
+          }
         },500)
         if (gameSettings.soundsEnabled){
           goodSound.play()
@@ -943,45 +1285,69 @@
         },500)
       }
 
-      function showColorDistance(index){
+      function showColorDistance(index, multipleChoiceButtonNum=-1){
         var rainbow = new Rainbow();
         rainbow.setSpectrum(incorrectColor,halfCorrectColor,correctColor)
         let colorNum = Math.floor(index*100)
         var betweenColor = '#' + rainbow.colorAt(colorNum)
         console.log(betweenColor)
         let guessInput = document.getElementById('guessInput')
+        let mcBtn = document.getElementById('mc_button_'+multipleChoiceButtonNum)
         if (index > gameSettings.requiredSimilarity){
           let hitCard = document.getElementById('word_'+(numWords-1));
           hitCard.style.backgroundColor = betweenColor
         }
-        guessInput.style = 'background-color: '+betweenColor+';'
+        if (MultiChoiceMode){ // this will never actually fire since this function has been disabled for multi choice mode, but leaving this in just in case I change my mind again!
+          mcBtn.style = 'background-color: '+betweenColor+'; ; color: var(--fg-color);'
+        } else { // if typing mode
+          guessInput.style = 'background-color: '+betweenColor+';'
+        }
         // document.getElementById('guessButton').style = 'border: 2px solid '+betweenColor+';'
         // setTimeout(function(){
         //   document.body.style = null;
         // },500)
       }
 
-      function showWrong(index){
+      function showWrong(index, multipleChoiceButtonNum){
         let guessInput = document.getElementById('guessInput')
         let guessButton = document.getElementById('guessButton')
         let guessArea = document.getElementById('guessArea')
-        if(index > 0){
-          showColorDistance(index)
+        let mcBtn = document.getElementById('mc_button_'+multipleChoiceButtonNum)
+        let fallingCard = document.getElementById('word_'+(numWords-1));
+        if(index > 0 && !MultiChoiceMode){ // Visibly it looks better to not show a color indicator for closeness on multi choice mode, though it has been set up to support that
+          showColorDistance(index, multipleChoiceButtonNum)
         } else {
-          guessInput.style = 'background-color: var(--incorrect)'
+          if(MultiChoiceMode){
+            mcBtn.style = 'background-color: var(--incorrect); color: var(--fg-color);'
+          } else { // if typing mode
+            guessInput.style = 'background-color: var(--incorrect)'
           // guessButton.style = 'border: 2px solid var(--incorrect);'
+          }          
         }
-        guessButton.innerHTML = gameSettings.incorrectMessage
+        // both modes
         guessArea.style = 'animation: shake 0.5s'
-        guessInput.disabled = true
+        if (MultiChoiceMode){
+          extraSpeed = 25;
+          fallingCard.classList.add('fallingQuicker')
+          mcDisabled = true
+        } else { // if typing mode
+          guessButton.innerHTML = gameSettings.incorrectMessage
+          guessInput.disabled = true
+        }        
+      
         setTimeout(function(){
-          guessInput.style = null;
-          guessButton.innerHTML = gameSettings.guessButton
+          if (MultiChoiceMode){
+            mcBtn.style = null;
+          } else { // if typing mode
+            guessInput.style = null;
+            guessButton.innerHTML = gameSettings.guessButton          
+            // guessButton.style = null;
+            guessInput.disabled = false;
+            guessInput.value = ''
+            guessInput.focus() // it lost it when we disabled it
+            // both modes
+          }
           guessArea.style = null;
-          // guessButton.style = null;
-          guessInput.disabled = false;
-          guessInput.value = ''
-          guessInput.focus() // it lost it when we disabled it
         },500)
         if (gameSettings.soundsEnabled){
           badSound.play()
@@ -1041,7 +1407,6 @@
     <div id="guessArea">
       <input type="text" id="guessInput"  oninput="autoGiveGuess(this.value)" placeholder="Type your answer here" class="notransition"></input>
       <button id="guessButton" class="notransition">Guess</button>
-      <button
     </div>
   </body>
   <!-- Module for finding colors between colors. From: https://github.com/anomal/RainbowVis-JS -->

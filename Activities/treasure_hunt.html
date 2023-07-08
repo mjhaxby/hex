@@ -5,9 +5,9 @@
     "description": "Type in the answer to the question to precede to the next answer. You can have as many alternative answers as necessary.",
     "settings": [
     {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait"]},
-    {"name":"caseSensitive","label":"Case sensitive (similarity 100%)", "type":"checkbox", "default":false},
+    {"name":"caseSensitive","label":"Case sensitive", "type":"checkbox", "default":false,"info":"If required similarity is less than 100, this will have no effect."},
     {"name":"requiredSimilarity","label":"Required similarity to accept answer (%)","type":"number","default":100,"min":1,"max":100},
-    {"name":"instruction","label":"Instruction (%c = characters, %w = words, %s[s] = plural s)","type":"text","default":"Enter %w word%s[s] (%c character%s[s])."},
+    {"name":"instruction","label":"Instruction","type":"text","default":"Enter %w word%s[s] (%c character%s[s]).","info":"%c = characters, %w = words, %s[s] = plural s"},
     {"name":"guessButton","label":"Guess button label","type":"text","default":"Guess"},
     {"name":"correctMessage","label":"Correct answer message","type":"text","default":"Yes!"},
     {"name":"correctEnoughMessage","label":"Acceptable answer message","type":"text","default":"Close enough"},
@@ -16,7 +16,7 @@
     "sample_data": [
       ["Look for the yellow fruit","banana","lemon"],
       ["Now look for the orange fruit","orange","passion fruit"],
-      ["Find the small green fruit and you've won!","grape"]
+      ["Find the very small green or red fruit and you've won!","grape"]
     ]
   }
 *HEX SETTINGS END*-->
