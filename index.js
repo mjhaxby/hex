@@ -1,5 +1,5 @@
-const { ipcRenderer } = require('electron');
 // The ipcRenderer module provides a few methods so you can send events from the render process (web page) to the main process.
+// It is now enabled in the preload.js file.
 
 // These are used for Electron (I think – not actually sure what for anymore):
 const runActivity = document.getElementById('runBtn');
@@ -8,9 +8,15 @@ const exportActivity = document.getElementById('exportBtn');
 //GLOBAL VARS
 
 var settingsVisible = false
-var prefsStore = {cols_min: 1, rows_min: 1}
+var prefsStore = {cols_min: 1, rows_min: 1} // for activity prefs
+var configStore = {} // for app prefs
+var configStoreRequestCount = 0
+var pageLoaded = false
+var lastExportedScormID = ''
 
 // PAGE FUNCTIONS
+
+document.addEventListener('DOMContentLoaded',pageLoad)
 
 function pageLoad(){
   //Allow us to type tabs in the text area field
@@ -32,6 +38,29 @@ function pageLoad(){
   headerRow(numCols) // add the header row with controls
   addRow(1) // add the first data row
   loadActivities()
+  setTimeout(function(){
+    document.body.classList.remove('preload');
+  },500)
+  pageLoaded = true
+  applyAppConfig() // this should have already happened, but it won't hurt to apply it again if it hasn't
+  // if it hasn't happened (maybe the page was reloaded), it will request the config which will retrigger the same function
+  document.body.addEventListener('pointerdown', deselectAll, true); // unselect when clicking anywhere
+}
+
+// apply preferences set by the app
+function applyAppConfig(){
+  if (Object.keys(configStore).length > 0){
+    if (configStore.showAdvancedExport){
+      showAdvancedExport()
+    } else {
+      hideAdvancedExport()
+    }
+  } else { // if the page is reloaded for example, we won't have it
+    if (configStoreRequestCount < 10){ // don't do this forever, just in case
+      ipcRenderer.send('requestConfig')
+      configStoreRequestCount++
+    }
+  }
 }
 
 function run() {
@@ -44,7 +73,7 @@ function run() {
     var source = selector.options[selector.selectedIndex].getAttribute('data-source')
     data = convertTableToTrimmedArray()
     settings = getSettings(prefsStore.settings)
-
+    console.log(settings)
      //send the info to main process
     ipcRenderer.send('runActivity', data, settings, activity, source); // ipcRender.send will pass the information to main process
   } else {
@@ -55,7 +84,7 @@ function run() {
 function exporter(){
   validity = checkValidity()
   if (validity.valid){
-    ipcRenderer.send('exportActivity'); // since export can be called from elsewhere, we won't bother sending the data from here
+      ipcRenderer.send('exportActivity'); // since export can be called from elsewhere, we won't bother sending the data from here
   } else {
     displayValidityInfo(validity)
   }
@@ -65,6 +94,11 @@ function selectActivity(){
   clearUnusedRowsFromEnd()
   clearUnusedColsFromEnd()
   loadPrefs()
+
+  packageIDEl = document.getElementById('packageID')
+  if (document.getElementById('scormToggle').checked && lastExportedScormID == packageIDEl.value){
+    packageIDEl.value = ''
+  }
 }
 
 function loadPrefs(){
@@ -110,10 +144,30 @@ function setPrefs(prefs){
     settingsArea.appendChild(description)
   }
   if (prefs.hasOwnProperty('sample_data')){
-    var example = document.createElement('button')
-    example.innerHTML = 'example'
-    example.setAttribute('onclick', 'showExample(prefsStore.sample_data)')
+    var example = exampleButton()
     settingsArea.appendChild(example)
+  } else if (prefs.hasOwnProperty('sample_datas')){
+    // var exampleHolder = document.createElement('div')
+    // exampleHolder.setAttribute('id','exampleHolder')
+    for (let i=1; i<=prefs.sample_datas.length; i++){
+      var example = exampleButton(i)      
+      settingsArea.appendChild(example)
+      if (i<prefs.sample_datas.length) {settingsArea.append(' ')} // weirdly this is how we get the space between the other buttons, so we're doing the same here to be consistent
+    }
+  }
+
+  // enable or disable scorm toggle
+  var scormTogglerHolder = document.getElementById('scormToggle_holder')
+  var scormToggle = document.getElementById('scormToggle')
+  if (prefs.scorm_support){
+    scormTogglerHolder.classList.remove('disabled')
+    scormToggle.disabled = false 
+    exportTypeToggled()    
+  } else {
+    scormTogglerHolder.classList.add('disabled')
+    scormToggle.checked = false
+    scormToggle.disabled = true // just in case
+    exportTypeToggled()
   }
 
   // make sure there are the minimum number of cols required
@@ -133,11 +187,69 @@ function setPrefs(prefs){
   updateAppearanceForUnused()
 }
 
+function exampleButton(number=0){
+  var exampleText = 'example'
+  var functionRef = 'showExample(prefsStore.sample_data)'
+  var example = document.createElement('button')
+
+  if (number > 0){
+    exampleText += (' #' + number)
+    functionRef = 'showExample(prefsStore.sample_datas['+(number-1)+'])'
+  }
+
+  example.innerHTML = exampleText
+  example.setAttribute('onclick', functionRef)
+  // example.setAttribute('data-category','all')
+  return example    
+}
+
+function makeInfoHover(info){
+  var infoContainer = document.createElement('div')
+  var infoBox = document.createElement('div')
+  var infoIcon = document.createElement('div')
+  infoContainer.setAttribute('class','infoContainer')
+  infoBox.setAttribute('class','infoBox')
+  infoIcon.setAttribute('class','infoIcon')
+  infoIcon.setAttribute('onmouseover','checkInfoBoxVisibility(this)')
+  infoIcon.innerHTML = 'ℹ︎'
+  infoBox.innerHTML = info
+  infoBox.style.bottom = '100%'
+  infoContainer.appendChild(infoBox)
+  infoContainer.appendChild(infoIcon)  
+  return infoContainer
+}
+
+function checkInfoBoxVisibility(infoIcon){
+  var infoBox = infoIcon.parentElement.children[0]
+  var settingsArea = document.getElementById('settingsArea')  
+
+  infoBox.style = 'bottom: 100%' // return to default position before checking
+
+  var infoBoxPos = infoBox.getBoundingClientRect()
+  var settingsAreaPos = settingsArea.getBoundingClientRect()
+
+  if ((infoBoxPos.right > (settingsAreaPos.right + 20))){ // 20 padding
+    infoBox.style.right = '100%'
+  }
+  infoBoxPos = infoBox.getBoundingClientRect()
+  settingsAreaPos = settingsArea.getBoundingClientRect()
+  console.log('info' + infoBoxPos.top)
+  console.log('settings' + (settingsAreaPos.top-20))
+  if ((infoBoxPos.top > (settingsAreaPos.top - 20))){ // 20 padding
+    infoBox.style.top = '100%'
+    infoBox.style.bottom = null
+  }
+
+}
+
 function makeSettings(settings){
-  settingsArea =  document.getElementById('settingsArea')
+  var settingsArea =  document.getElementById('settingsArea')
   var settingEls = new Array();
+  var categories = new Array();
   // label type options default
   for (i=0; i<settings.length; i++){
+    newSetting = document.createElement('div')
+    newSetting.setAttribute('class', 'setting')
     if (settings[i].type == 'text' | settings[i].type == 'number' | settings[i].type == 'checkbox'){
       newInput = document.createElement('input')
       newInputLabel = document.createElement('label')
@@ -163,14 +275,36 @@ function makeSettings(settings){
         if (settings[i].hasOwnProperty('max')){
           newInput.max = settings[i].max
         }
+      } else if (settings[i].type == 'text' && settings[i].hasOwnProperty('max')){
+        // max for a text input is interpreted as the maximum amount of text that can be inputted
+        newInput.setAttribute('maxlength',settings[i].max)
+        if (settings[i].max < 10){
+          newInput.setAttribute('size',settings[i].max) // for text fields whose max is much shorter than the normal size of the box, set the size too
+          if (settings[i].max < 4){ // for short text fields, it'll look better if they're centered
+            newInput.style.textAlign = 'center'
+            if (settings[i].max == 1){
+              newInput.setAttribute('onclick','this.select()') // if it's just a single character, clicking on the box should select it
+            }
+        }
+        }
       }
+      // different order for label and input for checkbox copared to others
       if (settings[i].type == 'checkbox'){
-        settingEls.push(newInput)
-        settingEls.push(newInputLabel)
+        newSetting.appendChild(newInput)
+        newSetting.appendChild(newInputLabel)
+        // settingEls.push(newInput)
+        // settingEls.push(newInputLabel)
       } else {
-        settingEls.push(newInputLabel)
-        settingEls.push(newInput)
+        newSetting.appendChild(newInputLabel)
+        newSetting.appendChild(newInput)
+        // settingEls.push(newInputLabel)
+        // settingEls.push(newInput)
       }
+      // add info hover icon
+      if (settings[i].hasOwnProperty('info')){
+        newSetting.appendChild(makeInfoHover(settings[i].info))
+      }
+    // selects are a bit different, so we'll make that separately
     } else if (settings[i].type = 'select'){
       newSelect = document.createElement('select')
       newSelect.id = 'setting_' + settings[i].type + '_' + settings[i].name
@@ -186,16 +320,83 @@ function makeSettings(settings){
       if (settings[i].hasOwnProperty('default')){
         newSelect.value = settings[i].default
       }
-      settingEls.push(newSelectLabel)
-      settingEls.push(newSelect)
+      // // add category (if it has one, otherwise set to "general")
+      // if (settings[i].hasOwnProperty('category')){
+      //  newSelectLabel.setAttribute('data-category',settings[i].category)
+      //  newSelect.setAttribute('data-category',settings[i].category)
+      //  currentCategory = settings[i].category
+      // } else {
+      //   newSelectLabel.setAttribute('data-category','general')
+      //   newSelect.setAttribute('data-category','general')
+      //   currentCategory = 'general'
+      // }
+      // settingEls.push(newSelectLabel)
+      // settingEls.push(newSelect)
+      newSetting.appendChild(newSelectLabel)
+      newSetting.appendChild(newSelect)      
     }
-    settingEls.push(document.createElement('br'))
+    // add category (if it has one, otherwise set to "general")
+    if (settings[i].hasOwnProperty('category')){
+      currentCategory = settings[i].category
+    } else {
+      currentCategory = 'general'
+    }
+    newSetting.setAttribute('data-category',currentCategory)
+    // add category to the list if we don't already have it
+    if (!categories.includes(currentCategory)){
+      categories.push(currentCategory)
+    }
+    // add to setting els array
+    settingEls.push(newSetting)
+    // add a line break with the same category as the element we just added, so it disappears with it when necessary
+    // brEl = document.createElement('br')
+    // brEl.setAttribute('data-category',currentCategory)
+    // settingEls.push(brEl)
   }
+  // so long as there's more than one category, add the category picker
+  if (categories.length > 1){
+    var categoryPicker = document.createElement('select')
+    categoryPicker.id = 'categoryPicker'
+    categoryPicker.setAttribute('onchange','changeActivitySettingsCategory(this.value)')
+    // add 'all' option for categories
+    allOption = document.createElement('option')
+    allOption.value = 'all'
+    allOption.innerHTML = 'all'
+    categoryPicker.appendChild(allOption)
+    // add all the other categories
+    for (let i = 0; i < categories.length; i++){
+      newOption = document.createElement('option')
+      newOption.value = categories[i]
+      newOption.innerHTML = categories[i]
+      categoryPicker.appendChild(newOption)
+    }    
+    // add it to settings area
+    settingsArea.appendChild(categoryPicker)
+    // brEl = document.createElement('br')
+    // settingsArea.appendChild(brEl)
+  }
+  // add all the settings to the inner div
+  settingsAreaInner = document.createElement('div')
+  settingsAreaInner.id = 'settingsAreaInner'
   for (i=0; i<settingEls.length; i++){
-    settingsArea.appendChild(settingEls[i])
+    settingsAreaInner.appendChild(settingEls[i])
   }
+  // add columns if there is more than one setting
+  settingsAreaInner.style.columns = determineColumnSettingsForSettings(settingEls.length)
+  
+  // add all the settings to the main div
+  settingsArea.appendChild(settingsAreaInner)
+  // so long as there was at least one setting, add a little hr
+  if (settingEls.length > 0){
+    var hrule = document.createElement('hr')
+    settingsArea.appendChild(hrule)
+  }    
+  // select the first category (after all), so long as there's more than one
+  if (categories.length > 1){
+    changeActivitySettingsCategory(categories[0])
+    categoryPicker.value = categories[0]
+  }  
 }
-
 
 function getSettings(settings){ // gets the settngs as they've been set by the user
   var settingEl
@@ -222,6 +423,30 @@ function getSettings(settings){ // gets the settngs as they've been set by the u
     }
   }
   return settingsToReturn
+}
+
+function changeActivitySettingsCategory(category){
+  var settingsAreaInner =  document.getElementById('settingsAreaInner')
+  numSettings = 0
+  for (let i = 0; i<settingsAreaInner.children.length; i++){
+    if(category == 'all' || settingsAreaInner.children[i].getAttribute('data-category') == category || settingsAreaInner.children[i].getAttribute('data-category') == 'all'){
+      settingsAreaInner.children[i].classList.remove('hidden')
+      numSettings++
+    } else {
+      settingsAreaInner.children[i].classList.add('hidden')
+    }
+  }
+  settingsAreaInner.style.columns = determineColumnSettingsForSettings(numSettings)
+}
+
+function determineColumnSettingsForSettings(numSettings){
+  if(numSettings == 1){
+    return '1'
+  } else if (numSettings == 2){
+    return '2 auto'
+  } else {
+    return 'auto 20em'
+  }
 }
 
 function showExample(sampleData){
@@ -332,14 +557,16 @@ function showSettings(){
   settingsArea = document.getElementById("settingsArea")
   inputBox = document.getElementById("inputBox")
   if (settingsVisible){
-    showSettingsButton.style.transform = null // unrotate button
+    showSettingsButton.classList.remove('up')
+    showSettingsButton.classList.add('down')
     settingsVisible = false
     settingsArea.style.height = ""
     inputBox.style.height = ""
     // settingsArea.style.minHeight = ""
     settingsArea.style.padding = ""
   } else {
-    showSettingsButton.style.transform = 'rotate(180deg)' // rotate the button
+    showSettingsButton.classList.remove('down')
+    showSettingsButton.classList.add('up')
     settingsVisible = true
     settingsArea.style.height = "220px"
     settingsArea.style.padding = "20px"
@@ -348,28 +575,63 @@ function showSettings(){
   }
 }
 
+function exportTypeToggled() {
+  var checkboxEl = document.getElementById('scormToggle')
+  var packageIDWrapper = document.getElementById('packageIDWrapper');
+  var packageIDEl = document.getElementById('packageID')
+
+  if (checkboxEl.checked) {
+    packageIDWrapper.classList.add('expandedLeft');
+    packageIDWrapper.classList.remove('hiddenLeft');
+  } else {
+    packageIDWrapper.classList.remove('expandedLeft');
+    packageIDWrapper.classList.add('hiddenLeft');
+    if (lastExportedScormID == packageIDEl.value){
+      packageIDEl.value = ''
+    }
+  }
+}
+
+function generateID(){
+  document.getElementById('packageID').value = crypto.randomUUID()
+}
+
 
 // Electron stuff:
 
-ipcRenderer.on('loadInput', (event, msg) => {
-  document.getElementById('inputBox').innerHTML = msg // fill in input box when opening a file
+ipcRenderer.on('loadInput', (event, data) => {
+  dataAsArray = returnJSONorArray(data)
+  convertArrayToTableData(dataAsArray)
 })
 
 ipcRenderer.on('getInputForExport', (event) => { // main.js requests the data
+  sendInputForExport()
+})
+
+function sendInputForExport(){
   var data = new Object();
   const selector = document.getElementById('activitySlct')
   var activity = selector.value
   var source = selector.options[selector.selectedIndex].getAttribute('data-source')
   var input = convertTableToTrimmedArray()
   var settings = getSettings(prefsStore.settings)
-  data = {input: input, activity: activity, settings: settings, source: source}
-
-  // let textBlock = convertTableDataToBlock(); // TO DO: merge these two steps into one! (still want to keep this function, will use it for exporting to clipboard)
-  // data.input = convertTextBlockToArray(textBlock)
+  var packageIDEl = document.getElementById('packageID')
+  if(document.getElementById('scormToggle').checked){
+    type = 'scorm'
+    if (packageIDEl.value.trim() == ''){
+      generateID()
+    }
+    packageIdentifier = packageIDEl.value.trim()
+    lastExportedScormID = packageIdentifier
+  } else {
+    type = 'html'
+    packageIdentifier = ''
+  }
+  data = {input: input, activity: activity, settings: settings, source: source, type: type, packageIdentifier: packageIdentifier}
 
   console.log(data)
-  ipcRenderer.send('sentInputForExport' ,data)
-})
+  ipcRenderer.send('sentInputForExport', data)
+}
 
 ipcRenderer.on('setPrefs', (event, prefs) => {
   if (prefs.hasOwnProperty('error')){
@@ -407,6 +669,56 @@ ipcRenderer.on('loadActivities', (event) => { // this is used for reloading the 
   loadActivities()
 })
 
+ipcRenderer.on('configStore', (event, config) => {
+  configStore = config
+  if(pageLoaded){
+    applyAppConfig()
+  }
+  // just in case the page hasn't loaded, we'll also apply it again when it does
+  document.addEventListener("DOMContentLoaded", function(event) { 
+    applyAppConfig() 
+  });
+})
+
+// ipcRenderer.on('showAdvancedExport', (event) => {
+//   console.log('Show advanced export options')
+//   try{
+//     showAdvancedExport()
+//   } catch { //if it doesn't work, it's probably because the page hasn't loaded, so set it up to do it then
+//     document.addEventListener("DOMContentLoaded", function(event) { 
+//       showAdvancedExport()
+//     });
+//   }
+
+// })
+
+function showAdvancedExport(){
+  advancedExport = document.getElementById('advancedExport')
+  advancedExport.style.display = 'inline-block'
+  setTimeout(function(){
+    advancedExport.classList.remove('preload');
+  },500)
+  document.getElementById('buttons').classList.add('leftAlign')
+}
+
+function hideAdvancedExport(){
+  console.log('Hide advanced export options')
+  advancedExport = document.getElementById('advancedExport')
+  advancedExport.style.display = null
+  advancedExport.classList.add('preload');
+  document.getElementById('buttons').classList.remove('leftAlign')
+  document.getElementById('scormToggle').checked = false // set back to default HTML
+}
+
+// ipcRenderer.on('hideAdvancedExport', (event) => {
+//   console.log('Hide advanced export options')
+//   advancedExport = document.getElementById('advancedExport')
+//   advancedExport.style.display = null
+//   advancedExport.classList.add('preload');
+//   document.getElementById('buttons').classList.remove('leftAlign')
+//   document.getElementById('scormToggle').checked = false // set back to default HTML
+// })
+
 ipcRenderer.on('loadPrebuiltActivities', (event, activities) => {
   const activitySlct = document.getElementById('activitySlct');
   activities.forEach(activity => {
@@ -435,3 +747,5 @@ ipcRenderer.on('loadUserActivities', (event, activities) => {
   });
   loadPrefs()
 });
+
+

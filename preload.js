@@ -1,7 +1,8 @@
 // preload.js
 
-// All of the Node.js APIs are available in the preload process.
-// It has the same sandbox as a Chrome extension.
+
+const { contextBridge, ipcRenderer } = require('electron');
+
 window.addEventListener('DOMContentLoaded', () => {
   const replaceText = (selector, text) => {
     const element = document.getElementById(selector)
@@ -12,3 +13,24 @@ window.addEventListener('DOMContentLoaded', () => {
     replaceText(`${dependency}-version`, process.versions[dependency])
   }
 })
+
+
+contextBridge.exposeInMainWorld('ipcRenderer', {
+  send: (channel, ...args) => {
+    // Whitelist channels that are allowed to be sent
+    const validChannels = ['runActivity','exportActivity','getPrebuiltActivities','readActivityPrefs','sentInputForExport','getUserActivities'];
+
+    if (validChannels.includes(channel)) {
+      ipcRenderer.send(channel, ...args);
+    }
+  },
+  on: (channel, listener) => {
+    // Whitelist channels that are allowed to be received
+    const validChannels = ['loadInput','getInputForExport','setPrefs','copyToClipboard','copyToClipboard','clearTable','deleteUnusedRows','deleteUnusedCols','loadActivities','readActivityPrefs','configStore','loadPrebuiltActivities','loadUserActivities'];
+
+    if (validChannels.includes(channel)) {
+      ipcRenderer.on(channel, listener);
+    }
+  },
+  // Add other methods or properties of ipcRenderer as needed
+});
