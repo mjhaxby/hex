@@ -1,0 +1,102 @@
+#scormToggle_holder{
+  transition: all 0.3s ease-in-out;
+}
+
+#scormToggle_holder:hover{
+  background-color: #474544;
+}
+
+#scormToggle_holder:hover .toggle-text-right{
+  color: #f2f3eb;
+}
+
+#scormToggle_holder:hover .toggle-text-left{
+  color: #474544;
+}
+
+#scormToggle_holder:hover .toggle-input:checked ~ .toggle-text-right{
+  color: #474544;
+}
+
+#scormToggle_holder:hover .toggle-input:checked ~ .toggle-text-left{
+  color: #f2f3eb;
+}
+
+#scormToggle_holder:hover .toggle-handle{
+  background-color: #f2f3eb;
+}
+
+.toggle-switch {
+    display: inline-block;
+    position: relative;
+    width: 80px;
+    height: 38px;
+    border: 2px solid #474544;
+    overflow: hidden;
+    background: transparent;
+    top: 16px;
+  }
+  
+  .toggle-input {
+    display: none !important;
+  }
+  
+  .toggle-label {
+    display: block;
+    position: absolute;
+    /* top: 2px; */
+    /* left: 2px; */
+    width: 100%;
+    height: 36px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .toggle-handle {
+    display: block;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 36px;
+    height: 34px;
+    background-color: #474544;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .toggle-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    width: 40px;
+    height: 40px;
+    font-weight: bold;
+    font-size: 12px;
+    transition: color 0.3s ease-in-out;
+    pointer-events: none;
+    color: #474544;
+  }
+  
+  .toggle-text-left {
+    left: 0px;
+    color: #f2f3eb;
+  }
+  
+  .toggle-text-right {
+    right: 0px;    
+  }
+  
+  .toggle-input:checked + .toggle-label .toggle-handle {
+    left: calc(100% - 46px);
+    background-color: #474544;
+  }
+  
+  .toggle-input:checked ~ .toggle-text-right {
+    color: #f2f3eb;
+  }
+
+  .toggle-input:checked ~ .toggle-text-left {
+    color: #474544;
+  }
+  
