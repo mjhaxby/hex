@@ -1,6 +1,6 @@
 # hex
 
-https://github.com/mjhaxby/hex/blob/main/hexTrailer_smaller.mp4
+https://github.com/mjhaxby/hex/assets/47946283/f41d81ae-9ae5-403a-ab48-aa40efc490e2
 
 ## What is this?
 **hex** is an application designed to create learning activities, similar to Hot Potatoes, but much simpler to use. In fact, **hex** has the capability to turn any table of data into activities that you can run on the spot or export to a website or learning environment. The most common use case would be turning a list of vocabulary items into a game to finish a class or a revision activity online for homework.
