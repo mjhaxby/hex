@@ -16,6 +16,9 @@ The first activity I made was the Blockbusters activity, which uses hexagons. He
 ## Why on earth did you make this with Electron?
 If I were making this just for myself, I would have made it easier for myself and just done something on the command line. Since I wanted to be able to share it, I needed a way to make a graphical application quickly for multiple platforms. Since **hex** exports HTML files (and therefore needs browser-capability in order to use them in run mode), Electron had all the features I needed baked in. Since it does very little heavy lifting, the resource cost of using Electron is relatively low. Also, unlike other Electron apps, it’s not acting as a front for what is essentially a website – **hex** works entirely offline.
 
+## Where can I download it?
+Download the latest version on the [releases](https://github.com/mjhaxby/hex/releases) page.
+
 ## What’s next for **hex**?
 - Improved custom activities support.
 - Explanations on how to use each activity.
