@@ -1,8 +1,11 @@
 # hex
-## What is this?
-**hex** is an application originally designed to create learning activities, similar to Hot Potatoes. In fact, **hex** has the capability to turn any tab-formatted table into webpage-based activities (so using HTML, CSS and Javascript). In future versions, it will be possible to create your own activities.
 
-So far there are four activities available: Blockbusters, Match, Crack the code and Backs to the board.
+![](https://github.com/mjhaxby/hex/blob/main/hexTrailer_smaller.mp4)
+
+## What is this?
+**hex** is an application designed to create learning activities, similar to Hot Potatoes, but much simpler to use. In fact, **hex** has the capability to turn any table of data into activities that you can run on the spot or export to a website or learning environment. The most common use case would be turning a list of vocabulary items into a game to finish a class or a revision activity online for homework.
+
+So far there are nine activities available: Anagram, Backs to the Board, Blockbusters, Crack the code, Crossword, Decisions, Falling Words, Match and Treasure Hunt. It's also possible to create your own activities.
 
 ## How do I use it?
 The simplest way is to simply copy and paste a list of vocabulary (with translation or definitions) from a Word or Excel document into **hex**. You can press *run* to open the activity, probably for use in the classroom, or you can press *export* to create an HTML file (or SCORM file). You can then put this HTML file on a Learning Management System, like Moodle, so that your students can use them individually. Some activities work best in the classroom, like *Backs to the board*. Others, you’re more likely to use as individual activities, like *Match*, either in a computer lab or at home. 
