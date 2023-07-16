@@ -117,15 +117,13 @@ const createMainWindow = () => {
 }
 
 const createActivityWindow = (activityType, data, settings, source) => {
-  var newWindow = Object.create(activityWindowPrototype);
-  newWindow.activityType = activityType
-  newWindow.data = data
-  newWindow.settings = settings
-  newWindow.source = source
-  newWindow.window = new BrowserWindow({
-    title: activityType, // later replace with a user-friendly version of this
-    width: 800,
-    height: 600,
+
+  // window options
+  const windowOpts = {
+    title: activityType,
+    show: false, // hidden at first so that the position can be determined
+    width: 1024,
+    height: 768,
     webPreferences: {
       preload: path.join(__dirname, 'preload_activity.js'),
       nodeIntegration: false,
@@ -133,9 +131,29 @@ const createActivityWindow = (activityType, data, settings, source) => {
       devTools: !app.isPackaged,
       sandbox: app.isPackaged
     }
-  })
+  }
 
+  // get position of current browser window
+  if (BrowserWindow.getFocusedWindow()) {
+    current_win = BrowserWindow.getFocusedWindow();
+    const pos = current_win.getPosition();
+    Object.assign(windowOpts, {
+      x: pos[0] + 22,
+      y: pos[1] + 22,
+    });
+  };
 
+  var newWindow = Object.create(activityWindowPrototype);
+  newWindow.activityType = activityType
+  newWindow.data = data
+  newWindow.settings = settings
+  newWindow.source = source
+  newWindow.window = new BrowserWindow(windowOpts)
+
+  let thisWin = newWindow
+  newWindow.window.once('ready-to-show', () => {
+      thisWin.window.show()
+    })
 
   newWindow.windowId = newWindow.window.id
 
@@ -170,7 +188,8 @@ ipcMain.on('activityReady', (event, arg) =>{
 app.whenReady().then(() => {
   if (process.platform === 'darwin') {
     app.dock.setMenu(dockMenu)
-  }  
+  }
+  app.setAboutPanelOptions(aboutOptions)
   createMainWindow();
   getConfig()
     .then((currentConfig) => {
@@ -705,7 +724,7 @@ const exportActivity = (data,activity,settings,source,type='html',packageIdentif
           clipboard.writeText(packageIdentifier)
         }
 
-        if (result.response == 1 || result.response == 2){
+        if (result.response == 1 || result.response == 0){
           exportActivityAsScorm(activity, source, data, settings, packageIdentifier)
         }
         
@@ -870,6 +889,13 @@ function askToDeleteUnusedRows(){
 
 function askToDeleteUnusedCols(){
   mainWindow.webContents.send('deleteUnusedCols');
+}
+
+const aboutOptions = {
+  credits: 'Confetti animation by Patrik Svensson.',
+  website: 'https://github.com/mjhaxby/hex',
+  iconPath: 'icon.png',
+  authors: 'Morgan Haxby'
 }
 
 // MENU template
