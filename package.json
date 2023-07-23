@@ -1,6 +1,6 @@
 {
   "name": "hex",
-  "version": "3.0.0",
+  "version": "3.1.2",
   "description": "Learning activity creator.",
   "main": "main.js",
   "scripts": {
