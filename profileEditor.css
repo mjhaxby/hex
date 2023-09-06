@@ -1,0 +1,14 @@
+body{
+    overflow-y: scroll;
+    height: auto;
+}
+
+.invalidSetting{
+ color: #bf0000;   
+}
+
+#profileName{
+    font-size: 2em;
+    text-align: center;
+}
+

@@ -31,8 +31,7 @@ body{
 hr{
   border: solid 0.5px #474544;
   opacity: 50%;
-  margin-top: 1em;
-  margin-bottom: 1em;
+  margin: 1em;
   z-index: -1;
 }
 
@@ -390,6 +389,7 @@ label{
 }
 
 .infoIcon{
+  margin-left: 1px;
   border-radius: 50%;
   width: 0.8em;
   height: 0.8em;
@@ -559,7 +559,7 @@ label{
 }
 
 
-#showSettingsButton{
+.showSettingsButton{
   display: inline-block;
   vertical-align: middle;
   /* height: 24px; */
@@ -567,7 +567,7 @@ label{
   margin: 0.25em;
 }
 
-#settingsArea{
+.settingsArea{
   border: none;
   box-sizing: border-box; /* to stop padding adding width */
   border-bottom: solid 2px #474544;
@@ -576,14 +576,25 @@ label{
   height: 0;
   background: #E8E9E1;
   clear: both;
-  transition: 0.5s;
+  transition: height 0.5s;
   overflow-y: scroll;
   overflow-x: visible;
   z-index: 1;
 }
 
-#settingsAreaInner{
+.openSettings{
+  height: 220px;
+  /* padding: 20px; */
+  transition: height 0.5s;
+}
+
+.settingsAreaInner{
+  padding: 20px;
   /* text-align: left; */  
+}
+
+.exampleBtn{
+  margin-bottom: 20px;
 }
 
 #generateBtn{

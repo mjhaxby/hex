@@ -7,32 +7,41 @@
     <title>Hex</title>
     <script src="index.js"  charset="utf-8"></script>
     <script src="tableManager.js"  charset="utf-8"></script>
+    <script src="activitySettingsManager.js"  charset="utf-8"></script>
+    <link rel="stylesheet" href="toggle-switch.css"> <!--Only works in its own style sheet-->
     <link rel="stylesheet" href="index.css">
   </head>
-  <body onload="pageLoad()">
+  <body class="preload">
     <div id="topArea">
       <img id="hex-logo" src="hex.svg">
       <div id="buttons">
         <select name="activityType" id="activitySlct" onchange="selectActivity()">
-          <!-- TODO: create the activity type list automatically based on the file names in the activities folder -->
-          <!-- <option value="blockbusters">Blockbusters</option>
-          <option value="match">Match</option>
-          <option value="crack_the_code">Crack the code</option>
-          <option value="backs_to_the_board">Back to the board</option>
-          <option value="anagram">Anagram</option>
-          <option value="dobble">Dobble</option>
-          <option value="crossword">Crossword</option>  <!--https://mitchum.blog/building-a-crossword-puzzle-generator-with-javascript/--> -->
-          <!-- <option value="cards">Cards</option>
-          <option value="magnet_board">Magnet board</option>
-          <option value="sort">Sort</option>
-          <option value="timeout">Timeout</option>
-          <option value="codemames">Codenames</option>
-          <option value="decisions">Decisions</option>
-          <option value="treasure_hunt">Treasure Hunt</option>
-          <option value="find_someone_who">Find someone who</option> -->
+
         </select>
         <button id="runBtn" onclick="run()">run</button>
         <button id="exportBtn" onclick="exporter()">export</button>
+        <div id="advancedExport" class="preload">
+          <div id="scormToggle_holder" class="toggle-switch">
+            <input type="checkbox" id="scormToggle" class="toggle-input" onchange="exportTypeToggled()">
+            <label for="scormToggle" class="toggle-label">
+              <span class="toggle-handle"></span>
+            </label>
+            <span class="toggle-text toggle-text-left">HTML</span>
+            <span class="toggle-text toggle-text-right">SCORM</span>
+          </div>
+          <div id="packageIDWrapper" class="hiddenLeft">
+            <label for="packageID">ID</label>
+            <input id="packageID" type="text">
+            <button id="generateBtn" onclick="generateID()"><svg version="1.1" id="generateIcn" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+              viewBox="0 0 455 455" xml:space="preserve">
+              <path d="M0,0v455h455V0H0z M103.75,386.25c-19.33,0-35-15.67-35-35s15.67-35,35-35s35,15.67,35,35S123.08,386.25,103.75,386.25z
+              M103.75,138.75c-19.33,0-35-15.67-35-35s15.67-35,35-35s35,15.67,35,35S123.08,138.75,103.75,138.75z M227.5,262.5
+             c-19.33,0-35-15.67-35-35s15.67-35,35-35s35,15.67,35,35S246.83,262.5,227.5,262.5z M351.25,386.25c-19.33,0-35-15.67-35-35
+             s15.67-35,35-35s35,15.67,35,35S370.58,386.25,351.25,386.25z M351.25,138.75c-19.33,0-35-15.67-35-35s15.67-35,35-35
+             s35,15.67,35,35S370.58,138.75,351.25,138.75z"/>
+           </svg></button>
+          </div>          
+        </div>        
       </div>
     </div>
     <br>
@@ -49,15 +58,15 @@
       </table>
     </div>
     <div id="controlsEtc">
-      <h2 id="settingsTitle" onclick="showSettings()"><img id="showSettingsButton" src="down.png"></img>activity settings</h2>
-      <div id="settingsArea">
+      <h2 id="settingsTitle" onclick="showSettings()"><i class="showSettingsButton arrow down" id="showSettingsButton"></i></img>activity settings</h2>
+      <div id="settingsArea" class="settingsArea">
       </div>
       <small><p>Node.js <span id="node-version"></span>,
       Chromium <span id="chrome-version"></span>,
       and Electron <span id="electron-version"></span> • Created by mjhaxby</p></small>
     </div>
   </body>
-  <script>
+  <!-- <script>
     document.body.addEventListener('pointerdown', deselectAll, true); // unselect when clicking anywhere
-  </script>
+  </script> -->
 </html>

@@ -16,7 +16,7 @@ let openActivityTemplate = function openTemplatePromise(file){
 
 }
 
-function addActivityTemplateData(activityTemplate, activityData, activitySettings){
+function addActivityTemplateData(activityTemplate, activityData, activitySettings, prefsStore){
   for (i = 0; i < activityData.length; i++){
     for (j = 0; j < activityData[i].length; j++){
       activityData[i][j] = activityData[i][j].replaceAll('"','\\"')
@@ -29,9 +29,11 @@ function addActivityTemplateData(activityTemplate, activityData, activitySetting
   activityDataAsArray = activityDataAsArray.slice(0, -1) // remove last comma
   activityDataAsArray = activityDataAsArray + ']' // add final square bracket
   activitySettingsAsObject = 'gameSettings = ' + JSON.stringify(activitySettings)
-  outputData = activityTemplate
+  exportInfo = {version: prefsStore.app_version, creationTime: Date.now(), platform: prefsStore.platform, activity: prefsStore.activity, source: prefsStore.source}
+  // outputData = activityTemplate
   outputData = activityTemplate.replace('<script src="activityController.js"></script>','<script  charset="utf-8">gameData = ' + activityDataAsArray + '\n' + activitySettingsAsObject + '\ndocument.addEventListener("DOMContentLoaded",pageLoad())</script>')
-  //TO DO: Add SCORM setting when appropriate
+  let regex = /<!--\*HEX SETTINGS START\*([.\s\S]+)\*HEX SETTINGS END\*-->/gm
+  outputData = outputData.replace(regex,`<!--*HEX INFO START*${JSON.stringify(exportInfo)}*HEX INFO END*-->`)
   return outputData
 }
 

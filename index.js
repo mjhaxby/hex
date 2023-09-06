@@ -7,12 +7,12 @@ const exportActivity = document.getElementById('exportBtn');
 
 //GLOBAL VARS
 
-var settingsVisible = false
 var prefsStore = {cols_min: 1, rows_min: 1} // for activity prefs
 var configStore = {} // for app prefs
 var configStoreRequestCount = 0
 var pageLoaded = false
 var lastExportedScormID = ''
+var appVersion
 
 // PAGE FUNCTIONS
 
@@ -119,7 +119,7 @@ function loadActivities(){
   // user activities requested when prebuilt activities are received
 }
 
-function setPrefs(prefs){
+function setPrefs(prefs, customDefaults={}){
   // save prefs
   prefsStore = prefs
 
@@ -133,7 +133,10 @@ function setPrefs(prefs){
   settingsArea = document.getElementById("settingsArea")
   settingsArea.innerHTML = ""
   if (prefs.hasOwnProperty('settings')){
-    makeSettings(prefs.settings)
+    makeSettings(prefs.settings) // this will set the factory default settings first, which we should do just in case they've been updated since the defaults were set
+    if (Object.keys(customDefaults).length > 0){
+      setSettings(customDefaults,prefs.settings)
+    }
   }
   if (prefs.hasOwnProperty('description')){
     var description = document.createElement('p')
@@ -187,277 +190,22 @@ function setPrefs(prefs){
   updateAppearanceForUnused()
 }
 
-function exampleButton(number=0){
+function exampleButton(number = 0) {
   var exampleText = 'example'
   var functionRef = 'showExample(prefsStore.sample_data)'
   var example = document.createElement('button')
 
-  if (number > 0){
-    exampleText += (' #' + number)
-    functionRef = 'showExample(prefsStore.sample_datas['+(number-1)+'])'
+  if (number > 0) {
+      exampleText += (' #' + number)
+      functionRef = 'showExample(prefsStore.sample_datas[' + (number - 1) + '])'
   }
+
+  example.setAttribute('class', 'exampleBtn')
 
   example.innerHTML = exampleText
   example.setAttribute('onclick', functionRef)
   // example.setAttribute('data-category','all')
-  return example    
-}
-
-function makeInfoHover(info){
-  var infoContainer = document.createElement('div')
-  var infoBox = document.createElement('div')
-  var infoIcon = document.createElement('div')
-  infoContainer.setAttribute('class','infoContainer')
-  infoBox.setAttribute('class','infoBox')
-  infoIcon.setAttribute('class','infoIcon')
-  infoIcon.setAttribute('onmouseover','checkInfoBoxVisibility(this)')
-  infoIcon.innerHTML = 'ℹ︎'
-  infoBox.innerHTML = info
-  infoBox.style.bottom = '100%'
-  infoContainer.appendChild(infoBox)
-  infoContainer.appendChild(infoIcon)  
-  return infoContainer
-}
-
-function checkInfoBoxVisibility(infoIcon){
-  var infoBox = infoIcon.parentElement.children[0]
-  var settingsArea = document.getElementById('settingsArea')  
-
-  infoBox.style = 'bottom: 100%' // return to default position before checking
-
-  var infoBoxPos = infoBox.getBoundingClientRect()
-  var settingsAreaPos = settingsArea.getBoundingClientRect()
-
-  if ((infoBoxPos.right > (settingsAreaPos.right + 20))){ // 20 padding
-    infoBox.style.right = '100%'
-  }
-  infoBoxPos = infoBox.getBoundingClientRect()
-  settingsAreaPos = settingsArea.getBoundingClientRect()
-  console.log('info' + infoBoxPos.top)
-  console.log('settings' + (settingsAreaPos.top-20))
-  if ((infoBoxPos.top > (settingsAreaPos.top - 20))){ // 20 padding
-    infoBox.style.top = '100%'
-    infoBox.style.bottom = null
-  }
-
-}
-
-function makeSettings(settings){
-  var settingsArea =  document.getElementById('settingsArea')
-  var settingEls = new Array();
-  var categories = new Array();
-  // label type options default
-  for (i=0; i<settings.length; i++){
-    newSetting = document.createElement('div')
-    newSetting.setAttribute('class', 'setting')
-    if (settings[i].type == 'text' | settings[i].type == 'number' | settings[i].type == 'checkbox'){
-      newInput = document.createElement('input')
-      newInputLabel = document.createElement('label')
-      newInput.id = 'setting_' + settings[i].type + '_' + settings[i].name
-      newInput.type = settings[i].type
-      newInputLabel.for = 'setting_' + settings[i].type + '_' + settings[i].name
-      newInputLabel.innerHTML = settings[i].label
-      if (settings[i].hasOwnProperty('default')){
-        if (settings[i].type == 'checkbox'){
-          if (settings[i].default){
-            newInput.checked = true
-          } else {
-            newInput.checked = false
-          }
-        } else {
-          newInput.value = settings[i].default
-        }
-      }
-      if (settings[i].type == 'number'){
-        if (settings[i].hasOwnProperty('min')){
-          newInput.min = settings[i].min
-        }
-        if (settings[i].hasOwnProperty('max')){
-          newInput.max = settings[i].max
-        }
-      } else if (settings[i].type == 'text' && settings[i].hasOwnProperty('max')){
-        // max for a text input is interpreted as the maximum amount of text that can be inputted
-        newInput.setAttribute('maxlength',settings[i].max)
-        if (settings[i].max < 10){
-          newInput.setAttribute('size',settings[i].max) // for text fields whose max is much shorter than the normal size of the box, set the size too
-          if (settings[i].max < 4){ // for short text fields, it'll look better if they're centered
-            newInput.style.textAlign = 'center'
-            if (settings[i].max == 1){
-              newInput.setAttribute('onclick','this.select()') // if it's just a single character, clicking on the box should select it
-            }
-        }
-        }
-      }
-      // different order for label and input for checkbox copared to others
-      if (settings[i].type == 'checkbox'){
-        newSetting.appendChild(newInput)
-        newSetting.appendChild(newInputLabel)
-        // settingEls.push(newInput)
-        // settingEls.push(newInputLabel)
-      } else {
-        newSetting.appendChild(newInputLabel)
-        newSetting.appendChild(newInput)
-        // settingEls.push(newInputLabel)
-        // settingEls.push(newInput)
-      }
-      // add info hover icon
-      if (settings[i].hasOwnProperty('info')){
-        newSetting.appendChild(makeInfoHover(settings[i].info))
-      }
-    // selects are a bit different, so we'll make that separately
-    } else if (settings[i].type = 'select'){
-      newSelect = document.createElement('select')
-      newSelect.id = 'setting_' + settings[i].type + '_' + settings[i].name
-      newSelectLabel = document.createElement('label')
-      newSelectLabel.for = 'setting_' + settings[i].type + '_' + settings[i].name
-      newSelectLabel.innerHTML = settings[i].label
-      for (j=0; j<settings[i].options.length; j++){
-        newOption = document.createElement('option')
-        newOption.value = settings[i].options[j]
-        newOption.innerHTML = settings[i].options[j]
-        newSelect.appendChild(newOption)
-      }
-      if (settings[i].hasOwnProperty('default')){
-        newSelect.value = settings[i].default
-      }
-      // // add category (if it has one, otherwise set to "general")
-      // if (settings[i].hasOwnProperty('category')){
-      //  newSelectLabel.setAttribute('data-category',settings[i].category)
-      //  newSelect.setAttribute('data-category',settings[i].category)
-      //  currentCategory = settings[i].category
-      // } else {
-      //   newSelectLabel.setAttribute('data-category','general')
-      //   newSelect.setAttribute('data-category','general')
-      //   currentCategory = 'general'
-      // }
-      // settingEls.push(newSelectLabel)
-      // settingEls.push(newSelect)
-      newSetting.appendChild(newSelectLabel)
-      newSetting.appendChild(newSelect)      
-    }
-    // add category (if it has one, otherwise set to "general")
-    if (settings[i].hasOwnProperty('category')){
-      currentCategory = settings[i].category
-    } else {
-      currentCategory = 'general'
-    }
-    newSetting.setAttribute('data-category',currentCategory)
-    // add category to the list if we don't already have it
-    if (!categories.includes(currentCategory)){
-      categories.push(currentCategory)
-    }
-    // add to setting els array
-    settingEls.push(newSetting)
-    // add a line break with the same category as the element we just added, so it disappears with it when necessary
-    // brEl = document.createElement('br')
-    // brEl.setAttribute('data-category',currentCategory)
-    // settingEls.push(brEl)
-  }
-  // so long as there's more than one category, add the category picker
-  if (categories.length > 1){
-    var categoryPicker = document.createElement('select')
-    categoryPicker.id = 'categoryPicker'
-    categoryPicker.setAttribute('onchange','changeActivitySettingsCategory(this.value)')
-    // add 'all' option for categories
-    allOption = document.createElement('option')
-    allOption.value = 'all'
-    allOption.innerHTML = 'all'
-    categoryPicker.appendChild(allOption)
-    // add all the other categories
-    for (let i = 0; i < categories.length; i++){
-      newOption = document.createElement('option')
-      newOption.value = categories[i]
-      newOption.innerHTML = categories[i]
-      categoryPicker.appendChild(newOption)
-    }    
-    // add it to settings area
-    settingsArea.appendChild(categoryPicker)
-    // brEl = document.createElement('br')
-    // settingsArea.appendChild(brEl)
-  }
-  // add all the settings to the inner div
-  settingsAreaInner = document.createElement('div')
-  settingsAreaInner.id = 'settingsAreaInner'
-  for (i=0; i<settingEls.length; i++){
-    settingsAreaInner.appendChild(settingEls[i])
-  }
-  // add columns if there is more than one setting
-  settingsAreaInner.style.columns = determineColumnSettingsForSettings(settingEls.length)
-  
-  // add all the settings to the main div
-  settingsArea.appendChild(settingsAreaInner)
-  // so long as there was at least one setting, add a little hr
-  if (settingEls.length > 0){
-    var hrule = document.createElement('hr')
-    settingsArea.appendChild(hrule)
-  }    
-  // select the first category (after all), so long as there's more than one
-  if (categories.length > 1){
-    changeActivitySettingsCategory(categories[0])
-    categoryPicker.value = categories[0]
-  }  
-}
-
-function getSettings(settings){ // gets the settngs as they've been set by the user
-  var settingEl
-  var settingsToReturn = {};
-  // var settingItem = {name: '', type: '', value: ''}
-  if (settings != null){
-    for (i=0; i<settings.length; i++){
-      // settingItem.name = settings[i].name
-      // settingItem.type = settings[i].type
-      settingEl = document.getElementById('setting_' + settings[i].type+ '_' + settings[i].name)
-      if (settings[i].type == 'checkbox'){ // for checkboxes
-        if(settingEl.checked){ // set to true or false depending on whether it's checked
-          // settingItem.value = true
-          settingsToReturn[settings[i].name] = true;
-        } else {
-          settingsToReturn[settings[i].name] = false;
-        }
-      } else if (settings[i].type == 'number') {
-        settingsToReturn[settings[i].name] = parseFloat(settingEl.value) // for numbers, parse as number
-      } else { // for everything else, just get its value
-        settingsToReturn[settings[i].name] = settingEl.value
-      }
-      // settingsToReturn.push({ ...settingItem})
-    }
-  }
-  return settingsToReturn
-}
-
-function changeActivitySettingsCategory(category){
-  var settingsAreaInner =  document.getElementById('settingsAreaInner')
-  numSettings = 0
-  for (let i = 0; i<settingsAreaInner.children.length; i++){
-    if(category == 'all' || settingsAreaInner.children[i].getAttribute('data-category') == category || settingsAreaInner.children[i].getAttribute('data-category') == 'all'){
-      settingsAreaInner.children[i].classList.remove('hidden')
-      numSettings++
-    } else {
-      settingsAreaInner.children[i].classList.add('hidden')
-    }
-  }
-  settingsAreaInner.style.columns = determineColumnSettingsForSettings(numSettings)
-}
-
-function determineColumnSettingsForSettings(numSettings){
-  if(numSettings == 1){
-    return '1'
-  } else if (numSettings == 2){
-    return '2 auto'
-  } else {
-    return 'auto 20em'
-  }
-}
-
-function showExample(sampleData){
-  if (!tableIsEmpty()){
-    if (confirm('This will erase all data in the table and replace it with sample data. Are you sure you want to continue?')){
-      clearTable();
-    } else {
-      return
-    }
-  }
-  convertArrayToTableData(sampleData)
+  return example
 }
 
 function checkValidity(){
@@ -552,29 +300,6 @@ function displayValidityInfo(validity){
   // change color of problem cells
 }
 
-function showSettings(){
-  showSettingsButton = document.getElementById("showSettingsButton")
-  settingsArea = document.getElementById("settingsArea")
-  inputBox = document.getElementById("inputBox")
-  if (settingsVisible){
-    showSettingsButton.classList.remove('up')
-    showSettingsButton.classList.add('down')
-    settingsVisible = false
-    settingsArea.style.height = ""
-    inputBox.style.height = ""
-    // settingsArea.style.minHeight = ""
-    settingsArea.style.padding = ""
-  } else {
-    showSettingsButton.classList.remove('down')
-    showSettingsButton.classList.add('up')
-    settingsVisible = true
-    settingsArea.style.height = "220px"
-    settingsArea.style.padding = "20px"
-    inputBox.style.height = "calc(100% - 480px)"
-    // settingsArea.style.minHeight = "100px"
-  }
-}
-
 function exportTypeToggled() {
   var checkboxEl = document.getElementById('scormToggle')
   var packageIDWrapper = document.getElementById('packageIDWrapper');
@@ -600,15 +325,24 @@ function generateID(){
 // Electron stuff:
 
 ipcRenderer.on('loadInput', (event, data) => {
-  dataAsArray = returnJSONorArray(data)
+  var dataAsArray = []
+  if (typeof data == 'object'){
+    dataAsArray = data
+  } else {
+    dataAsArray = returnJSONorArray(data)
+  }  
   convertArrayToTableData(dataAsArray)
 })
 
 ipcRenderer.on('getInputForExport', (event) => { // main.js requests the data
-  sendInputForExport()
+  sendInput('export')
 })
 
-function sendInputForExport(){
+ipcRenderer.on('getInputForSave', (event,path) => { // main.js requests the data
+  sendInput('save',path)
+})
+
+function sendInput(purpose='export',path=''){
   var data = new Object();
   const selector = document.getElementById('activitySlct')
   var activity = selector.value
@@ -630,14 +364,37 @@ function sendInputForExport(){
   data = {input: input, activity: activity, settings: settings, source: source, type: type, packageIdentifier: packageIdentifier}
 
   console.log(data)
-  ipcRenderer.send('sentInputForExport', data)
+  if (purpose == 'export'){
+    ipcRenderer.send('sentInputForExport', data)
+  } else if (purpose == 'save') {
+    ipcRenderer.send('sentInputForSave', data, path)
+  }
+  
 }
 
-ipcRenderer.on('setPrefs', (event, prefs) => {
+ipcRenderer.on('setPrefs', (event, prefs,customDefaults) => {
   if (prefs.hasOwnProperty('error')){
     alert('The hex settings in this activity have not been formatted correctly.\n'+prefs.error)
   } else {
-    setPrefs(prefs)
+    setPrefs(prefs,customDefaults)
+  }
+});
+
+ipcRenderer.on('setActivity', (event, activity, source) => {
+  let selector = document.getElementById('activitySlct')
+  var selectIndex = -1
+  for (let i=0; i< selector.options.length; i++){
+    if (selector.options[i].value == activity && selector.options[i].getAttribute('data-source') == source){
+      selectIndex = i
+      i = selector.options.length // stop looking
+    }
+  }
+  if (selectIndex == -1){
+    window.alert('Activity does not exist.')
+  } else {
+    // let prevIndex = selector.selectedIndex
+    selector.selectedIndex = selectIndex // this will trigger loading the saved activity settings if there are any
+    selectActivity() // not triggered by the change, so we'll trigger it here
   }
 });
 
@@ -678,6 +435,21 @@ ipcRenderer.on('configStore', (event, config) => {
   document.addEventListener("DOMContentLoaded", function(event) { 
     applyAppConfig() 
   });
+})
+
+ipcRenderer.on('getActivitySettingsForProfile', (event) => {
+  let activitySettings = getSettings(prefsStore.settings)
+  const selector = document.getElementById('activitySlct')
+  var activity = selector.value
+  var source = selector.options[selector.selectedIndex].getAttribute('data-source')
+  console.log('sending settings to profile')
+  console.log(activitySettings)
+  ipcRenderer.send('settingsToProfile', activity, source, activitySettings)
+})
+
+ipcRenderer.on('applyActivitySettings', (event, settings) => {
+  console.log(settings)
+  setSettings(settings,prefsStore.settings,false) // later change to false
 })
 
 // ipcRenderer.on('showAdvancedExport', (event) => {
@@ -747,5 +519,9 @@ ipcRenderer.on('loadUserActivities', (event, activities) => {
   });
   loadPrefs()
 });
+
+ipcRenderer.on('requestActivitySettingDefaults', (event) => {
+  setDefaultActivitySettings()
+})
 
 
