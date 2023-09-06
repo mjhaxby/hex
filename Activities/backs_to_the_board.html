@@ -360,10 +360,10 @@
 
   #confettiHolder{ /* stops board from jumping around whenstarting confetti*/
     position: absolute;
-    top: 1; /* putting it at 1 stops it interferring with the controls */
+    top: 1px; /* putting it at 1 stops it interferring with the controls */
     z-index: -1;
-    height: 99%;
-    width: 99%;
+    height: calc(100% - 1px);
+    width: 100%;
     overflow: hidden;
   }
 
@@ -383,7 +383,7 @@
 
     </style>
     <script>
-    // confetti start
+    // confetti start (by Patrik Svensson)
     var retina = window.devicePixelRatio,
 
         // Math shorthands

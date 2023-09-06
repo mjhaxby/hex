@@ -1,6 +1,7 @@
 <!--*HEX SETTINGS START*
   {
     "cols_min":3,
+    "cols_max":17,
     "rows_min":2,
     "cols":["Question","Answer 1","Index 1","Answer 2","Index 2","Answer 3","Index 3","Answer 4","Index 4","Answer 5","Index 5","Answer 6","Index 6","Answer 7","Index 7","Answer 8","Index 8"],
     "description": "Each answer takes you to a new question, indicated here by the index, which refers to the numbers on the left-hand side of the table in hex. You can specifiy winning questions and losing questions. For these, you can leave answers empty if you wish and no button will be displayed, but you may want to use this to allow learners to restart the game.",
@@ -366,14 +367,13 @@
     }
 
     #confettiHolder {
-      /* stops board from jumping around whenstarting confetti*/
       position: absolute;
-      top: 1;
-      /* putting it at 1 stops it interferring with the board */
-      left: 0;
+      top: 1px;
+      /* putting it at 1 stops it interferring with the controls */
       z-index: -1;
       height: calc(100% - 1px);
       width: 100%;
+      overflow: hidden;
     }
 
     #losingHolder {
@@ -432,8 +432,8 @@
 
     .dropletBulb {
       position: absolute;
-      background: rgb(255,154,154);
-      background: radial-gradient(circle at 60% bottom, rgba(255,154,154,1) 0%, rgba(136,8,8,1) 30%);
+      background: rgb(255, 154, 154);
+      background: radial-gradient(circle at 60% bottom, rgba(255, 154, 154, 1) 0%, rgba(136, 8, 8, 1) 30%);
       left: 50%;
       top: 95%;
       width: 40%;
@@ -456,11 +456,11 @@
       transition: all 20s ease-out
     }
 
-    .water{
+    .water {
       height: 100%;
       width: 100%;
-      background: rgba(79,195,247,1);
-      background: linear-gradient(0deg, rgba(30,76,97,1) 0%, rgba(79,195,247,1) 100%);
+      background: rgba(79, 195, 247, 1);
+      background: linear-gradient(0deg, rgba(30, 76, 97, 1) 0%, rgba(79, 195, 247, 1) 100%);
       margin-top: -1px;
     }
 
@@ -479,6 +479,7 @@
       0% {
         transform: translateX(-50%);
       }
+
       100% {
         transform: translateX(0%);
       }
@@ -496,9 +497,9 @@
     function decision(cardNumber) {
       cardNumber-- //cardNumber will always be one higher than it should be on a normal array index
       if (winningCards.includes(cardNumber)) {
-        if (gameSettings.soundsEnabled){
+        if (gameSettings.soundsEnabled) {
           popSound.play();
-          setTimeout(function (){winSound.play()},500)
+          setTimeout(function () { winSound.play() }, 500)
         }
         startConfetti('multi')
       } else {
@@ -510,27 +511,27 @@
         }
 
         if (losingCards.includes(cardNumber)) {
-          if (gameSettings.soundsEnabled){
+          if (gameSettings.soundsEnabled) {
             loseSound.play()
           }
           // cancel timeout if set
-          if (cleanLosingHolder != undefined){
+          if (cleanLosingHolder != undefined) {
             clearTimeout(cleanLosingHolder)
             //clean straight away
             losingHolder.style = null
             losingHolder.innerHTML = ''
-          }          
+          }
           lost = true
           showLosingEffect()
-        // if lost before, gracefully remove evidence of having lost
+          // if lost before, gracefully remove evidence of having lost
         } else if (lost == true) {
           lost = false
           losingHolder = document.getElementById('losingHolder')
           losingHolder.style.opacity = 0;
-          cleanLosingHolder = setTimeout(function(){
+          cleanLosingHolder = setTimeout(function () {
             losingHolder.style = null
             losingHolder.innerHTML = ''
-          },10*500)
+          }, 10 * 500)
         }
 
       }
@@ -559,9 +560,9 @@
     }
 
     // uncentres the gameArea if it's too big to fit in the window, otherwise resets it
-    function checkSize(){
+    function checkSize() {
       document.getElementById('gameArea').style = null;
-      if (document.getElementById('message').scrollHeight > document.body.clientHeight){
+      if (document.getElementById('message').scrollHeight > document.body.clientHeight) {
         document.getElementById('gameArea').style.top = 0
         document.getElementById('gameArea').style.transform = 'translate(-50%)'
       }
@@ -676,103 +677,103 @@
 
     // losing effects
 
-    function showLosingEffect(){
-      if(gameSettings.losingEffect == 'Fade to black'){
+    function showLosingEffect() {
+      if (gameSettings.losingEffect == 'Fade to black') {
         document.getElementById('losingHolder').style.backgroundColor = '#000000'
-      } else if (gameSettings.losingEffect == 'Blood'){
+      } else if (gameSettings.losingEffect == 'Blood') {
         startBloodEffect()
-      } else if (gameSettings.losingEffect == 'Rising water'){
+      } else if (gameSettings.losingEffect == 'Rising water') {
         fillOcean()
       }
     }
 
-    function startBloodEffect(){
-      const position1 = (getRandomInt(80,95)/100)
-      const position2 = (getRandomInt(0,50)/100)
-      const position3 = (getRandomInt(60,70)/100)
-      var droplet = dropDroplet(document.getElementById('losingHolder'), 70, 10, 0.5, (document.body.clientWidth*position1))
-        setTimeout(function (){
-          droplet.style.transition = '30s ease-out'
-          droplet.style.height = document.body.clientHeight
-        },500)
-        setTimeout(function(){
-          var droplet2 = dropDroplet(document.getElementById('losingHolder'), 40, 10, 0.5, (document.body.clientWidth*position2))          
-            setTimeout(function (){
-              droplet2.style.transition = '30s ease-out'
-              droplet2.style.height = document.body.clientHeight*0.8
-            },500)          
-        },5*1000)
-        setTimeout(function(){
-          var droplet3 = dropDroplet(document.getElementById('losingHolder'), 30, 10, 0.5, (document.body.clientWidth*position3))          
-            setTimeout(function (){
-              droplet3.style.transition = '20s ease-out'
-              droplet3.style.height = document.body.clientHeight*0.2
-            },500) 
-        },10*1000)
-    }
-
-    function createDroplet(){
-        var droplet = document.createElement('div')
-        var dropletLine = document.createElement('div')
-        var dropletBulb = document.createElement('div')
-        droplet.setAttribute('class','droplet')
-        dropletLine.setAttribute('class','dropletLine')
-        dropletBulb.setAttribute('class','dropletBulb')
-        droplet.appendChild(dropletLine)
-        droplet.appendChild(dropletBulb)
-        return droplet
-    }
-
-    function dropDroplet(element, width=25, height=100, time=3, origin=0){
-        var newdroplet = createDroplet()
-        newdroplet.style.top = '-' + width + 'px'
-        newdroplet.style.width = '0px'
-        newdroplet.style.height = '0px'
-        newdroplet.style.left = origin + (width/2) + 'px'
-        newdroplet.style.transition = time + 's'
-        element.appendChild(newdroplet,document.body.firstChild)
+    function startBloodEffect() {
+      const position1 = (getRandomInt(80, 95) / 100)
+      const position2 = (getRandomInt(0, 50) / 100)
+      const position3 = (getRandomInt(60, 70) / 100)
+      var droplet = dropDroplet(document.getElementById('losingHolder'), 70, 10, 0.5, (document.body.clientWidth * position1))
+      setTimeout(function () {
+        droplet.style.transition = '30s ease-out'
+        droplet.style.height = document.body.clientHeight
+      }, 500)
+      setTimeout(function () {
+        var droplet2 = dropDroplet(document.getElementById('losingHolder'), 40, 10, 0.5, (document.body.clientWidth * position2))
         setTimeout(function () {
-            newdroplet.style.left = origin + 'px'
-            newdroplet.style.width = width + 'px'
-            newdroplet.style.height = height + 'px'
-        },100)
-        return newdroplet
+          droplet2.style.transition = '30s ease-out'
+          droplet2.style.height = document.body.clientHeight * 0.8
+        }, 500)
+      }, 5 * 1000)
+      setTimeout(function () {
+        var droplet3 = dropDroplet(document.getElementById('losingHolder'), 30, 10, 0.5, (document.body.clientWidth * position3))
+        setTimeout(function () {
+          droplet3.style.transition = '20s ease-out'
+          droplet3.style.height = document.body.clientHeight * 0.2
+        }, 500)
+      }, 10 * 1000)
     }
 
-    function createWave(){
+    function createDroplet() {
+      var droplet = document.createElement('div')
+      var dropletLine = document.createElement('div')
+      var dropletBulb = document.createElement('div')
+      droplet.setAttribute('class', 'droplet')
+      dropletLine.setAttribute('class', 'dropletLine')
+      dropletBulb.setAttribute('class', 'dropletBulb')
+      droplet.appendChild(dropletLine)
+      droplet.appendChild(dropletBulb)
+      return droplet
+    }
+
+    function dropDroplet(element, width = 25, height = 100, time = 3, origin = 0) {
+      var newdroplet = createDroplet()
+      newdroplet.style.top = '-' + width + 'px'
+      newdroplet.style.width = '0px'
+      newdroplet.style.height = '0px'
+      newdroplet.style.left = origin + (width / 2) + 'px'
+      newdroplet.style.transition = time + 's'
+      element.appendChild(newdroplet, document.body.firstChild)
+      setTimeout(function () {
+        newdroplet.style.left = origin + 'px'
+        newdroplet.style.width = width + 'px'
+        newdroplet.style.height = height + 'px'
+      }, 100)
+      return newdroplet
+    }
+
+    function createWave() {
       const SVGstring = '<path d="M9720,320C8100,320,8100,0,6480,0S4860,320,3240,320,1620,0,0,0V1120H12960V0C11340,0,11340,320,9720,320Z"> <animate dur="5s" repeatCount="indefinite" attributeName="d" values=" M9720,320C8100,320,8100,0,6480,0S4860,320,3240,320,1620,0,0,0V1120H12960V0C11340,0,11340,320,9720,320Z; M9720,0C8100,0,8100,319,6480,319S4860,0,3240,0,1620,320,0,320v800H12960V320C11340,320,11340,0,9720,0Z; M9720,320C8100,320,8100,0,6480,0S4860,320,3240,320,1620,0,0,0V1120H12960V0C11340,0,11340,320,9720,320Z"/></path>'
       // var SVGstring = document.getElementById('waveProto').innerHTML
       var wave = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-      wave.setAttribute('viewBox','0 0 12960 1120')
-      wave.setAttribute('class','wave')
-      wave.innerHTML = SVGstring            
+      wave.setAttribute('viewBox', '0 0 12960 1120')
+      wave.setAttribute('class', 'wave')
+      wave.innerHTML = SVGstring
       return wave
     }
 
-    function createWater(){
+    function createWater() {
       var water = document.createElement('div')
-      water.setAttribute('class','water')
+      water.setAttribute('class', 'water')
       return water
     }
 
-    function createOcean(){
+    function createOcean() {
       var ocean = document.createElement('div')
-      ocean.setAttribute('class','ocean')
+      ocean.setAttribute('class', 'ocean')
       var water = createWater()
-      var wave = createWave()      
+      var wave = createWave()
       ocean.appendChild(wave)
       ocean.appendChild(water)
       return ocean
     }
 
     // adapted from: https://codepen.io/elcontraption/pen/NzEooQ
-    function fillOcean(){
+    function fillOcean() {
       var losingHolder = document.getElementById('losingHolder')
       var ocean = createOcean()
       losingHolder.appendChild(ocean)
-      setTimeout(function(){
+      setTimeout(function () {
         ocean.style.top = '0%'
-      },10)   
+      }, 10)
     }
   </script>
 </head>
@@ -786,14 +787,14 @@
     </div>
   </div>
   <div id="confettiHolder"></div>
-  <div id="losingHolder">        
+  <div id="losingHolder">
 
   </div>
 </body>
 <script src="activityController.js"></script>
 <!--This space is for either the activityController (when running in electron) or the game data (after export) -->
 <script>
-  // confetti start
+  // confetti start (by Patrik Svensson)
   var retina = window.devicePixelRatio,
 
     // Math shorthands

@@ -1039,6 +1039,7 @@
     // }
   </script>
   <body>
+    <!-- ADAPTED FROM: -->
       	<!-- <a href="https://mitchum.blog/building-a-crossword-puzzle-generator-with-javascript/">Tutorial</a> |
         <a href="https://github.com/mmaynar1/games/tree/master/crossword-puzzle-generator">Github</a> | -->
     <button id="codeButton" onclick="showHideCode()">⊛</button>
@@ -1116,7 +1117,7 @@
       		column = 0;
       		row++;
       	}
-      }
+      }      
 
     	let attemptToPlaceWordOnGrid = function(grid, word)
     	{
@@ -1124,6 +1125,35 @@
             for (let row = 0; row < gridSize; ++row)
             {
                 for (let column = 0; column < gridSize; ++column)
+                {
+                    word.text = wordItem.text;
+                    word.row = row;
+            				word.column = column;
+            				word.vertical = Math.random() >= 0.5;
+                    word.ref = wordItem.ref
+
+                    if ( grid.isFilled( row, column ) )
+                    {
+                        if ( grid.update( word ) )
+                        {
+                            pushUsedWords( word.text );
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+
+    	}
+
+      // TODO: Experiment with whether going backwards make any difference? Could change between the two functions?
+      // Maybe do half the grids with one and half with the other, then find out which one ends up being bestGrid most often
+      let attemptToPlaceWordOnGridBackwards = function(grid, word)
+    	{
+            let wordItem = getAWordToTry();
+            for (let row = gridSize-1; row >= 0; --row)
+            {
+                for (let column = gridSize-1; column >= 0; --column)
                 {
                     word.text = wordItem.text;
                     word.row = row;
@@ -1244,16 +1274,32 @@
                 pushUsedWords(word.text);
 
                 let continuousFails = 0;
+                let triedRotation = true
                 for (let attempts = 0; attempts < attemptsToFitWords; ++attempts)
                 {
                     let placed = attemptToPlaceWordOnGrid( grid, word );
                     if( placed )
                     {
                         continuousFails = 0;
+                        triedRotation = false
                     }
                     else
                     {
                         continuousFails++;
+                    }
+                    if (continuousFails > 1 && !triedRotation){
+                      // after ten attempts, try rotating the board
+                      console.log('rotation')
+                      rotate(grid.grid)
+                      flip(grid.grid)
+                      rotate(grid.gridRef)
+                      flip(grid.gridRef)
+                      grid.gridRef.forEach(refs => {
+                        refs.forEach(ref =>{
+                          swap(ref,'horizontal','vertical')
+                        })
+                      })
+                      triedRotation = true
                     }
                     if( continuousFails > 470 )
                     {
@@ -1277,7 +1323,7 @@
             {
                 for (let column = 0; column < gridSize+2; ++column)
                 {
-                    let slot = document.getElementById(row + "_" + column);
+                    let slot = document.getElementById(row + "_" + column);                    
                     if( bestGrid.isFilled(row, column))
                     {
                         slot.classList.add('filled')
@@ -1488,6 +1534,37 @@
     {
     	return Math.floor(Math.random() * Math.floor(max));
     }
+    
+    // from: https://code.likeagirl.io/rotate-an-2d-matrix-90-degree-clockwise-without-create-another-array-49209ea8b6e6
+    function rotate(matrix) {
+    const n = matrix.length;
+    const x = Math.floor(n/ 2);
+    const y = n - 1;
+    for (let i = 0; i < x; i++) {
+      for (let j = i; j < y - i; j++) {
+          k = matrix[i][j];
+          matrix[i][j] = matrix[y - j][i];
+          matrix[y - j][i] = matrix[y - i][y - j];
+          matrix[y - i][y - j] = matrix[j][y - i]
+          matrix[j][y - i] = k
+      }
+    }
+  }
+
+  function flip(matrix){
+      for (let i=0; i<matrix.length; i++){
+        matrix[i].reverse()
+      }
+    }
+
+    // swaps two properties
+    // from https://stackoverflow.com/a/45637411
+    function swap(obj, key1, key2) {
+    [obj[key1], obj[key2]] = [obj[key2], obj[key1]];
+  }
+
+
+
   </script>
   <!-- CROSSWORD.JS -->
   <script>

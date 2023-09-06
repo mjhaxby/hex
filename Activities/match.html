@@ -253,7 +253,8 @@
         -webkit-touch-callout: none;
         -webkit-user-select: none;
         -ms-user-select: none;
-        transition: opacity 1s, background-color 1s;
+        /* transition: opacity 1s, background-color 1s; */
+        transition: opacity 1s;
         /* transition: 1s; // not enough to actually animate when adding in a div, what might work is to save where everything is, add in the new div, then temporarily make everything absolute in position and back where it was originally, then transform to the new positions, then remove the absolute positioning */
       }
       .dragable{
@@ -550,10 +551,18 @@
       }
 
       .notransition {
-        -webkit-transition: none !important;
+        /* -webkit-transition: none !important;
         -moz-transition: none !important;
         -o-transition: none !important;
         transition: none !important;
+        -webkit-transition-property: none !important;
+        -moz-transition-property: none !important;
+        -o-transition-property: none !important;
+        transition-property: none !important; */
+        -webkit-transition-duration: 0s !important;
+        -moz-transition-duration: 0s !important;
+        -o-transition-duration: 0s !important;
+        transition-duration: 0s !important;
       }
 
     </style>
@@ -637,6 +646,7 @@
               API.LMSSetValue("cmi.interactions.0.id",'Check presses')
               API.LMSSetValue("cmi.interactions.0.type", 'other')
               API.LMSSetValue("cmi.interactions.0.description", 'Number of times check button pressed')
+              // TO DO: Set this
         
               let suspendData = API.LMSGetValue("cmi.suspend_data")
               if (suspendData!= ""){
@@ -672,8 +682,12 @@
                 API.LMSSetValue("cmi.core.score.max", "100");
                 API.LMSSetValue("cmi.core.score.min", "0");
                 // API.LMSSetValue("cmi.comments","Attempts: "+attempts) // in postProgress()
-                API.LMSSetValue("cmi.core.lesson_status", "passed");
-                if (score >= gameSettings.pass){API.LMSSetValue("cmi.completion_status", "completed");}
+                // API.LMSSetValue("cmi.core.lesson_status", "passed");
+                if (score >= gameSettings.pass){
+                  // to be sure this works
+                  API.LMSSetValue("cmi.core.lesson_status", "completed");
+                  API.LMSSetValue("cmi.completion_status", "completed");
+                }
                 // API.LMSCommit(""); // in postProgress()
               } else {
                 API.LMSSetValue("cmi.core.score.raw", "0");
@@ -700,7 +714,7 @@
         
             function postProgress(matchesAsJSON){
               API.LMSSetValue("cmi.interactions.0.student_response",attempts)
-              newElapsedSeconds = elapsedSeconds + ( (Date.now() - timeSincePageLoad) / 1000 );
+              newElapsedSeconds = elapsedSeconds + ( (Date.now() - timeOfPageLoad) / 1000 );
               // var formattedTime = formatSecondsForLMS(newElapsedSeconds);
               API.LMSSetValue('cmi.core.session_time',formatSecondsForSCORM(newElapsedSeconds))
               // possible to add support for older scorm pages here, using the other function
@@ -773,7 +787,7 @@
       var staticContainer
       var attempts
       var matches = []
-      const timeSincePageLoad = Date.now() 
+      const timeOfPageLoad = Date.now() 
       var elapsedSeconds = 0
       var sideModeOn = false
       var shrunkCardContainer = false
@@ -797,10 +811,10 @@
         // now we can safely shuffle the cards and fill our lists
         shuffleArray(dragableList)
         addCards(staticList)
-        addCards(dragableList,true)
-        cement(cardContainer)
+        addCards(dragableList,true)        
         if (gameSettings.scorm){doLMSInitialize()}
         applySettings();
+        cement(cardContainer)
         window.addEventListener('resize', function(event){
           resetCardContainer()
         });
@@ -1500,7 +1514,7 @@
             hash |= 0; // Convert to 32bit integer
           }
           return hash;
-        }
+        }      
 
       function getRandomInt(min, max) {
         min = Math.ceil(min);
@@ -1536,8 +1550,8 @@
 
     </script>
   </head>
-  <body>
-    <div class="wrapper" id="mainWrapper" style="width: 100%">
+  <body class="notransition">
+    <div class="wrapper notransition" id="mainWrapper" style="width: 100%">
       <div class="wrapper notransition" id="cardWrapper"> <!-- no transition will be removed after settings are applied-->
         <div id="shrinker" class="horizontalBar">
           <div id="shrinkIcon" class="triangle-down top-left" onclick="shrinkCardContainer()"></div>
@@ -1552,7 +1566,7 @@
           </div>
                  
         </div>
-        <div id="cardContainer" class="container"></div>
+        <div id="cardContainer" class="container notransition"></div>
       </div>
       <div class="wrapper notransition" id="staticWrapper"> <!-- no transition will be removed after settings are applied-->
         <div id="staticContainer" class="container"></div>
