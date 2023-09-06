@@ -1,0 +1,49 @@
+<html>    
+    <head>
+        <meta charset="UTF-8">
+        <link rel="preconnect" href="https://fonts.googleapis.com"> 
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> 
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Share+Tech&display=swap" rel="stylesheet">
+        <link type="text/css" rel="stylesheet" href="documentation.css"> 
+        <link type="text/css" rel="stylesheet" href="contents.css">    
+        <script src="contents-builder.js"></script>
+        <script>
+            // var apiLink = document.createElement("link");
+            // var staticLink = document.createElement("link");
+            // var fontLink = document.createElement("link");
+            // var cssLink = document.createElement("link");
+
+            // apiLink.rel = "preconnect"
+            // apiLink.href = "https://fonts.gstatic.com"
+            
+            // staticLink.rel = "preconnect"
+            // staticLink.href = "https://fonts.gstatic.com"
+            // staticLink.crossOrigin = true
+
+            // fontLink.rel = "stylesheet"
+            // fontLink.href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Share+Tech&display=swap"
+
+            // cssLink.href = "documentation.css"; 
+            // cssLink.rel = "stylesheet"; 
+            // cssLink.type = "text/css"; 
+            
+            function pageLoad(){
+                // frames['documentation'].document.head.appendChild(apiLink);
+                // frames['documentation'].document.head.appendChild(staticLink);
+                // frames['documentation'].document.head.appendChild(fontLink);
+                // frames['documentation'].document.head.appendChild(cssLink);
+                documentationWrapper = document.getElementById('documentationWrapper')
+                documentationWrapper.innerHTML = frames['documentation'].document.body.innerHTML
+                const contents = buildContents(documentationWrapper)
+                documentationWrapper.insertBefore(contents,documentationWrapper.children[1])
+                enableMoveToSide(contents)
+            }
+
+        </script>            
+
+    </head>
+    <body onload="pageLoad()">
+        <div id="documentationWrapper"></div>
+        <iframe name="documentation" id="documentation" src="documentation.html"></iframe>
+    </body>
+</html>

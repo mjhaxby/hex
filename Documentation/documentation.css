@@ -1,0 +1,65 @@
+:root {
+    --bg-color: #F2F3EB;
+    --contents-bg-color: #ddded7;
+    --fg-color: #000000;
+}
+
+body{
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    background-color: var(--bg-color);
+}
+
+h1, h2, h3, h4, h5, h6{
+    font-family: 'Share Tech', sans-serif;
+}
+
+h1{
+    font-size: 3em;
+}
+
+h2{
+    font-size: 2em;
+}
+
+h3{
+    font-size: 1.5em;
+}
+
+h4{
+    font-size: 1.3em;
+}
+
+h5{
+    font-size: 1.2em;
+}
+
+a{
+    font-weight: 500;
+    text-decoration: none;
+    color: inherit;
+}
+
+a:hover{
+    text-decoration: underline;
+}
+
+/* iframe#documentation{
+    margin: auto;
+    width: 100%;
+    height: 100%;
+    max-width: 900px;
+    border: none;
+} */
+
+iframe#documentation{
+    display: none;
+}
+
+#documentationWrapper{
+    margin: auto;
+    width: 90%;
+    max-width: 900px;
+    height: 100%;
+    /* overflow: hidden; */
+}

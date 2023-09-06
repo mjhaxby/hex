@@ -1,0 +1,133 @@
+
+.contents{
+    /* border: 1px solid var(--fg-color); */
+    background-color: var(--contents-bg-color);
+    padding: 2em;
+    width: 600px;
+    overflow: scroll;
+    transition: 1s;
+    left: 5%;
+    line-height: 125%;
+}
+
+.contentsDummy{
+    display: block;
+    background-color: var(--contents-bg-color);
+    width: 500%;
+    margin-left: -100%;
+}
+
+/* .contentsDummy.sideMode{
+    display: block;
+} */
+
+.moveable{
+    position: fixed;
+}
+
+/* .side{    
+    
+}*/
+
+.side:hover{
+    left: 0 !important;
+} 
+
+.contentsHeader{
+    font-weight: 600;
+    /* margin-left: 6px; */
+}
+
+.contentsHeader.level3{
+    font-weight: 500;
+}
+
+.contentsHeader.level4{
+    font-weight: 400;
+    font-size: 0.9em;
+}
+.contentsHeader.level5{
+    font-weight: 400;
+    font-size: 0.8em;
+}
+
+.contentsHeader.level6{
+    font-weight: 400;
+    font-size: 0.6em;
+}
+
+.contentsSub{
+    margin-left: 10px;
+    transition: max-height .5s, transform .5s;
+    transform-origin: top;
+}
+
+.openButton{
+    font-size: 0.75em;
+    opacity: 0.5;
+    display: inline-block;
+    margin-left: -16px;
+    margin-right: 5px;
+    cursor: pointer;
+    transition: .5s;
+}
+
+.openButton:hover{
+    opacity: 1;
+}
+
+.closed{
+    max-height: 0;
+    overflow: hidden;
+    transform: scaleY(0);    
+}
+
+.open{
+    max-height: 5000px;
+}
+
+.arrow {
+    border: solid black;
+    border-width: 0 2px 2px 0;
+    display: inline-block;
+    padding: 4px;
+  }
+  
+  .arrow.right {
+    transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+  }
+  
+  .arrow.left {
+    transform: rotate(135deg);
+    -webkit-transform: rotate(135deg);
+  }
+  
+  .arrow.up {
+    transform: translateY(2px) rotate(-135deg);
+    -webkit-transform:  translateY(2px) rotate(-135deg);
+  }
+  
+  .arrow.down {
+    transform: translateY(-2px) rotate(45deg);
+    -webkit-transform: translateY(-2px) rotate(45deg);
+  }
+
+  .indicator{
+    border: solid var(--bg-color);
+    border-width: 0 4px 4px 0;
+    padding: 8px;
+    float: right;
+    opacity: 0;
+    transition: 0.5s;
+    margin-right: -0.9em;
+  }
+
+  .side .indicator{
+    opacity: 1;
+  }
+
+  .side:hover .indicator{
+    transform: rotate(135deg);
+    -webkit-transform: rotate(135deg);
+  }

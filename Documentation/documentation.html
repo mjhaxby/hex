@@ -1,0 +1,393 @@
+<!DOCTYPE html><head><meta charset="utf-8"/></head><h1>hex documentation</h1>
+<h2>Installation</h2>
+<p><strong>hex</strong> is available as a .dmg for Mac and .exe for Windows. Download the installation file for your computer, open and follow the instructions.
+There’s no build for Linux distributions yet, but you’re welcome to build it yourself from the source files.</p>
+<h2>Usage</h2>
+<h3>Activity selector</h3>
+<p>Select the activity you wish to create. This will automatically add the number of required columns (and remove any unnecessary blank ones).</p>
+<h3>Table editor</h3>
+<p>The easiest way to use <strong>hex</strong> is to paste in lists of words/phrases/definitions/etc. from another application. It must be tabbed data (rows on a new line, columns separated by tabs). But most applications that use tables (including Microsoft Word and Excel) will copy and paste as tabbed data without having to do anything special. Then, click on the first cell (or any cell below) and press Ctrl+V / Cmd+V, or right-click and select <strong>Paste</strong>.</p>
+<p>You can also enter data and edit it directly within <strong>hex</strong>. The plus/minus buttons (which appear when hovering over a column header or row number) allow you to add and remove columns and rows (also alt+tab to add a column, alt+shift+tab to remove it). The ↔︎ icon lets you swap data between two columns, which is useful when making several activities where the column headers won’t necessarily correspond. Click on a row number or column header to select that row or column. Hold down shift to select multiple sequentially, or ctrl/command to select multiple out of sequence.</p>
+<p>Columns that are greyed out are still editable, but won’t be used for the currently selected activity.</p>
+<p>Some activities have optional columns. When this is the case, the heading will be in parentheses. These columns will not necessarily show automatically, you may need to add them yourselves. Some activities accept an infinite amount of optional columns (e.g. Falling Words).</p>
+<h4>Exporting the table</h4>
+<p>To save your table somewhere else: Tools → Export table as tabbed text / Export table as JSON.</p>
+<h3>Activity settings</h3>
+<p>Open the activity settings drawer to adjust any available settings for the selected activity. As a minimum, each activity should have an “about” section which will explain how the activity works, and an “example” button, which will fill in the table with some sample data. This way, if you’re not sure how an activity works, you can run it straight away with the example data and try it out yourself before putting in your own data.</p>
+<p>Other settings may include, color options, sound controls, difficulty levels and options to custom certain labels in activities (which is useful if you don’t want your activity to be in English). More details in the Activities section.</p>
+<p>It is not (yet!) possible to change the defaults for activity settings. This will be reset every time you re-open the app or when you change activity.</p>
+<h3>Run</h3>
+<p>Clicking on <strong>Run</strong> will open the selected activity in a new window, using the data from the table and the activity settings. You can reset any activity with the shortcut Ctrl+R or Cmd+R on a Mac. If you make any changes to the data in the table, you will need to close the activity window and press run again to see these changes in the activity. This means that you can run as many activities as you like with the same or with different sets of data.</p>
+<p>You can also export the activity from the menu while running it.</p>
+<p>See the section <a href="#Errors-on-run-or-export">Errors on run or export</a> for any errors.</p>
+<h3>Export</h3>
+<p>Clicking on <strong>Export</strong> will open a dialog to save an HTML page. This page will open in any modern browser and allow you to run this activity any time. You can also upload this page to a website or add to a Moodle page (see the section <a href="#Adding-to-Moodle">Adding to Moodle</a>.</p>
+<p>The exported file contains everything the activity needs to run, including styles, scripts, fonts and images. This is not typical for an HTML page (normally the best practice is to store components separately. However, this makes it much simpler to manage activities and add them to other websites or LMS (Learning Management System). Very large <strong>hex</strong> activities may take a long time to load and the application has not been tested with datasets of more than about 200 rows.</p>
+<h4>Exporting SCORM</h4>
+<p>You can also export SCORM packages for some activities. You will need to first show the advance export options (<strong>View</strong> → <strong>Advanced export options</strong>). You can then switch from HTML to SCORM. When exporting, you will be able to save a ZIP file (the format used for SCORM packages).</p>
+<p>SCORM packages have a unique identifier to be distinguished by the LMS (Learning Management System, such as Moodle).<br />
+If you want to be able to update your package earlier, you should keep a copy of the automatically generated identifier. This appears in the <strong>id</strong> box and is also shown when exporting. When producing a new version of the same SCORM package, you should paste the identifier in the <strong>id</strong> box. If you export with a new identifier, the LMS will consider this a new package and learner information associated with this package may be lost. You can also use whatever you want as an identifier (“banana” for example would work, though it is recommended to have something a bit more unique). However, you should not reuse the same identifier for two packages on the same course, as the LMS will not be able to distinguish them.</p>
+<p>If you’re worried about accidentally generated two identifiers that are the same: don’t. When you export without an identifier or click on the dice button <strong>hex</strong> makes a UUID. Wikipedia has this to say about UUIDs:</p>
+<blockquote>
+<p>Only after generating 1 billion UUIDs every second for the next 100 years, the probability of creating just one duplicate would be about 50%. Or, to put it another way, the probability of one duplicate would be about 50% if every person on earth owned 600 million UUIDs.</p>
+</blockquote>
+<p>The SCORM packages generated by <strong>hex</strong> typically provide a score between 0 and 100 (essentially a percentage) and also try to save progress if a user exits an activity before finishing it. It also saves some interactions so you can get an idea of what a learner actually did in the activity and how long they spent doing it. This makes it much more appropriate for tracking learning. However, please bear in mind that SCORM packages are not appropriate for testing, especially without surveillance. Both <strong>hex</strong> activities and the SCORM API use Javascript, which can be manipulated relatively easily in any browser by opening the Javascript console.</p>
+<p>At the moment, exporting as SCORM is only available for the <strong>Match</strong> and <strong>Blockbusters</strong> activities, the latter still being slightly experimental.</p>
+<h4><a name="Adding-to-Moodle">Adding to Moodle</a></h4>
+<p>In edit mode, simply drag and drop the exported file onto the Moodle page where you want the activity. For a SCORM package, you will need to select this from the pop up. Alternatively, click the <strong>Add a new activity or resource</strong> button, select either File or SCORM package and then upload the <strong>hex</strong> activity.</p>
+<p>You may want to adjust the Appearance settings after upload. I would recommend changing <strong>Display</strong> to <strong>New window</strong> for most activities, but you may want to do <strong>Embed</strong> or <strong>In frame</strong> for some smaller activities to make it easier for students to navigate around your page.</p>
+<h3><a name="Errors-on-run-or-export">Errors on run or export</a></h3>
+<h4>[Activity] requires X row(s) and you only have Y row(s)</h4>
+<p>You have no entered enough data for this activity to run. You will need to add some more rows to the bottom.</p>
+<h4>[Activity] requires X columns(s) and you only have Y column(s)</h4>
+<p>You have not filled in all the required columns. Optional columns are in brackets.</p>
+<h4>[Activity] does not allow empty cells and you have X empty cell(s)</h4>
+<p>You have left some cells empty. These should be highlighted in red. Check to see if you have an empty rows in the middle and delete them.</p>
+<h3>Activities</h3>
+<h4>Anagram</h4>
+<p>This activity shuffles the letters of the answers to create anagram puzzles. You can have as many puzzles as you like, but it’s a good idea to do fewer than twelve. You an optionally give a clue (you can think of this as the question that the learner needs to find the answer to).</p>
+<p>Anagram will try to avoid creating anagrams containing potentially offensive words in English and in French. However, please be aware that it will not refuse to create an anagram if it fails to generate a non-offensive one.</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Color.</strong> There are a number of color themes to choose from.</li>
+</ul>
+<h5>Examples</h5>
+<ul>
+<li>British foods.</li>
+</ul>
+<h4>Backs to the board</h4>
+<p>This activity is for use in class, probably with the whole group. The class is split into two teams. A team leader is elected from each. They stand at the front, either side of the teacher with their backs to the boards. The teacher will probably want to face the board or else sit on a swivel chair so they can quickly look round. A list of words will be shown on the board and the two teams must explain (in the target language only!) the words to their own team leader <em>simultaneously</em>. This is not a game where the two teams take it in turns, so it can get a little noisy. When the team leader knows a word, they say in quietly to the teacher, who will tick it off from their side. When a team has found all the words, they win. The team leader can then be changed.</p>
+<p>Of course, there is a risk that the team leader will hear a clue intended for the other team. However, in reality, this is rarely an issue, as they are usually focused on their own team.</p>
+<p>In someone <em>does</em> try to cheat (saying the word in their own language, telling the team leader the word, the team leader looking at the board…), there is a penalty button. This will add another word from the list.</p>
+<p>Some variations are possible. For example, miming instead of explaining words, the whole class explaining to both leaders (who are in competition), one explainer for each team (change after each word)…</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Color.</strong> There are a number of color themes to choose from.</li>
+<li><strong>Show penalty buttons</strong>. You can hide these if you’d prefer to keep things simple.</li>
+<li><strong>Sounds</strong>. Sound effects can be disabled.</li>
+</ul>
+<h5>Examples</h5>
+<ul>
+<li>Basic verbs.</li>
+</ul>
+<h4>Blockbusters</h4>
+<p>This activity can work as a whole class in teams or with individuals on their own devices (though a mobile phone screen is a little too small). This is an old gameshow concept. The first team must try to connect the left-hand side to the right-hand side. The second team must connect the top to the bottom. They can choose any free hexagon in any order. The first team has further to go, but they get to start, which makes it more-or-less fair. In order to win a hexagon, they must answer a question. A clue for the answer is given in each hexagon (the initials). When they think they know the answer, click on <strong>Show answer</strong>, then <strong>Correct</strong> or <strong>Wrong</strong> depending on what they had said. It’s usually a good idea to play at least one game as a whole class first, otherwise students can mistakenly think that this is a true/false exercise and don’t realise they need to supply their own answer before looking at the correct one.</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Color</strong>. There are a number of color themes to choose from.</li>
+<li><strong>Sounds</strong>. Sound effects can be disabled.</li>
+<li><strong>Show clues</strong>. To make it harder, the initials of the answer can be hidden.</li>
+<li><strong>Wrong answer behaviour</strong>. In the default setting, when a team answers incorrectly, the opposing team automatically gets their hexagon, which sometimes causes them to win. The alternative option is to remove that hexagon from the game and no one can win it. This can make the game go on much longer.</li>
+<li><strong>Team builder</strong>. Show a screen at the beginning to write the names of the team mates. These will be shown at the bottom of the screen during their corresponding turns. This is mostly intended for SCORM packages (for which it is always enabled).</li>
+<li><strong>New game button</strong>. Customise the wording.</li>
+<li><strong>Start game button</strong>. Customise the wording.</li>
+<li><strong>Show answer button</strong>. Customise the wording.</li>
+<li><strong>Correct button</strong>. Customise the wording.</li>
+<li><strong>Wrong button</strong>. Customise the wording.</li>
+</ul>
+<h5>Examples</h5>
+<ul>
+<li>European capitals.</li>
+<li>Jobs.</li>
+<li>Comic book Superheroes.</li>
+</ul>
+<h4>Crack the code</h4>
+<p>Letters in the answer are replaced with a random emoji. To find the answers, the letter each emoji represents must be supplied. Optionally, a clue can be given (this could be the definition or a translation of the word). This works best with short lists of words, since a long list will reveal all the answers before reaching the end.</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Color</strong>. There are a number of color themes to choose from.</li>
+<li><strong>Difficulty</strong>. Easy – 5 letters are given. Medium – 3 letters are given. Hard – no letters are given.</li>
+</ul>
+<h5>Examples</h5>
+<ul>
+<li>Fruit.</li>
+</ul>
+<h4>Crossword</h4>
+<p>Create a crossword puzzle from the answers and clues. In most cases, not all will be provided, a better puzzles are usually generated by supplying a longer list of possible answers and clues. Every time the activity is loaded, a new puzzle will be generated. However, you can reuse the same puzzle again by clicking on the button in the top-right corner and copying the game code into the activity settings. This will force the activity to create the same puzzle every time.</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Color</strong>. There are a number of color themes to choose from.</li>
+<li><strong>Grid size</strong>. You can make larger and smaller crossword puzzles. However, unless you have very long words, this is actually not very likely to change the outcome of the algorithm that generates the puzzles.</li>
+<li><strong>Pre-fill answers</strong>. See the answers in the grid. This is useful while trying to generate a particularly good puzzle.</li>
+<li><strong>Game code</strong>. Copy the code from the activity to always reproduce the same puzzle.</li>
+<li><strong>Show game code button</strong>. You can hide the game code button, for example if you think it might cause curious students to waste time.</li>
+</ul>
+<h5>Examples</h5>
+<ul>
+<li>Education</li>
+</ul>
+<h4>Decisions</h4>
+<p>This activity creates a simple create-your-own-adventure type game. It’s quite different from most of the other activities in <strong>hex</strong>, but somewhat similar to <strong>treasure hunt</strong>. Each question is shown individually, with one-eight answer options  underneath. Clicking on an answer will take the learner to the question referenced by the index (the index is shown in hex by the numbers on the left-hand side). These sorts of games can be complex to map out, so it will be a good idea to plan this in a tree diagram before attempting to make it in hex.</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Color</strong>. There are a number of color themes to choose from.</li>
+<li><strong>Winning indices</strong>. Specify which index or which indices should show confetti. You can write your own winning message for the Question on these indices. The answer button is not optional, but you can simply put “Try again?” and give 1 as the index.</li>
+<li><strong>Losing indices</strong>. Specify which index or which indices should show the losing animation. You can write your own game over message for the Question on these indices. The answer button is not optional, but you can simply put “Try again?” and give 1 as the index.</li>
+<li><strong>Losing effect</strong>. The animation that will play when arriving at a losing index. To disable, simply do not specify any losing indices.</li>
+<li><strong>Sounds</strong>. Sound effects can be disabled.</li>
+</ul>
+<h5>Examples</h5>
+<ul>
+<li>A single-question win-or-lose game.</li>
+</ul>
+<h4>Drill</h4>
+<p>An activity for individual use to start learning vocabulary. In default mode, each piece of vocabulary passes through the following stages: listen and repeat (back-drilling), read and rewrite (back-drilling), read and rewrite, say the world aloud from memory, rewrite from memory. For each item at each stage, the learner can decide to move on to the next step (so long as they have fulfilled the criteria for completion) or review the item again, in which case they will go back up to two stages. Back-drilling happens automatically for phrases; the final word is presented first, following by the final two words and so on until the whole phrase has been built. For words, back-drilling will be used when the words are split up by the activity creator (by default using <strong>/</strong>). The activity uses the speech synthesis of the device it is run on, therefore the appropriate languages must be installed by the learner for this to work correctly. In the fourth column, you can override how the speech synthesis pronounced a word by writing it in whatever way obligates the speech synthesis to say it correctly. To provide a speech synthesis for individual parts, put this in [square brackets], with the same separators as in the Word/Phrase column.</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Word separator</strong>. Choose the character to separate longer words into shorter ones.</li>
+<li><strong>Language for speech synthesis</strong>. The language to offer voices from when running the activity. For some languages, you can choose both the overall language or a dialect. Bear in mind that not all devices will have all languages available. The quality of voices may vary from device to device and depending on the version of the users’ operating system.</li>
+</ul>
+<h5>Examples</h5>
+<ul>
+<li>Debate language (French to English).</li>
+<li>Basic English words.</li>
+</ul>
+<h4>Falling words</h4>
+<p>Questions fall from the top of the screen, the learner must find the answer before they reach the bottom or collides with another question. When the pile of questions reaches the top, the game is over. Both typing and multiple choice modes. Alternative answers can be provided in columns 3 onwards. At the end of the game, learners can click on the fallen questions to see the answer at the bottom of the screen.</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Color</strong>. There are a number of color themes to choose from.</li>
+<li><strong>Shuffle</strong>. When disabled, questions will drop in the order given.</li>
+<li><strong>Sounds</strong>. Sound effects can be disabled.</li>
+<li><strong>Mode</strong>. Typing or multiple-choice. In typing mode, learners can give as many guesses as they can before the word reaches the bottom or the top of the pile. In multiple-choice mode, they only have one guess, after which the question will immediately drop to the bottom.</li>
+<li><strong>In multiple choice mode, maintain the same options every time a question reappears</strong>. When enabled, this will always show the same possible answers in the same order for each falling word. Wrong answers will be selected according to their similarity with the correct answer. The range of answers may not be the same from game-to-game. Always enabled if there four or fewer possible answers.</li>
+<li><strong>Difficulty</strong>. Choose between Very easy, Easy, Medium, Hard, Ultra and Impossible. This varies the speed at which questions fall and the relief time between each question.</li>
+<li><strong>Required similarity to accept answer (%)</strong>. Typing mode only. Difference between submitted answer and all possible correct answers. If the words are sufficiently similar, the answer will be accepted, but with a difference message and sound.</li>
+<li><strong>Loop</strong>. Forever, Missed words first, Missed words only, Off. In order for the player to be able to complete the game, select <strong>Missed words only</strong> or <strong>Off</strong>.</li>
+<li><strong>Guess button</strong>. Customise the wording.</li>
+<li><strong>Correct answer message</strong>. Customise the wording.</li>
+<li><strong>Acceptable answer message</strong>. Customise the wording.</li>
+<li><strong>Incorrect answer message</strong>. Customise the wording.</li>
+<li><strong>Start instruction</strong>. Customise the wording.</li>
+<li><strong>Winning message</strong>. Customise the wording.</li>
+<li><strong>Losing message</strong>. Customise the wording.</li>
+<li><strong>Abandon game confirmation</strong>. Customise the wording.</li>
+<li><strong>Reset button</strong>. Customise the wording.</li>
+<li><strong>Show answers instruction</strong>. Customise the wording.</li>
+</ul>
+<h5>Examples</h5>
+<ul>
+<li>Animals.</li>
+<li>French departments.</li>
+<li>Dependent prepositions. (Try this one in multiple choice mode!)</li>
+</ul>
+<h4>Four in a row</h4>
+<p>An activity for a whole class in two teams or two students at a shared device (tablet or computer preferably). The two teams take it in turns to drop a counter in a column, which they earn by answering a question correctly. The first team to have four counters of their color in a row (vertically, horizontally or diagonally) wins. There is a <strong>faith</strong> mode (learners answer the question before revealing the answer to see if they had it correct) and a <strong>typing</strong> mode, where the correct answer must be entered. Alternative answers can be provided for use in typing mode only.</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Color</strong>. There are a number of color themes to choose from.</li>
+<li><strong>Sounds</strong>. Sound effects can be disabled.</li>
+<li><strong>Mode</strong>. Faith (learners answer question aloud and then click to see the answer and report whether they are correct) or typing (answers must be typed in).</li>
+<li><strong>Required similarity to accept answer (%)</strong>. Typing mode only. Difference between submitted answer and all possible correct answers. If the words are sufficiently similar, the answer will be accepted, but with a difference message and sound.</li>
+<li><strong>Rows</strong>. The number of rows high for the board. Minimum 4, default 9.</li>
+<li><strong>Columns</strong>. The number of columns wide for the board. Minimum 4, default 9.</li>
+<li><strong>Show question preview</strong>. By default, the questions are visible in the space where they need to be answered to earn the counter.</li>
+<li><strong>Show team builder</strong>. Show a screen at the beginning to write the names of the team mates. These will be shown at the bottom of the screen during their corresponding turns. This is mostly intended for SCORM packages (for which it is always enabled).</li>
+<li><strong>New game button</strong>. Customise the wording.</li>
+<li><strong>Start game button</strong>. Customise the wording.</li>
+<li><strong>OK button</strong>. Customise the wording.</li>
+<li><strong>Show answer button</strong>. Customise the wording.</li>
+<li><strong>Correct button</strong>. Customise the wording.</li>
+<li><strong>Wrong button</strong>. Customise the wording.</li>
+</ul>
+<h5>Examples</h5>
+<ul>
+<li>Common Kanji (meanings in English).</li>
+<li>German adjective endings.</li>
+</ul>
+<h4>Match</h4>
+<p>Match a prompt to and answer by dragging and dropping. It is possible to have a prompt with no answer or an answer with no prompt (i.e. a trap) by leaving one column blank. Twelve prompts or fewer will be shown in a list, whereas longer lists will be displayed in-line for more compact viewing.</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Color</strong>. There are a number of color themes to choose from.</li>
+<li><strong>Font size (%)</strong>. Increase or decrease the font size compared to the default.</li>
+<li><strong>Default view mode</strong>. Top And Bottom or Side-By-Side. In the default mode, the bank of answers is shown at the top of the screen. In Side-By-Side mode the words are shown on the side and remain there even as the user scrolls down.</li>
+<li><strong>Allow user to switch view mode</strong>. When enabled, the learner can choose between Top And Bottom or Side-By-Side.</li>
+<li><strong>Allow user to sort drawable cards alphabetically</strong>. The cards in the bank are shown shuffled by default. However, by default the learner can re-order them alphabetically. Note that, if the activity detects that this would place the answers in the same order as their corresponding prompt, this option will be hidden.</li>
+<li><strong>Allow user to shuffle cards again</strong>. By default, learners can reshuffle the answers in the answer bank.</li>
+<li><strong>Check button</strong>. Customise the wording.</li>
+<li><strong>Completion % (scorm only)</strong>. The percentage of correct answers for the activity to be recorded as completed in the LMS. Has no effect when using the activity in <strong>run</strong> mode or when exported as HTML.</li>
+</ul>
+<h5>Examples</h5>
+<ul>
+<li>British demonyms.</li>
+</ul>
+<h4>Treasure hunt</h4>
+<p>Each question is displayed individually. To progress to the next question, the learner must type in the answer. The number of words and characters to type in is shown (if an alternative answer is provided, this is given as a range).</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Color</strong>. There are a number of color themes to choose from.</li>
+<li><strong>Case sensitive</strong>. By default, it doesn’t matter whether learners use upper or lower case. Enable this option to enforce checking of the case as well.</li>
+<li><strong>Required similarity to accept answer (%)</strong>. Difference between submitted answer and all possible correct answers. If the words are sufficiently similar, the answer will be accepted, but with a different message.</li>
+<li><strong>Instruction</strong>. Customise the wording. In this option, use the wildcards to represent numbers and to form plurals. <strong>%w</strong> stands for the number of words, <strong>%c</strong> stands for the number of characters. <strong>%s[]</strong> is used to signal a plural ending, by default %s[s]. The character(s) in brackets will be shown when the last number in the string is above one. For example, the default “Enter %w word%s[s] (%c character%s[s]).“ will be rendered something like “Enter 1 word (10 characters).” for a single word answer of 10 characters.</li>
+<li><strong>Guess button label</strong>. Customise the wording.</li>
+<li><strong>Correct answer message</strong>. Customise the wording.</li>
+<li><strong>Acceptable answer message</strong>. Customise the wording.</li>
+<li><strong>Incorrect answer message</strong>. Customise the wording.</li>
+<li><strong>Winning message</strong>. Customise the wording. This is shown when the last question is answered.</li>
+</ul>
+<h5>Examples</h5>
+<ul>
+<li>Find three fruits.</li>
+</ul>
+<h4>Custom activities</h4>
+<p>See the section on making activities.</p>
+<h2>Custom activity templates</h2>
+<h3>Prerequisites for creating a hex activity</h3>
+<p>You should know how to use HTML, CSS and Javascript (all the elements of a simple interactive website). However, even with only a basic knowledge of these, you can create a simple activity. There are plenty of resources online support forums and even AI assistants to help learn how to make a webpage. It’s a really handy skill to have so I recommend having a go. All of the existing <strong>hex</strong> activities have been made by a complete non-professional (I’m a foreign language teacher), so really anyone can do it.</p>
+<h3>Structure of a hex activity file</h3>
+<p>A hex activity file begins with <code>&lt;!--*HEX SETTINGS START*</code>, then a JSON representation of its settings, which is followed by <code>*HEX SETTINGS END*--&gt;</code>. The wording of these two pseudo-tags is important as <strong>hex</strong> looks specifically for these to find the configuration for the activity.</p>
+<p>Here follows an example:</p>
+<pre><code>&lt;!--*HEX SETTINGS START*
+  {
+    &quot;cols_min&quot;:2,
+    &quot;cols_max&quot;:2,
+    &quot;rows_min&quot;:4,
+    &quot;cols&quot;:[&quot;Prompt&quot;,&quot;Answer&quot;],
+    &quot;scorm_support&quot;:false,
+    &quot;description&quot;: &quot;Describe your activity.&quot;,
+    &quot;settings&quot;:[
+    {&quot;name&quot;:&quot;color&quot;,&quot;label&quot;:&quot;Color&quot;,&quot;type&quot;:&quot;select&quot;,&quot;options&quot;:[&quot;Default&quot;,&quot;Swedish furniture company&quot;,&quot;Black and white&quot;,&quot;Magnet&quot;,&quot;Rexby&quot;,&quot;Blorange&quot;],&quot;category&quot;:&quot;look and feel&quot;},
+    {&quot;name&quot;:&quot;soundsEnabled&quot;,&quot;label&quot;:&quot;Sounds&quot;,&quot;type&quot;:&quot;checkbox&quot;,&quot;default&quot;:true,&quot;category&quot;:&quot;look and feel&quot;},
+    {&quot;name&quot;:&quot;fontSize&quot;,&quot;label&quot;:&quot;Font size (%)&quot;,&quot;type&quot;:&quot;number&quot;,&quot;default&quot;:100,&quot;max&quot;:500,&quot;category&quot;:&quot;look and feel&quot;},
+    {&quot;name&quot;:&quot;text_newGame&quot;, &quot;label&quot;:&quot;New game button&quot;,&quot;type&quot;:&quot;text&quot;,&quot;default&quot;:&quot;New game&quot;,&quot;category&quot;:&quot;language&quot;},
+    {&quot;name&quot;:&quot;text_startGame&quot;, &quot;label&quot;:&quot;Start game button&quot;, &quot;type&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Start game&quot;,&quot;category&quot;:&quot;language&quot;},
+    {&quot;name&quot;:&quot;text_showAnswer&quot;, &quot;label&quot;:&quot;Show answer button&quot;,&quot;type&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Show answer&quot;,&quot;category&quot;:&quot;language&quot;},
+    {&quot;name&quot;:&quot;text_correct&quot;, &quot;label&quot;:&quot;Correct button&quot;,&quot;type&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Correct&quot;,&quot;category&quot;:&quot;language&quot;},
+    {&quot;name&quot;:&quot;text_wrong&quot;, &quot;label&quot;:&quot;Wrong button&quot;,&quot;type&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Wrong&quot;,&quot;category&quot;:&quot;language&quot;}    
+    ],
+    &quot;sample_data&quot;: [
+            [&quot;Albania&quot;,&quot;Tirana&quot;],
+            [&quot;Andorra&quot;,&quot;Andorra la Vella&quot;],
+            [&quot;Austria&quot;,&quot;Vienna&quot;],
+            [&quot;Belarus&quot;,&quot;Minsk&quot;],
+            [&quot;Belgium&quot;,&quot;Brussels&quot;],
+            [&quot;Bosnia and Herzegovina&quot;,&quot;Sarajevo&quot;],
+            [&quot;Bulgaria&quot;,&quot;Sofia&quot;],
+            [&quot;Croatia&quot;,&quot;Zagreb&quot;],
+            [&quot;Czechia&quot;,&quot;Prague&quot;],
+            [&quot;Denmark&quot;,&quot;Copenhagen&quot;],
+            [&quot;Estonia&quot;,&quot;Tallinn&quot;],
+            [&quot;Finland&quot;,&quot;Helsinki&quot;],
+            [&quot;France&quot;,&quot;Paris&quot;],
+            [&quot;Germany&quot;,&quot;Berlin&quot;],
+            [&quot;Greece&quot;,&quot;Athens&quot;],
+            [&quot;Hungary&quot;,&quot;Budapest&quot;],
+            [&quot;Iceland&quot;,&quot;Reykjavik&quot;],
+            [&quot;Ireland&quot;,&quot;Dublin&quot;],
+            [&quot;Italy&quot;,&quot;Rome&quot;],
+            [&quot;Latvia&quot;,&quot;Riga&quot;],
+            [&quot;Liechtenstein&quot;,&quot;Vaduz&quot;],
+            [&quot;Lithuania&quot;,&quot;Vilnius&quot;],
+            [&quot;Luxembourg&quot;,&quot;Luxembourg&quot;],
+            [&quot;Malta&quot;,&quot;Valletta&quot;],
+            [&quot;Moldova&quot;,&quot;Chisinau&quot;],
+            [&quot;Monaco&quot;,&quot;Monaco&quot;],
+            [&quot;Montenegro&quot;,&quot;Podgorica&quot;],
+            [&quot;Netherlands&quot;,&quot;Amsterdam&quot;],
+            [&quot;North Macedonia&quot;,&quot;Skopje&quot;],
+            [&quot;Norway&quot;,&quot;Oslo&quot;],
+            [&quot;Poland&quot;,&quot;Warsaw&quot;],
+            [&quot;Portugal&quot;,&quot;Lisbon&quot;],
+            [&quot;Romania&quot;,&quot;Bucharest&quot;],
+            [&quot;Russia&quot;,&quot;Moscow&quot;],
+            [&quot;San Marino&quot;,&quot;San Marino&quot;],
+            [&quot;Serbia&quot;,&quot;Belgrade&quot;],
+            [&quot;Slovakia&quot;,&quot;Bratislava&quot;],
+            [&quot;Slovenia&quot;,&quot;Ljubljana&quot;],
+            [&quot;Spain&quot;,&quot;Madrid&quot;],
+            [&quot;Sweden&quot;,&quot;Stockholm&quot;],
+            [&quot;Switzerland&quot;,&quot;Bern&quot;],
+            [&quot;Ukraine&quot;,&quot;Kiev&quot;],
+            [&quot;United Kingdom&quot;,&quot;London&quot;]
+           ]
+        ]
+  }
+*HEX SETTINGS END*--&gt;
+</code></pre>
+<p>Here are the possibility parameters. Apart from the column names, they are all optional.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Explanation</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cols_min</td>
+<td>The minimum number of columns.</td>
+<td></td>
+</tr>
+<tr>
+<td>cols_max</td>
+<td>The maximum number of columns.</td>
+<td>Recommended, unless the last column name can be repeated.</td>
+</tr>
+<tr>
+<td>rows_min</td>
+<td>The minimum number of rows.</td>
+<td>Recommended.</td>
+</tr>
+<tr>
+<td>rows_max</td>
+<td>The maximum number of rows.</td>
+<td></td>
+</tr>
+<tr>
+<td>cols</td>
+<td>The names for the columns, expressed as a JSON array. Optional columns will be determined by cols_min and cols_max. If there is no cols_max, it is recommended to add <code>&quot;====&quot;</code> as the last column name. This will repeat the previous column name for every column thereafter.</td>
+<td></td>
+</tr>
+<tr>
+<td>scorm_support</td>
+<td>Signal to <strong>hex</strong> whether the activity has been built to interface with an LMS</td>
+<td>Default: false</td>
+</tr>
+<tr>
+<td>empty_cells_allowed</td>
+<td>When set to true, empty cells within the range of the minimum rows and columns will not prevent the user running or exporting the activity.</td>
+<td>Default: false</td>
+</tr>
+<tr>
+<td>settings</td>
+<td>The activity settings as a JSON object. See <a href="#activity-settings">activity settings</a></td>
+<td></td>
+</tr>
+<tr>
+<td>sample_data</td>
+<td>Data to fill in for the example, expressed a JSON array.</td>
+<td>Overrides sample_datas if present.</td>
+</tr>
+<tr>
+<td>samaple_datas</td>
+<td>Data for multiple examples, expressed as a JSON array of arrays.</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>All javascript, HTML and CS must be contained within the same file. The file should not use any external scripts, fonts or images. For the latter two, these can be embedded using base64.</p>
+<p>A function called <code>pageLoad</code>, taking no arguments, should be used for any javascript code that runs when the DOM is loaded, but this should not be called in the page itself. When <strong>hex</strong> runs or exports this activity, it will add its own call to this function. If there is no code to be loaded, this function should be included anyway. <strong>hex</strong> will add two global arrays: <code>gameData</code> and <code>gameSettings</code>. <code>gameData</code> is a 2D array of the data from the table, where the first level represents rows and the second represents columns. <code>gameSettings</code> is an object containing the activity settings as set by the user. Its properties are named according the activity setting names set in the activity file. Below is an example of wha the <code>pageLoad</code> function might look like.</p>
+<pre><code>function pageLoad(){
+    console.log(gameData)
+    console.log(gameSettings)
+    doSomethingWith(gameData)
+    if(gameSettings.soundsEnabled){
+        checkSoundsAndStart()
+    else {
+        startGame()
+    }
+}
+</code></pre>
+<p>Finally, the activity file much include the following script. For simplicity, it’s easiest to include this at the top or at the bottom of the page.</p>
+<p><code>&lt;script src=&quot;activityController.js&quot;&gt;&lt;/script&gt;</code></p>
+<p>When running an activity, this passes the <code>gameData</code> and <code>gameSettings</code> to the activity. When exporting, this is replaced with that same data.</p>
+<h3><a name="activity-settings">Activity settings</a></h3>
+<p>No activity settings should be named <strong>scorm</strong>, as this is reserved for SCORM packages.</p>
+<h3>Adding SCORM support</h3>
+<p><strong>Coming soon.</strong></p>
+<h3>Good practice</h3>
+<p><strong>Coming soon.</strong></p>
+<h3>Using your own activities in hex</h3>
+<p><strong>Coming soon.</strong></p>
