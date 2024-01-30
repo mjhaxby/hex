@@ -7,8 +7,14 @@
     "description":"Two teams of learners, each with one or more leader who stands backs to the board. Learners must explain to their leader(s) the words on the board and get them all before the other team. If they cheat, you can add penalties (they have to guess extra words).",
     "settings":[
       {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Swedish furniture company","Liberty"]},
+      {"name":"shuffle","label":"Shuffle", "type":"checkbox", "default":true},
+      {"name":"reshuffle","label":"Re-use words between games", "type":"checkbox", "default":false,"info":"When disabled, words will not reappear in future games unless all of the words have been used. When enabled, the game is fully reset each time, so words from the previous game can reappear."},
       {"name":"penaltyEnabled","label":"Show penalty buttons", "type":"checkbox", "default":true,"info":"Shows buttons that, when clicked, add an extra word/phrase for that team only to complete in order to win."},
-      {"name":"soundsEnabled","label":"Sounds","type":"checkbox","default":true}
+      {"name":"soundsEnabled","label":"Sounds","type":"checkbox","default":true},
+      {"name":"text_words","label":"Words","type":"text","default":"Words","category":"Language"},
+      {"name":"text_start","label":"Start game","type":"text","default":"Start game","category":"Language"},
+      {"name":"text_restart","label":"Restart game","type":"text","default":"Restart game","category":"Language"},
+      {"name":"text_penalty","label":"Penalty word","type":"text","default":"Penalty word","category":"Language"}
     ],
     "sample_data":[["run"],["sing"],["walk"],["jump"],["laugh"],["draw"],["scream"],["eat"],["drink"],["leave"],["speak"]]
   }
@@ -804,7 +810,9 @@
 // confetti end
     </script>
     <script charset="utf-8">
-      var shuffledProblems = new Array();
+      var unusedProblems = new Array();
+      var problemsInCurrentGame = new Array();
+      var problemsInLastGame = new Array();
       var gameStarted = false;
       var gameOver = false;
       var numProblems = 1;
@@ -869,13 +877,20 @@
       }
 
       function updateNumProblems(num){
+        if (num > gameData.length){
+          num = gameData.length
+          document.getElementById('numProblems').value = num
+        } else if (num < 1){
+          num = 1
+          document.getElementById('numProblems').value = num
+        }
         let increaseBy = num - numProblems
         numProblems = num
         if (gameStarted){
           if (increaseBy > 0){
             // don't add extra if there are too many (this might be the case if we've added penalties)
             if (gameArea.children.length < gameData.length){
-              addProblems(shuffledProblems, increaseBy)
+              addProblems(increaseBy)
             }
           } else if (increaseBy < 0){
             let decreaseBy = increaseBy * -1
@@ -909,7 +924,7 @@
             penaltyLeft--
             penaltyRight--
           } else {
-            addProblems(shuffledProblems, 1, side)
+            addProblems(1, side)
           }
         } else if(side == 'right'){
           penaltyRight++
@@ -923,7 +938,7 @@
             penaltyLeft--
             penaltyRight--
           } else {
-            addProblems(shuffledProblems, 1, side)
+            addProblems(1, side)
           }
         }
         if (numProblems + penaltyLeft >= gameData.length){
@@ -945,15 +960,28 @@
         }
       }
 
-      function addProblems(array, numToShow, side = 'both'){
+      function addProblems(numToShow, side = 'both'){
         for (i=0;i<numToShow;i++){
           // if (side == 'both'){
           //   penalty = 0
           // } else {
           //   penalty = 1
           // }
-          // use the count of gameArea's children to find data and label the new elements because there might alrrady be some
-          newEl = problemDiv(array[gameArea.children.length],gameArea.children.length, side)
+          // use the count of gameArea's children to find data and label the new elements because there might already be some
+          if (unusedProblems.length == 0){
+            if (gameSettings.shuffle){
+              unusedProblems = shuffleArray(gameData)
+              if (problemsInLastGame.length < gameData.length){ // unless we used all the problems last game
+                unusedProblems.moveToEnd(problemsInLastGame) // avoid the problems we saw last game (if there was one)
+              }            
+              unusedProblems.moveToEnd(problemsInCurrentGame) // even more importantly, avoid the problems from this game!
+            } else {
+              unusedProblems.push(...gameData)
+            }            
+          }
+          let newEl = problemDiv(unusedProblems[0],gameArea.children.length, side)
+          problemsInCurrentGame.push(unusedProblems[0])
+          unusedProblems = unusedProblems.slice(1)          
           gameArea.appendChild(newEl)
         }
       }
@@ -1012,12 +1040,16 @@
         gameOver = false
         gameArea.innerHTML = ''
         penaltyLeft = 0
-        penaltyRight = 0
-        shuffledProblems = shuffleArray(gameData)
-        addProblems(shuffledProblems, numProblems)
+        penaltyRight = 0        
+        if (gameSettings.shuffle && gameSettings.reshuffle){
+            unusedProblems = shuffleArray(gameData)                    
+        }                
+        problemsInLastGame = shuffleArray(problemsInCurrentGame) // we'll shuffle this, so that if these words DO reappear, it will at least not be in a predictable order
+        problemsInCurrentGame = []
+        addProblems(numProblems)
         if (!gameStarted){
           gameStarted = true
-          document.getElementById('start').innerHTML = 'Restart game'
+          document.getElementById('start').innerHTML = gameSettings.text_restart
           if (numProblems < gameData.length){
             penaltyLeftBtn.disabled = false
             penaltyRightBtn.disabled = false
@@ -1030,6 +1062,49 @@
         document.getElementById('person_right').classList.remove('won')
         document.getElementById('person_right').style = null
       }
+
+      // function moveArrayItems(){
+      //   // let indicesToMove = []
+      //   // if (problemsInLastGame.length <= gameData.length){ // if we didn't use all the words last game
+      //   //   for (let i = 0; i < unusedProblems.length; i++){
+      //   //     if (problemsInLastGame.includes(unusedProblems[i])){ // if we played this one last game
+      //   //       indicesToMove.push(i) // make a note of it
+      //   //     }
+      //   //   }
+      //   // }
+      //   // for (let i = indicesToMove.length-1; i >= 0; i--){ // moving backwards, so that the indices moved aren't affected
+
+      //   // }
+
+
+      //   // Remove items from their current positions
+      //   if (problemsInLastGame.length <= gameData.length){ // if we didn't use all the words last game
+
+      //   problemsInLastGame.forEach(problem => {
+      //         const index = unusedProblems.indexOf(problem);
+      //         if (index !== -1) {
+      //             unusedProblems.splice(index, 1);
+      //         }
+      //     });
+
+      //     // Add the items to the end of the array
+      //     unusedProblems.push(...problemsInLastGame);
+      //   }
+      // }
+
+      Array.prototype.moveToEnd = function (itemsToMove) {
+            // Remove items from their current positions
+            itemsToMove.forEach(item => {
+                const index = this.indexOf(item);
+                if (index !== -1) {
+                  this.splice(index, 1);
+                }
+            });
+
+            // Add the items to the end of the array
+            this.push(...itemsToMove);
+            return this
+        }
 
       function shuffleArray(array){
         for (let i = array.length-1; i > 0; i--){
@@ -1082,6 +1157,15 @@
           penaltyLeftBtn.style.display = 'none'
           penaltyRightBtn.style.display = 'none'
         }
+        if (gameSettings.shuffle){
+          unusedProblems = shuffleArray(gameData)
+        }
+        // apply language settings
+        document.getElementById('wordsLabel').innerHTML = gameSettings.text_words
+        document.getElementById('start').innerHTML = gameSettings.text_start
+        document.getElementById('penaltyLeft').innerHTML = gameSettings.text_penalty
+        document.getElementById('penaltyRight').innerHTML = gameSettings.text_penalty
+
         checkSoundsAndStart()
       }
 
@@ -1185,7 +1269,7 @@
     </div>
     <div id="topControls">
       <div class="control">
-        <div class="labelControl">Words:</div>
+        <div class="labelControl"><span id="wordsLabel">Words</span>:</div>
         <input id="numProblems" type="number" onchange="updateNumProblems(parseInt(this.value))" min=1 value=1>
       </div>
       <button id="start" onclick="start()" disabled>Start game</button>

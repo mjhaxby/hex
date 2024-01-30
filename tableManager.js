@@ -677,62 +677,64 @@ function inputCellKey(e, row, col){
   var charPos = e.target.selectionStart;
   var strLength = e.target.value.length;
   var colToChoose = 1;
-  if (e.key == 'Backspace' || e.key == 'Delete'){
-    rowEl = document.getElementById('row_'+row)
-    allBlank = true
-    for (let i=1; i<rowEl.children.length-1; i++){ // check all except last col (where plus button is)
-      if (rowEl.children[i].children[0].value != ''){
-        allBlank = false
+  if (!e.isComposing){　// don't do anything if we're composing (e.g in Japanese)
+    if (e.key == 'Backspace' || e.key == 'Delete'){
+      rowEl = document.getElementById('row_'+row)
+      allBlank = true
+      for (let i=1; i<rowEl.children.length-1; i++){ // check all except last col (where plus button is)
+        if (rowEl.children[i].children[0].value != ''){
+          allBlank = false
+        }
       }
-    }
-    if (allBlank){
+      if (allBlank){
+        e.preventDefault();
+        deleteRow(row)
+      }
+    } else if (e.key == 'Enter' || e.key == 'ArrowDown' || (e.key == 'Tab' && row == numRows && col == numCols)){ // tab only when in the last cell
       e.preventDefault();
-      deleteRow(row)
-    }
-  } else if (e.key == 'Enter' || e.key == 'ArrowDown' || (e.key == 'Tab' && row == numRows && col == numCols)){ // tab only when in the last cell
-    e.preventDefault();
-    if (row < numRows){
-      if (e.key == 'Enter' || e.key == 'Tab'){
-        colToChoose = 1 // always go back to first col with enter or tab
+      if (row < numRows){
+        if (e.key == 'Enter' || e.key == 'Tab'){
+          colToChoose = 1 // always go back to first col with enter or tab
+        } else {
+          colToChoose = col
+        }
+        newFocusId = 'inputCell_'+(row+1)+'_'+colToChoose
+        newFocus = document.getElementById(newFocusId)
+        newFocus.focus()
+      } else if (e.key == 'Enter' || e.key == 'Tab') {
+        addRow(row+1) // add row after
+        newFocusId = 'inputCell_'+(row+1)+'_1' // always go back to first col with enter
+        newFocus = document.getElementById(newFocusId)
+        newFocus.focus()
+      }
+    } else if (e.key == 'ArrowUp' && row > 1){
+        newFocusId = 'inputCell_'+(row-1)+'_'+col
+        newFocus = document.getElementById(newFocusId)
+        newFocus.focus()
+    } else if (e.key == 'ArrowLeft' && col > 1 && charPos == 0){
+        e.preventDefault();
+        newFocusId = 'inputCell_'+row+'_'+(col-1)
+        newFocus = document.getElementById(newFocusId)
+        newFocus.focus()
+    } else if (e.key == 'ArrowRight' && col < numCols && charPos == strLength) {
+        e.preventDefault();
+        newFocusId = 'inputCell_'+row+'_'+(col+1)
+        newFocus = document.getElementById(newFocusId)
+        newFocus.focus()
+    } else if (e.key == 'Tab' && e.getModifierState('Alt')){
+      e.preventDefault();
+      if (e.getModifierState('Shift')){
+        deleteCol(col) // only if empty??
+        newFocusId = 'inputCell_'+row+'_'+(col-1)
+        newFocus = document.getElementById(newFocusId)
+        newFocus.focus()
       } else {
-        colToChoose = col
+        addCol(col+1)
+        newFocusId = 'inputCell_'+row+'_'+(col+1)
+        // console.log(newFocusId)
+        newFocus = document.getElementById(newFocusId)
+        newFocus.focus()
       }
-      newFocusId = 'inputCell_'+(row+1)+'_'+colToChoose
-      newFocus = document.getElementById(newFocusId)
-      newFocus.focus()
-    } else if (e.key == 'Enter' || e.key == 'Tab') {
-      addRow(row+1) // add row after
-      newFocusId = 'inputCell_'+(row+1)+'_1' // always go back to first col with enter
-      newFocus = document.getElementById(newFocusId)
-      newFocus.focus()
-    }
-  } else if (e.key == 'ArrowUp' && row > 1){
-      newFocusId = 'inputCell_'+(row-1)+'_'+col
-      newFocus = document.getElementById(newFocusId)
-      newFocus.focus()
-  } else if (e.key == 'ArrowLeft' && col > 1 && charPos == 0){
-      e.preventDefault();
-      newFocusId = 'inputCell_'+row+'_'+(col-1)
-      newFocus = document.getElementById(newFocusId)
-      newFocus.focus()
-  } else if (e.key == 'ArrowRight' && col < numCols && charPos == strLength) {
-      e.preventDefault();
-      newFocusId = 'inputCell_'+row+'_'+(col+1)
-      newFocus = document.getElementById(newFocusId)
-      newFocus.focus()
-  } else if (e.key == 'Tab' && e.getModifierState('Alt')){
-    e.preventDefault();
-    if (e.getModifierState('Shift')){
-      deleteCol(col) // only if empty??
-      newFocusId = 'inputCell_'+row+'_'+(col-1)
-      newFocus = document.getElementById(newFocusId)
-      newFocus.focus()
-    } else {
-      addCol(col+1)
-      newFocusId = 'inputCell_'+row+'_'+(col+1)
-      // console.log(newFocusId)
-      newFocus = document.getElementById(newFocusId)
-      newFocus.focus()
     }
   }
 }

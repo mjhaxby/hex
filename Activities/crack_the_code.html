@@ -7,7 +7,9 @@
     "description":"Work out which emoji represents which letter to find the words.",
     "settings":[
       {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait"]},
-      {"name":"difficulty","label":"Difficulty","type":"select","options":["Easy","Medium","Hard"],"info":"Will reveal more or fewer letters."}
+      {"name":"difficulty","label":"Difficulty","type":"select","options":["Easy","Medium","Hard"],"info":"Will reveal more or fewer letters."},
+      {"name":"numQs","label":"Questions limit","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to show a a limited number of questions randomly. Set to 0 to show all (not shuffled)."},
+      {"name":"text_check","label":"Check button label","type":"text","default":"check"}
     ],
     "sample_data":[["banana","a yellow fruit"],
       ["apple","makes a nice pie"],
@@ -1089,7 +1091,14 @@
         } else {
           emojis = emojiC
         }
+        document.getElementById('checkBtn').innerHTML = gameSettings.text_check        
         makeEmojiRef()
+        if (gameSettings.numQs > 0){
+          gameData = shuffleArray(gameData)
+          if (gameSettings.numQs <= gameData.length){
+            gameData = gameData.splice(gameSettings.numQs)
+          }
+        }
         // setTimeout(function(){
           makeCipher()
           makeDictionary(gameData)
@@ -1162,7 +1171,7 @@
     <div id="phrases">
     </div>
     <br>
-    <button class="noprint" onclick="markSolved()">check</button>
+    <button id="checkBtn" class="noprint" onclick="markSolved()">check</button>
     <br>
     <div class="odometer noprint" id="points"></div>
     <div id="footer">Symbols designed by <a href="https://openmoji.org/">OpenMoji</a> License: <a href="https://creativecommons.org/licenses/by-sa/4.0/#">CC BY-SA 4.0</a></div>

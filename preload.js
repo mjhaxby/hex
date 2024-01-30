@@ -33,7 +33,8 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'updateProfile',
       'applyActivityProfile',
       'saveProfile',
-      'checkProfileChangesThen'
+      'checkProfileChangesThen',
+      'hotPotsReady'
     ];
 
     if (validChannels.includes(channel)) {
@@ -60,6 +61,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'loadSettings',
       'requestActivitySettingDefaults',
       'loadProfile',
+      'loadData',
       'getActivitySettingsForProfile',
       'addToProfile',
       'applyActivitySettings',

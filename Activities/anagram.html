@@ -6,7 +6,9 @@
     "cols":["Answer","Clue"],
     "description":"Solve the anagrams.",
     "settings":[
-      {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait"]}
+      {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait"]},
+      {"name":"numQs","label":"Questions limit","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to show a a limited number of questions randomly. Set to 0 to show all (not shuffled)."},
+      {"name":"text_check","label":"Check button label","type":"text","default":"check"}
     ],
     "sample_data":[["fish and chips","served in newspaper with ketchup"],["bangers and mash","sausages with mashed potato"],["full english breakfast","bacon, eggs, beans, toast… first thing in the morning!"],["sunday roast","on the last day of the week, with roast vegetables, meat and gravy"],["yorkshire pudding","this isn't sweet, but it is like a puffy pancake that you can eat with gravy"],["toad-in-the-hole","sausages in yorkshire pudding"],["shepherd’s pie","lamb with mashed potato on top, baked in the oven"],["welsh rarebit","melted cheesy sauce on toasted bread"]]
   }
@@ -252,7 +254,7 @@
 
       input[type='text'] {
         font-family: "ShareTechMono", Courier New Bold;
-        \* background: none; *\
+        /* background: none; */
         border: none;
         font-weight: 400;
         letter-spacing: 0.1em;
@@ -393,7 +395,12 @@
         if (gameSettings.color.toLowerCase() != 'default'){
           setColorTheme(gameSettings.color.toLowerCase())
         }
-        for (let i=0; i<gameData.length; i++){
+        document.getElementById('checkBtn').innerHTML = gameSettings.text_check
+        let numProblems = (gameSettings.numQs > 0) ? gameSettings.numQs : gameData.length;
+        if (gameSettings.numQs > 0){
+          gameData = shuffleArray(gameData)
+        }
+        for (let i=0; i<numProblems && i<gameData.length; i++){
           if (gameData[i].length == 1 || gameData[i][1] == ''){
             dictionary.push({wordNum: i, phrase: gameData[i][0], split: []})
           } else if (gameData[i].length == 2 && gameData[i][1] != ''){
@@ -490,25 +497,33 @@
       }
 
       function splitWords(phrase){
-        let phraseAsArray = phrase.split('')
+        
+        let splitCompRegex = /[\s,.?/:;"“”\\{}()\[\]!£\$%*…«»？！、。「」¡¿≥≤<>~]/g // previously /[^\w]/g but this didn't account for special characters
         // get any character that's not a letter
-        let splitComponents = phrase.match(/[^\w]/g); // TO DO: account for accents
-        if (splitComponents != null){
-          var words = []
-          var wordSoFar = ''
-          // check each character against our list of possible splitters (mostly will be space) and make a new array of individual words
-          phraseAsArray.forEach(character =>{
-            if (splitComponents.includes(character)){ // splitter?
-              words.push(wordSoFar) // add the word so far to the list
-              wordSoFar = '' // start a new word
-            } else {
-              wordSoFar += character // not a splitter? OK, add the character to the word so far
-            }
-          })
-          words.push(wordSoFar) // add the last word
-        } else {
-          words = [phrase]
-        }
+        let splitComponents = phrase.match(splitCompRegex);
+
+        let words = phrase.split(splitCompRegex)
+
+        // OLD VERSION
+        // let phraseAsArray = phrase.split('')
+        // if (splitComponents != null){
+        //   var words = []
+        //   var wordSoFar = ''
+        //   // check each character against our list of possible splitters (mostly will be space) and make a new array of individual words
+        //   phraseAsArray.forEach(character =>{
+        //     if (splitComponents.includes(character)){ // splitter?
+        //       words.push(wordSoFar) // add the word so far to the list
+        //       wordSoFar = '' // start a new word
+        //     } else {
+        //       wordSoFar += character // not a splitter? OK, add the character to the word so far
+        //     }
+        //   })
+        //   words.push(wordSoFar) // add the last word
+        // } else {
+        //   words = [phrase]
+        // }
+
+
         return {words: words, components: splitComponents}
       }
 
@@ -659,7 +674,7 @@
     <div id="phrases">
     </div>
     <br>
-    <button class="noprint" onclick="markSolved()">check</button>
+    <button id="checkBtn" class="noprint" onclick="markSolved()">check</button>
     <br>
     <div class="odometer noprint" id="points"></div>
   </body>

@@ -1,20 +1,20 @@
 Arguments: 
-  /opt/homebrew/Cellar/node/18.6.0/bin/node /opt/homebrew/Cellar/yarn/1.22.19/libexec/bin/yarn.js app:dist
+  /opt/homebrew/Cellar/node/19.2.0/bin/node /opt/homebrew/Cellar/yarn/1.22.19/libexec/bin/yarn.js app:dist -wm
 
 PATH: 
-  /opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/TeX/texbin:/Library/Apple/usr/bin
+  /opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/TeX/texbin:/Library/Apple/usr/bin
 
 Yarn version: 
   1.22.19
 
 Node version: 
-  18.6.0
+  19.2.0
 
 Platform: 
   darwin arm64
 
 Trace: 
-  SyntaxError: /Users/morgan/Dropbox/Dev/Electron/Hex/package.json: Unexpected token t in JSON at position 789
+  SyntaxError: /Users/morgan/Dropbox/Dev/Electron/Hex/package.json: Expected ',' or '}' after property value in JSON at position 754
       at JSON.parse (<anonymous>)
       at /opt/homebrew/Cellar/yarn/1.22.19/libexec/lib/cli.js:1629:59
       at Generator.next (<anonymous>)
@@ -24,7 +24,7 @@ Trace:
 npm manifest: 
   {
     "name": "hex",
-    "version": "1.0.0",
+    "version": "2.1.1",
     "description": "Learning activity creator.",
     "main": "main.js",
     "scripts": {
@@ -33,13 +33,14 @@ npm manifest:
     },
     "repository": {
       "type": "git",
-      "url": "mjh-source"
+      "url": "mjhaxby/hex"
     },
     "keywords": [
       "language",
       "learning"
     ],
-    "author": "Morgan Haxby",
+    "author": "Morgan Haxby <info@mjhaxby.fr> (http://www.mjhaxby.fr)",
+    "homepage": "https://github.com/mjhaxby/hex",
     "license": "ISC",
     "devDependencies": {
       "electron": "^19.0.1",
@@ -52,18 +53,20 @@ npm manifest:
       }
     },
     "dependencies": {
-      "electron-default-menu": "^1.0.2"
+      "electron-default-menu": "^1.0.2",
+      "update-electron-app": "^2.0.1"b
     },
     "build": {
       "appId": "com.mjhaxby.hex",
       "mac": {
         "category": "public.app-category.education",
         "icon": "buildResources/icon.icns",
-        target: {
-          target: 'default',
-          arch: [
-            'x64',
-            'arm64'
+        "target": {
+          "target": "default",
+          "arch": [
+            "x64",
+            "arm64",
+            "universal"
           ]
         }
       },
@@ -71,13 +74,28 @@ npm manifest:
         "icon": "buildResources/icon.png",
         "target": [
           {
-             "target": "nsis",
-               "arch": [
-                 "x64",
-                 "ia32"
-                ]
-           }
-         ]
+            "target": "nsis",
+            "arch": [
+              "x64",
+              "ia32"
+            ]
+          }
+        ]
+      },
+      "linux": {
+        "desktop": {
+          "StartupNotify": "false",
+          "Encoding": "UTF-8",
+          "MimeType": "x-scheme-handler/deeplink"
+        },
+        "target": [
+          "AppImage",
+          "rpm",
+          "deb"
+        ]
+      },
+      "deb": {
+        "priority": "optional"
       }
     }
   }
@@ -848,6 +866,11 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/electron-default-menu/-/electron-default-menu-1.0.2.tgz#a652144703ddaf6fa8043a62f91855e422e1005e"
     integrity sha512-YAL/UNR3kPG58wOOlmDpTG3i6+bzwhHx6NllIOaLuVrU7uYifeYGGdk5IH2Hap4wVEx2YTA8cqQ2PGSplYwDWQ==
   
+  electron-is-dev@^0.3.0:
+    version "0.3.0"
+    resolved "https://registry.yarnpkg.com/electron-is-dev/-/electron-is-dev-0.3.0.tgz#14e6fda5c68e9e4ecbeff9ccf037cbd7c05c5afe"
+    integrity sha512-jLttuuq8QK67n3mXmIe9pkrO7IH3LGIk12xJkhTmc852U2sCJaRAOpRGPSh+1Xnzck5v9escd9YXzuze9nGejg==
+  
   electron-notarize@^1.1.1:
     version "1.2.1"
     resolved "https://registry.yarnpkg.com/electron-notarize/-/electron-notarize-1.2.1.tgz#347c18eca8e29dddadadee511b870c13d4008baf"
@@ -1179,6 +1202,13 @@ Lockfile:
     dependencies:
       pump "^3.0.0"
   
+  github-url-to-object@^4.0.4:
+    version "4.0.6"
+    resolved "https://registry.yarnpkg.com/github-url-to-object/-/github-url-to-object-4.0.6.tgz#5ea8701dc8c336b8d582dc3fa5bf964165c3b365"
+    integrity sha512-NaqbYHMUAlPcmWFdrAB7bcxrNIiiJWJe8s/2+iOc9vlcHlwHqSGrPk+Yi3nu6ebTwgsZEa7igz+NH2vEq3gYwQ==
+    dependencies:
+      is-url "^1.1.0"
+  
   glob@^7.1.3, glob@^7.1.6:
     version "7.2.3"
     resolved "https://registry.yarnpkg.com/glob/-/glob-7.2.3.tgz#b8df0fb802bbfa8e89bd1d938b4e16578ed44f2b"
@@ -1433,6 +1463,11 @@ Lockfile:
     version "1.0.0"
     resolved "https://registry.yarnpkg.com/is-typedarray/-/is-typedarray-1.0.0.tgz#e479c80858df0c1b11ddda6940f96011fcda4a9a"
     integrity sha512-cyA56iCMHAh5CdzjJIa4aohJyeO1YbwLi3Jc35MmRU6poroFjIGZzUzupGiRPOjgHg9TLu43xbpwXk523fMxKA==
+  
+  is-url@^1.1.0, is-url@^1.2.4:
+    version "1.2.4"
+    resolved "https://registry.yarnpkg.com/is-url/-/is-url-1.2.4.tgz#04a4df46d28c4cff3d73d01ff06abeb318a1aa52"
+    integrity sha512-ITvGim8FhRiYe4IQ5uHSkj7pVaPDrCTkNd3yq3cV7iZAcJdHTUMPMEHcqSOy9xZ9qFenQCvi+2wjH9a1nXqHww==
   
   is-wsl@^2.2.0:
     version "2.2.0"
@@ -2277,6 +2312,16 @@ Lockfile:
     version "2.0.0"
     resolved "https://registry.yarnpkg.com/universalify/-/universalify-2.0.0.tgz#75a4984efedc4b08975c5aeb73f530d02df25717"
     integrity sha512-hAZsKq7Yy11Zu1DE0OzWjw7nnLZmJZYTDZZyEFHZdUhV8FkH5MCfoU1XMaxXovpyW5nq5scPqq0ZDP9Zyl04oQ==
+  
+  update-electron-app@^2.0.1:
+    version "2.0.1"
+    resolved "https://registry.yarnpkg.com/update-electron-app/-/update-electron-app-2.0.1.tgz#229dbeb4534f51ec949e6a46ae1ac32f68a17eed"
+    integrity sha512-e4xEner89UZZaBGYJbYlMdL1uUrC0VjOsTAL2N4opPjzFtn+j7mdsJJsnyXZzUVeLY+8tuCX4XEsUM98oBHmZg==
+    dependencies:
+      electron-is-dev "^0.3.0"
+      github-url-to-object "^4.0.4"
+      is-url "^1.2.4"
+      ms "^2.1.1"
   
   update-notifier@^5.1.0:
     version "5.1.0"

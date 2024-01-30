@@ -8,6 +8,7 @@ const fs = require('fs')
 const path = require('path')
 const request = require('electron-request')
 const activityEditor = require('./activityEditor.js')
+const tools = require('./tools.js')
 const octokit = require('@octokit/request')
 const AdmZip = require('adm-zip');
 
@@ -228,7 +229,8 @@ const createDocumentationWindow = () => {
   })
 
   // and load the html of the app.
-  windows.documentation.loadFile('documentation/index.html')
+  let docuPath = path.resolve(__dirname, 'Documentation/index.html')
+  windows.documentation.loadFile(docuPath)
 
   windows.documentation.on('closed', () => {
     windows.documentation = null
@@ -1743,7 +1745,11 @@ const applicationMenu = Menu.buildFromTemplate([
       {
         label: 'Reset message before SCORM export',
         click: () => { config.showScormInfo = true; saveConfigFile(); }
-      }
+      },
+      {
+        label: 'Hot Potatoes importer',
+        click: () => { config.showScormInfo = true; tools.openHotPotatoesDialog(); }
+      },
     ]
   },
   // { role: 'windowMenu' }

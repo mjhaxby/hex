@@ -111,9 +111,14 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
             }
             if (settings[i].type == 'select'){
                 for (let j = 0; j < settings[i].options.length; j++) {
-                    newOption = document.createElement('option')
-                    newOption.value = settings[i].options[j]
+                    newOption = document.createElement('option')                    
                     newOption.innerHTML = settings[i].options[j]
+                    // if the value of the option has been provided, use that as its value, otherwise just use the optional label
+                    if (settings[i].hasOwnProperty('optionValues') && j < settings[i].optionValues.length){
+                        newOption.value = settings[i].optionValues[j]
+                    } else {
+                        newOption.value = settings[i].options[j]
+                    }
                     newSelect.appendChild(newOption)
                 }
                 if (settings[i].hasOwnProperty('default')) {

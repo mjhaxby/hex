@@ -8,8 +8,9 @@
     "settings":[
         {"name":"color","label":"Color","type":"select","options":["Magnet","Swedish furniture company","Black and white","Rexby","Blorange"],"category":"look and feel"},
         {"name":"soundsEnabled","label":"Sounds","type":"checkbox","default":true,"category":"look and feel"},
-        {"name":"rows","label":"Rows","type":"number","default":9,"min":4,"max":12,"category":"look and feel"},
+        {"name":"rows","label":"Rows","type":"number","default":9,"min":4,"max":12,"category":"look and feel"},        
         {"name":"cols","label":"Columns","type":"number","default":9,"min":4,"max":12,"category":"look and feel"},
+        {"name":"colLabels","label":"Column labels","type":"select","options":["Numbers","Letters","Chinese","Roman","None"],"category":"look and feel"},
         {"name":"mode","label":"Mode","type":"select","options":["Faith","Typing"],"info":"In faith mode, learners answer outloud the question, then click to reveal the answer and select whether they knew it or not. In typing mode, they must type the answer.","category":"behaviour"},
         {"name":"requiredSimilarity","label":"Required similarity to accept answer (%)","type":"number","default":90,"min":1,"max":100,"info":"Only for typing mode.","category":"behaviour"},
         {"name":"showQPrev","label":"Show question preview","type":"checkbox","default":true,"category":"look and feel"},
@@ -320,6 +321,13 @@
 
         .hoveredRow.nextEmpty {
             background-color: var(--currentTeam);
+        }
+
+        .row-number {
+            color: var(--grid);
+            text-align: center;
+            vertical-align: bottom;
+            transform: translateY(100%)
         }
 
         #newGameButton{
@@ -859,7 +867,7 @@
             return num;
         }
     </script>
-    <script>
+    <script charset="utf-8">
         var numRows = 9 // default value for testing
         var numCols = 9
         var gameTable
@@ -920,6 +928,9 @@
                 newMemRow = makeMemRow(i)
                 memTable = memTable.concat(newMemRow)
             }
+
+            let numbersRow = makeNumbersRow()
+            gameTable.appendChild(numbersRow)
 
             if (!gameSettings.scorm) {
                 // set the starting team
@@ -1439,6 +1450,92 @@
             newCell.qPrevEl = document.getElementById('qPrev_' + rowNum + '_' + colNum)
             newCell.winning = false
             return newCell
+        }
+
+        function makeNumbersRow(){
+            let row = document.createElement('tr')
+            for (let i = 0; i < gameSettings.cols; i++){
+                let cell = document.createElement('td')
+                cell.innerHTML = determineRowLabel(i+1)
+                cell.classList.add('row-number')
+                row.appendChild(cell)
+            }
+            return row
+        }
+
+        function determineRowLabel(num){
+            if (gameSettings.colLabels == 'Numbers' || (gameSettings.colLabels == 'Chinese' && num > 99) || (gameSettings.colLabels == 'Roman' && num > 3999)){
+                // default to number for Chinese if over 99 and Roman over 3999
+                return num
+            } else if (gameSettings.colLabels == 'Letters'){
+                let letters = '';
+                while (num > 0) {
+                    num--; // Adjusting for 0-indexing
+                    let remainder = num % 26;
+                    letters = String.fromCharCode(65 + remainder) + letters;
+                    num = Math.floor(num / 26);
+                }  
+                return letters
+            } else if (gameSettings.colLabels == 'Chinese'){
+                return numberToChinese(num)
+            } else if (gameSettings.colLabels == 'Roman'){
+                return numberToRoman(num)
+            } else if (gameSettings.colLabels == 'None'){
+                return ''
+            }
+        }
+
+        function numberToChinese(num) {
+            if (num < 1 || num > 99) {
+                return 'Number out of range'; // This function handles numbers from 1 to 99
+            }
+
+            const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+            const tens = Math.floor(num / 10);
+            const ones = num % 10;
+
+            if (tens === 0) {
+                return digits[ones]; // For numbers 1-9
+            } else if (tens === 1 && ones === 0) {
+                return '十'; // Special case for 10
+            } else if (tens === 1) {
+                return '十' + digits[ones]; // For numbers 11-19
+            } else {
+                return digits[tens] + '十' + (ones ? digits[ones] : ''); // For numbers 20-99
+            }
+        }
+
+        function numberToRoman(num) {
+            if (num < 1 || num > 3999) {
+                return 'Number out of range'; // This function handles numbers from 1 to 3999
+            }
+
+            const romanNumerals = [
+                { value: 1000, numeral: 'M' },
+                { value: 900, numeral: 'CM' },
+                { value: 500, numeral: 'D' },
+                { value: 400, numeral: 'CD' },
+                { value: 100, numeral: 'C' },
+                { value: 90, numeral: 'XC' },
+                { value: 50, numeral: 'L' },
+                { value: 40, numeral: 'XL' },
+                { value: 10, numeral: 'X' },
+                { value: 9, numeral: 'IX' },
+                { value: 5, numeral: 'V' },
+                { value: 4, numeral: 'IV' },
+                { value: 1, numeral: 'I' }
+            ];
+
+            let result = '';
+
+            for (const numeral of romanNumerals) {
+                while (num >= numeral.value) {
+                    result += numeral.numeral;
+                    num -= numeral.value;
+                }
+            }
+
+            return result;
         }
 
         function dropCounterTo(cellEl, counterTeam) {
