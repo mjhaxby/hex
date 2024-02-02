@@ -7,8 +7,8 @@
     "settings":[
       {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait"],"category":"look and feel"},
       {"name":"shuffle","label":"Shuffle","type":"checkbox","default":true,"category":"gameplay"},
-      {"name":"background","label":"Background","type":"select_import","options":["Clouds","Water","Space"],"fileTypes":["Image"]}
-      {"name":"sprite","label":"Character","type":"select_import","options":["Bird","Octopus","Rocket"],"fileTypes":["Image"]}
+      {"name":"background","label":"Background","type":"select_import","options":["Clouds","Water","Space"],"fileTypes":["Image"],"category":"look and feel"},
+      {"name":"sprite","label":"Character","type":"select_import","options":["Bird","Octopus","Rocket","Phonebox"],"fileTypes":["Image"],"category":"look and feel"},
       {"name":"soundsEnabled","label":"Sounds","type":"checkbox","default":true,"category":"look and feel"},
       {"name":"mode","label":"Mode","type":"select","options":["Typing","Multiple choice"],"category":"gameplay"},
       {"name":"sameAnswers","label":"In multiple choice mode, maintain the same options every time a question reappears","type":"checkbox","default":true,"info":"When enabled, this will always show the same possible answers in the same order for each falling word. Wrong answers will be selected according to their similarity with the correct answer. The range of answers may not be the same from game-to-game. Always enabled if there four or fewer possible answers.","category":"gameplay"},
@@ -311,254 +311,6 @@
       }
 
       input[type='text'] {
-      body{
-        font-family: ShareTech;
-        font-size: 1.5em;
-        /*text-align: center;*/
-        color: var(--fg-color);
-        background-color: var(--bg-color);
-        transition: background-color 0.3s;
-        margin: 8px;
-      }
-
-
-      button {
-        background: none;
-        font-size: inherit;
-        font-style: inherit;
-        font-family: inherit;
-        border: 2px solid var(--bg-color);
-        color: var(--fg-color);
-        display: block;
-        padding: 2px;
-        transition: border-left 0.4s ease-in-out, border-right 0.2s ease-in-out, border-top 0.1s ease-in-out, border-bottom 0.3s ease-in-out, opacity 1s ease-in-out;
-        cursor: pointer;
-        text-align: center;
-      }
-
-      button:hover{
-        border: 2px solid var(--fg-color);
-      }
-
-      button:active{
-        border: 2px solid var(--fg-color-active);
-        color: grey;
-      }
-
-      input[type='text'] {
-      body{
-        font-family: ShareTech;
-        font-size: 1.5em;
-        /*text-align: center;*/
-        color: var(--fg-color);
-        background-color: var(--bg-color);
-        transition: background-color 0.3s;
-        margin: 8px;
-      }
-
-
-      button {
-        background: none;
-        font-size: inherit;
-        font-style: inherit;
-        font-family: inherit;
-        border: 2px solid var(--bg-color);
-        color: var(--fg-color);
-        display: block;
-        padding: 2px;
-        transition: border-left 0.4s ease-in-out, border-right 0.2s ease-in-out, border-top 0.1s ease-in-out, border-bottom 0.3s ease-in-out, opacity 1s ease-in-out;
-        cursor: pointer;
-        text-align: center;
-      }
-
-      button:hover{
-        border: 2px solid var(--fg-color);
-      }
-
-      button:active{
-        border: 2px solid var(--fg-color-active);
-        color: grey;
-      }
-
-      input[type='text'] {
-      body{
-        font-family: ShareTech;
-        font-size: 1.5em;
-        /*text-align: center;*/
-        color: var(--fg-color);
-        background-color: var(--bg-color);
-        transition: background-color 0.3s;
-        margin: 8px;
-      }
-
-
-      button {
-        background: none;
-        font-size: inherit;
-        font-style: inherit;
-        font-family: inherit;
-        border: 2px solid var(--bg-color);
-        color: var(--fg-color);
-        display: block;
-        padding: 2px;
-        transition: border-left 0.4s ease-in-out, border-right 0.2s ease-in-out, border-top 0.1s ease-in-out, border-bottom 0.3s ease-in-out, opacity 1s ease-in-out;
-        cursor: pointer;
-        text-align: center;
-      }
-
-      button:hover{
-        border: 2px solid var(--fg-color);
-      }
-
-      button:active{
-        border: 2px solid var(--fg-color-active);
-        color: grey;
-      }
-
-      input[type='text'] {
-      body{
-        font-family: ShareTech;
-        font-size: 1.5em;
-        /*text-align: center;*/
-        color: var(--fg-color);
-        background-color: var(--bg-color);
-        transition: background-color 0.3s;
-        margin: 8px;
-      }
-
-
-      button {
-        background: none;
-        font-size: inherit;
-        font-style: inherit;
-        font-family: inherit;
-        border: 2px solid var(--bg-color);
-        color: var(--fg-color);
-        display: block;
-        padding: 2px;
-        transition: border-left 0.4s ease-in-out, border-right 0.2s ease-in-out, border-top 0.1s ease-in-out, border-bottom 0.3s ease-in-out, opacity 1s ease-in-out;
-        cursor: pointer;
-        text-align: center;
-      }
-
-      button:hover{
-        border: 2px solid var(--fg-color);
-      }
-
-      button:active{
-        border: 2px solid var(--fg-color-active);
-        color: grey;
-      }
-
-      input[type='text'] {
-        color: var(--fg-color);
-        font: inherit;
-        background: none;
-        border: none;
-        border-bottom: solid 2px var(--fg-color);
-        font-weight: 400;
-        letter-spacing: 1px;
-        margin: 0em 0 0.5em 0;
-        padding: 0 0 0 0;
-        /* text-transform: uppercase; */
-        -webkit-box-sizing: border-box;
-        -moz-box-sizing: border-box;
-        -ms-box-sizing: border-box;
-        -o-box-sizing: border-box;
-        box-sizing: border-box;
-        -webkit-transition: all 0.3s;
-        -moz-transition: all 0.3s;
-        -ms-transition: all 0.3s;
-        -o-transition: all 0.3s;
-      body{
-        font-family: ShareTech;
-        font-size: 1.5em;
-        /*text-align: center;*/
-        color: var(--fg-color);
-        background-color: var(--bg-color);
-        transition: background-color 0.3s;
-        margin: 8px;
-      }
-
-
-      button {
-        background: none;
-        font-size: inherit;
-        font-style: inherit;
-        font-family: inherit;
-        border: 2px solid var(--bg-color);
-        color: var(--fg-color);
-        display: block;
-        padding: 2px;
-        transition: border-left 0.4s ease-in-out, border-right 0.2s ease-in-out, border-top 0.1s ease-in-out, border-bottom 0.3s ease-in-out, opacity 1s ease-in-out;
-        cursor: pointer;
-        text-align: center;
-      }
-
-      button:hover{
-        border: 2px solid var(--fg-color);
-      }
-
-      button:active{
-        border: 2px solid var(--fg-color-active);
-        color: grey;
-      }
-
-      input[type='text'] {
-        color: var(--fg-color);
-        font: inherit;
-        background: none;
-        border: none;
-        border-bottom: solid 2px var(--fg-color);
-        font-weight: 400;
-        letter-spacing: 1px;
-        margin: 0em 0 0.5em 0;
-        padding: 0 0 0 0;
-        /* text-transform: uppercase; */
-        -webkit-box-sizing: border-box;
-        -moz-box-sizing: border-box;
-        -ms-box-sizing: border-box;
-        -o-box-sizing: border-box;
-        box-sizing: border-box;
-        -webkit-transition: all 0.3s;
-        -moz-transition: all 0.3s;
-        -ms-transition: all 0.3s;
-        -o-transition: all 0.3s;
-      body{
-        font-family: ShareTech;
-        font-size: 1.5em;
-        /*text-align: center;*/
-        color: var(--fg-color);
-        background-color: var(--bg-color);
-        transition: background-color 0.3s;
-        margin: 8px;
-      }
-
-
-      button {
-        background: none;
-        font-size: inherit;
-        font-style: inherit;
-        font-family: inherit;
-        border: 2px solid var(--bg-color);
-        color: var(--fg-color);
-        display: block;
-        padding: 2px;
-        transition: border-left 0.4s ease-in-out, border-right 0.2s ease-in-out, border-top 0.1s ease-in-out, border-bottom 0.3s ease-in-out, opacity 1s ease-in-out;
-        cursor: pointer;
-        text-align: center;
-      }
-
-      button:hover{
-        border: 2px solid var(--fg-color);
-      }
-
-      button:active{
-        border: 2px solid var(--fg-color-active);
-        color: grey;
-      }
-
-      input[type='text'] {
         color: var(--fg-color);
         font: inherit;
         background: none;
@@ -763,7 +515,16 @@
         transition: 1s;
       }
 
-      #climbArea{
+      #sprite{
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        max-height: 20vh;
+        width: auto;
+        transform: translateX(-50%);
+      }
+
+      #dropArea{
         position: relative;
         font-size: 10vh;
         width: 100%;
@@ -844,6 +605,10 @@
         correctColor = getComputedStyle(document.documentElement).getPropertyValue('--correct').trim();
         halfCorrectColor = getComputedStyle(document.documentElement).getPropertyValue('--half-correct').trim();
         setColorTheme(gameSettings.color.toLowerCase())
+
+        // load sprite
+        document.getElementById('sprite').src = 'data:image/' + gameFiles.custom_setting_select_import_sprite.ext.slice(1) + ';base64,' + gameFiles.custom_setting_select_import_sprite.data
+
         window.onresize = adjustLayout;
         if (gameSettings.difficulty == 'Very easy'){
           speed = 0.5
@@ -939,7 +704,7 @@
               attached = document.getElementById(fallenCards[i].getAttribute('data-attached'))
               attachedPosition = document.getElementById(fallenCards[i].getAttribute('data-attached')).getBoundingClientRect();
               fallenCards[i].style.left = attachedPosition.left + (attachedPosition.width * parseFloat(fallenCards[i].getAttribute('data-leftpointindex')))
-              if (attached.id == 'climbArea'){
+              if (attached.id == 'dropArea'){
                 fallenCards[i].style.top = attachedPosition.bottom - (fallenCardPosition.height + 5)
               } else {
                 fallenCards[i].style.top = attachedPosition.top - fallenCardPosition.height
@@ -947,7 +712,7 @@
             }
           }
           var fallingCards = document.getElementsByClassName('falling')
-          let container = document.getElementById('climbArea')
+          let container = document.getElementById('dropArea')
           let containerPosition = container.getBoundingClientRect();
           for (let i=0; i<fallingCards.length; i++){ // slightly over the top, but this way we'll be ready if we ever decide to have multiple falling cards
             fallingCardPosition = fallingCards[i].getBoundingClientRect();
@@ -1067,7 +832,7 @@
         var btn
         var choices = []
         var numButtons = 4
-        const chosenAnswerNum = getRandomInt(word.answers.length)                
+        const chosenAnswerNum = getRandomInt(word.answers.length) // the answer chosen from the list of options     
 
         if (uniqueAnswers){
           numButtons = uniqueAnswers.length
@@ -1081,10 +846,10 @@
             var trys
             var randomChoiceIndex
             var randomChoice 
-            let numRandomChoice = getRandomInt(4) // random number 0-3
+            let numRandomChoice = getRandomInt(4) // random number 0-3 (how many answers will be similar to the actual answer)
             // console.log(`Showing ${numRandomChoice} completely random answers and ${3-numRandomChoice} which are somewhat similar to the correct one`)            
             for (i = 0; i<numRandomChoice; i++){ // replace some of the answers with completely random ones from the set
-              trys = 0
+              let trys = 0
               randomChoice = word.answers[chosenAnswerNum] // it won't be this, this is just to make sure the while below works
               while (randomChoice == word.answers[chosenAnswerNum] && trys < 100){
                 // this will probably only run once
@@ -1171,7 +936,7 @@
               if (!uniqueAnswers){
                 traps = findTraps(answer, word.drop)
               } else {
-                traps = uniqueWords
+                traps = uniqueWords // TO DO: This condition will never be reached - remove?
               }
               word.traps.push(traps)
             })
@@ -1219,14 +984,16 @@
             word.answers.forEach(candidate => {
               simil = similarity(target, candidate)
               if (closestAnswers.length >= 3){
-                closestAnswers.forEach(answer => {
-                  if (!added & simil > answer.simil && simil != 1){ // if it's more similar than something else we've already found (but not exactly the same thing!)
+                if (simil != 1 && closestAnswers.filter(word => word.trap === candidate).length == 0){ // if it's not the exact same as the original answer and not already a word on the list
+                  closestAnswers.forEach(answer => {
+                  if (!added & simil > answer.simil && simil != 1){ // if it's more similar than something else we've already found
                     closestAnswers.push({trap: candidate, simil: simil}) // add it to the list
                     added = true // we don't need to add it again
                   }
                 })
-              } else { // always add it if we don't yet have three (unless it's the same answer)
-                if (simil != 1){
+                }                
+              } else { // always add it if we don't yet have three (unless it's the same answer or already on the list)
+                if (simil != 1 && closestAnswers.filter(word => word.trap === candidate).length == 0){
                   closestAnswers.push({trap: candidate, simil: simil})
                   added = true
                 }
@@ -1399,7 +1166,7 @@
 
       function dropWord(word){
         var newWord = document.createElement('div')
-        let containerPosition = document.getElementById('climbArea').getBoundingClientRect();
+        let containerPosition = document.getElementById('dropArea').getBoundingClientRect();
         if (MultiChoiceMode){
           enableMultipleChoiceButtons()
         }        
@@ -1466,7 +1233,7 @@
         var attached = null
         var leftPointIndex = 0 // number between 0 and 1 to indicate the relative position of the left hand side of the ex-falling element to what it's attached to\
         let holder = document.getElementById('cardHolder')
-        let container = document.getElementById('climbArea')
+        let container = document.getElementById('dropArea')
         let containerPosition = container.getBoundingClientRect();
         let fallingPosition = fallingEl.getBoundingClientRect();
         if (fallingPosition.bottom >= containerPosition.bottom-5){
@@ -1509,7 +1276,7 @@
       }
 
       function checkTop(card){
-        let container = document.getElementById('climbArea')
+        let container = document.getElementById('dropArea')
         let containerPosition = container.getBoundingClientRect();
         let cardPosition = card.getBoundingClientRect();
         if (cardPosition.top <= containerPosition.top){
@@ -1596,14 +1363,14 @@
 
       function addScore(similarityIndex){
         let card = document.getElementById('word_'+(numWords-1))
-        let container = document.getElementById('climbArea')
+        let container = document.getElementById('dropArea')
         let cardPos = card.getBoundingClientRect();
         let containerPos = container.getBoundingClientRect();
         let distance = containerPos.bottom - cardPos.bottom
         // points are calculated based on how similar the word typed was to the target,
         // the difficulty level (speed),
         // how far it was from hitting the bottom
-        // how wide the climbArea display is! wider areas will score fewer points than narrower ones
+        // how wide the dropArea display is! wider areas will score fewer points than narrower ones
         // height of the container isn't taken into account because cards shrink when height is increased anyway
         var points = Math.round(((distance * similarityIndex)/(containerPos.width/100))*(speed/2))
         console.log(points)
@@ -1779,9 +1546,9 @@
   <!-- notransition is removed after applying the theme -->
   <body class="notransition">
     <div id="score" class="odometer"></div>
-    <div id="climbArea">
+    <div id="dropArea">
       <p id="message" class="notransition"><span class="loading">…</span></p>
-      <div id="sprite"></div>
+      <img id="sprite"><img>
     </div>
     <div id="cardHolder"></div>
     <div id="guessArea">      
