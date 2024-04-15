@@ -757,20 +757,26 @@ function convertArrayToTableData(array, startRow = 1, startCol = 1){
   }
 }
 
-function convertTableDataToArray(startRow = 1, startCol = 1, endRow = numRows, endCol = numCols){
+function convertTableDataToArray(startRow = 1, startCol = 1, endRow = numRows, endCol = numCols, santizeHTML=false){
   var rowsArray = []
   var colsArray = []
   for (let row=startRow; row<=endRow; row++){
     colsArray = []
     for (let col=startCol; col<=endCol; col++){
-      colsArray.push(document.getElementById('inputCell_'+row+'_'+col).value)
+      let cell = document.getElementById('inputCell_'+row+'_'+col).value
+
+      if (santizeHTML){
+        cell = cell.replaceAll('<','&lt;').replaceAll('>','&gt;')
+      }
+
+      colsArray.push(cell)
     }
     rowsArray.push(colsArray)
   }
   return rowsArray
 }
 
-function convertTableToTrimmedArray(){
+function convertTableToTrimmedArray(santizeHTML=false){
   var isNotEmptyRow = false
   var endRow = numRows
   var endCol = numCols
@@ -783,7 +789,7 @@ function convertTableToTrimmedArray(){
   if (prefsStore.hasOwnProperty('cols_max') && prefsStore.cols_max < numCols){
     endCol = prefsStore.cols_max
   }
-   inputArray = convertTableDataToArray(1,1,endRow,endCol)
+   inputArray = convertTableDataToArray(1,1,endRow,endCol,true)
 
    // get rid of trailing empty rows (don't bother with the first row, so as to not risk passing something empty)
    for (let row = inputArray.length-1; row>0; row--){

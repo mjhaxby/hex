@@ -65,7 +65,7 @@ input[type='text'], [type='email'], [type='number'], select, textarea {
   font-size: 1.000em;
   font-weight: 400;
   letter-spacing: 1px;
-  margin: 0em 0 0.5em 0;
+  margin: 0.1em 0 0.1em 0;
   padding: 0 0 0 0;
   /* text-transform: uppercase; */
   -webkit-box-sizing: border-box;
@@ -78,6 +78,10 @@ input[type='text'], [type='email'], [type='number'], select, textarea {
   -ms-transition: all 0.3s;
   -o-transition: all 0.3s;
   transition: all 0.3s;
+}
+
+input:disabled, select:disabled{
+  opacity: 0.5;
 }
 
 input[type='number']{
@@ -125,6 +129,7 @@ select {
   padding: 10px;
   padding-right: 32px;
   text-transform: lowercase;
+  margin-bottom: 0.5em;
 }
 
 select::-ms-expand {
@@ -149,7 +154,7 @@ table{
 
 td, th{
   padding: 5px;
-  vertical-align: top;
+  vertical-align: middle;
   /* margin-left: 0.3em;
   margin-right: 0.3em; */
   border-left: 0.5em;
@@ -419,6 +424,11 @@ label{
   opacity: 0;
   z-index: 99;
   text-transform: none;
+  scrollbar-width: none;
+}
+
+.infoBox::-webkit-scrollbar {
+  display: none;
 }
 
 .infoContainer:hover .infoBox{

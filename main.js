@@ -11,6 +11,7 @@ const activityEditor = require('./activityEditor.js')
 const tools = require('./tools.js')
 const octokit = require('@octokit/request')
 const AdmZip = require('adm-zip');
+const sizeOfImage = require("buffer-image-size")
 
 const isMac = process.platform === 'darwin'
 
@@ -21,6 +22,7 @@ var prefsStore // for checking security later
 var currentActivity
 var currentSource
 var openTablePath = ''
+var importFileStore = {}
 var prefsWaiting = {exists: false}
 var profileStore = { name: '', activities: [] }
 var openProfilePath = ''
@@ -107,7 +109,8 @@ const activityWindowPrototype = {
   window: null,
   windowId: null,
   data: null,
-  settings: null
+  settings: null,
+  importedFiles: null
 }
 
 const createMainWindow = () => {
@@ -121,7 +124,8 @@ const createMainWindow = () => {
       nodeIntegration: false,
       contextIsolation: true,
       devTools: !app.isPackaged,
-      sandbox: app.isPackaged
+      sandbox: app.isPackaged,
+      contentSecurityPolicy: "default-src 'self' data:;" // only own data
     }
   })
   process.env.MAIN_WINDOW_ID = windows.main.id;
@@ -133,7 +137,7 @@ const createMainWindow = () => {
   // windows.main.webContents.openDevTools()
 }
 
-const createActivityWindow = (activityType, data, settings, source) => {
+const createActivityWindow = (activityType, data, settings, source, importedFiles) => {
 
   // window options
   const windowOpts = {
@@ -146,7 +150,8 @@ const createActivityWindow = (activityType, data, settings, source) => {
       nodeIntegration: false,
       contextIsolation: true,
       devTools: !app.isPackaged,
-      sandbox: app.isPackaged
+      sandbox: app.isPackaged,
+      contentSecurityPolicy: "default-src 'self' data:;"  // only own data
     }
   }
 
@@ -165,6 +170,7 @@ const createActivityWindow = (activityType, data, settings, source) => {
   newWindow.data = data
   newWindow.settings = settings
   newWindow.source = source
+  newWindow.importedFiles = importedFiles
   newWindow.window = new BrowserWindow(windowOpts)
 
   let thisWin = newWindow
@@ -244,8 +250,9 @@ const createDocumentationWindow = () => {
 function finishLoadingActivity(thisWindow) {
   data = windows.activities.find(({ windowId }) => windowId === thisWindow.id).data
   settings = windows.activities.find(({ windowId }) => windowId === thisWindow.id).settings
+  importedFiles = windows.activities.find(({ windowId }) => windowId === thisWindow.id).importedFiles
   if (thisWindow) {
-    thisWindow.webContents.send('loadActivity', data, settings)
+    thisWindow.webContents.send('loadActivity', data, settings, importedFiles)
   }
 }
 
@@ -417,7 +424,7 @@ function findSettingAnomolies(settings) {
     currentSetting = settings[setting.name]
     currentSettingVarType = typeof currentSetting
 
-    if (setting.type == 'select' || setting.type == 'text' || setting.type == 'code' || setting.type == 'language') {
+    if (setting.type == 'select' || setting.type == 'text' || setting.type == 'code' || setting.type == 'language' || setting.type == 'select_import') {
       currentExpectedVarType = 'string'
     } else if (setting.type == 'number') {
       currentExpectedVarType = 'number'
@@ -453,6 +460,87 @@ function reportSettingErrors(errors) {
   })
   console.log(settingErrors)
   dialog.showErrorBox('Error running activity', errorString)
+}
+
+function capitalizeFirstLetter(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function customSelectImport(settingId,fileTypes){
+  const extensions = {image: ['jpg','jpeg','png','gif','svg','webp'], text: ['txt'], sound: ['mp3', 'wav', 'm4a']}
+  var validExtensions = []
+
+  var dialogOptions = {
+    title: 'Select file',
+    properties: ['openFile'],
+    filters: []
+  } 
+
+  fileTypes.forEach(fileType => {
+    if (extensions.hasOwnProperty(fileType.toLowerCase())){
+      dialogOptions.filters.push({name: capitalizeFirstLetter(fileType), extensions: extensions[fileType.toLowerCase()]})
+      validExtensions.push(...extensions[fileType.toLowerCase()])
+      console.log('Adding extensions')
+      console.log(extensions[fileType.toLowerCase()])
+    } else {
+      console.log('File type not found: ' + fileType)
+    }
+  })
+  // if(fileTypes.includes('Images') || fileTypes.includes('images') ){
+  //   dialogOptions.filters.push({name: 'Images', extensions: ['jpg','jpeg','png','gif','svg','webp']})
+  // }
+  // if(fileTypes.includes('Text') || fileTypes.includes('images') ){
+  //   dialogOptions.filters.push({name: 'Text', extensions: ['text']})
+  // }
+  // TO DO: Add others?
+
+  dialog.showOpenDialog(windows.main, dialogOptions).then(result => {
+    if (result.cancelled) {
+      console.log("Cancelled")
+      windows.main.webContents.send('customSelectImportFileResult', settingId, false)
+      return
+    }
+    const fileExt = path.extname(result.filePaths[0]).toLowerCase().slice(1)
+    if (!validExtensions.includes(fileExt)) {
+      console.log("File extension: ." + fileExt)
+      console.log("Valid extensions: ")
+      console.log(validExtensions)
+      dialog.showErrorBox("Error opening file", "Invalid file extension.")
+      return;
+    }
+    fs.stat(result.filePaths[0], (err, stats) => {
+      if (err) {
+        console.log("An error ocurred reading the file:" + err.message);
+        dialog.showErrorBox("Error opening file", "The file statistics could not be read.")
+        return;
+      }
+      if (stats.size > (1024 * 100)) { // for now, limit is 100KB
+        console.log("File is too big. " + stats.size + " bytes.");
+        dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 100KB or smaller are supported.")
+        windows.main.webContents.send('customSelectImportFileResult', settingId, false)
+      } else {
+        fs.readFile(result.filePaths[0], (err, data) => {
+          if (err) {
+            console.log("An error ocurred reading the file:" + err.message);
+            dialog.showErrorBox("Error opening file", "The file could not be read.")
+            windows.main.webContents.send('customSelectImportFileResult', settingId, false)
+            return;
+          }
+
+          let fileStoreItem = { data: data.toString('base64'), ext: fileExt, fileSize: stats.size }
+        
+          if (extensions.image.includes(fileExt)){
+            fileStoreItem.dimensions = sizeOfImage(data)
+          }
+
+          importFileStore['custom_' + settingId] = fileStoreItem
+
+          windows.main.webContents.send('customSelectImportFileResult', settingId, true)
+        })
+      }
+    })
+        
+  });
 }
 
 function isArrayofStrings(variable) {
@@ -562,15 +650,21 @@ ipcMain.on("runActivity", function (event, data, settings, activity, source) {
   console.log('Running activity')
   // console.log(event)
   // console.log(data)
+  if(prefsStore.hasOwnProperty('markdown_support') && prefsStore.markdown_support){
+    // TO DO: && if enabled by user
+    withMarkdown = activityEditor.applyMarkdown(data, settings, prefsStore.settings)    
+    data = withMarkdown.data
+    settings = withMarkdown.settings
+  }
   console.log(activity)
   console.log(settings)
   validateSender(event.senderFrame)
-  /// TO DO: Sanatise the input. Check that data is a 2D array, that activity is a string, that settings matches what we expect and that source is one of the possible options
   settingErrors = findSettingAnomolies(settings)
   dataOK = isArrayofArrayofStrings(data)
   activityOK = verifiyActivityAndSource(activity, source)
+
   if (settingErrors.length == 0 && dataOK && activityOK) {
-    createActivityWindow(activity, data, settings, source)
+    createActivityWindow(activity, data, settings, source, importFileStore)
   } else if (settingErrors.length > 0) {
     reportSettingErrors(settingErrors)
   } else if (!dataOK) {
@@ -640,6 +734,8 @@ ipcMain.on('readActivityPrefs', function (event, activity, source) {
       } else if (activityProfile) { // if it's not, the latest version is already here
         windows.main.webContents.send('applyActivitySettings',activityProfile.settings)
       }
+
+      importFileStore = {} // purge imported file store ready for new files for use in custom settings (these are likely to be images or sounds)
     })
   } else {
     dialog.showErrorBox('Error reading activity preferences', 'There was an error with the activity name or activity source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
@@ -706,6 +802,10 @@ ipcMain.on('setActivitySettingsDefaults', function (event, settings) {
   setDefaultActivitySettings(settings)
 })
 
+ipcMain.on('customSelectImport', function (event, settingId, fileTypes){
+  customSelectImport(settingId, fileTypes)
+})
+
 ipcMain.on('settingsToProfile', function (event, activity, source, settings) {
   activityProfile = profileStore.activities.find(profile => profile.activity === activity && profile.source === source)
   if (activityProfile) {
@@ -755,15 +855,19 @@ const importTableDialog = () => {
   var dialogOptions = {
     title: 'Select file',
     properties: ['openFile'],
-    filters: [
+    filters: [  
       {
         name: 'text',
         extensions: 'txt'
       },
       {
+        name: 'hex',
+        extensions: 'hex'
+      },
+      {
         name: 'json',
         extensions: 'json'
-      },
+      },    
       {
         name: 'All files',
         extensions: ['*']
@@ -778,7 +882,7 @@ const importTableDialog = () => {
     }
     console.log(result)
     const fileExt = path.extname(result.filePaths[0])
-    if (fileExt.toLowerCase() != '.json' && fileExt.toLowerCase() != '.txt') {
+    if (fileExt.toLowerCase() != '.hex' &&fileExt.toLowerCase() != '.json' && fileExt.toLowerCase() != '.txt') {
       console.log("File extension: " + fileExt)
       dialog.showErrorBox("Error opening file", "Invalid file extension. Please select a .txt or .json file.")
       return;
@@ -1021,6 +1125,10 @@ const openTableDialog = () => {
     properties: ['openFile'],
     filters: [      
       {
+        name: 'hex',
+        extensions: 'hex'
+      },
+      {
         name: 'json',
         extensions: 'json'
       },
@@ -1038,9 +1146,9 @@ const openTableDialog = () => {
     }
     console.log(result)
     const fileExt = path.extname(result.filePaths[0])
-    if (fileExt.toLowerCase() != '.json' && fileExt.toLowerCase() != '.txt') {
+    if (fileExt.toLowerCase() != '.hex' &&fileExt.toLowerCase() != '.json' && fileExt.toLowerCase() != '.txt') {
       console.log("File extension: " + fileExt)
-      dialog.showErrorBox("Error opening file", "Invalid file extension. Please select a .txt or .json file.")
+      dialog.showErrorBox("Error opening file", "Invalid file extension. Please select a .hex or .json or .txt file.")
       return;
     }
 
@@ -1157,12 +1265,18 @@ const saveTableDialog = (data) => {
     }
     fileName += prefsStore.activity
     defaultPath = fileName + '.json' 
+    // defaultPath = fileName + '.hext' // TO DO 
   }
 
   var dialogOptions = {
     title: 'Save table',
     properties: ['createDirectory'],
-    filters: [{
+    filters: [
+    //   {
+    //   name: 'hex table file',
+    //   extension: 'hext'
+    // },
+    {
       name: 'JSON file',
       extension: 'json'
     }],
@@ -1413,6 +1527,10 @@ function saveTable(inputData,path){
   inputData.modificationTime = Date.now()
 
   let data = JSON.stringify(inputData)
+
+  if(!/.hex$|\.json$/.test(path)){
+    path += '.hex'
+  }
 
   fs.writeFile(path, data, { encoding: 'utf8' }, (err) => {
     if (err) {

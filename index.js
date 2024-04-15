@@ -71,7 +71,7 @@ function run() {
     const selector = document.getElementById('activitySlct')
     var activity = selector.value
     var source = selector.options[selector.selectedIndex].getAttribute('data-source')
-    data = convertTableToTrimmedArray()
+    data = convertTableToTrimmedArray(true)
     settings = getSettings(prefsStore.settings)
     console.log(settings)
      //send the info to main process
@@ -347,9 +347,11 @@ function sendInput(purpose='export',path=''){
   const selector = document.getElementById('activitySlct')
   var activity = selector.value
   var source = selector.options[selector.selectedIndex].getAttribute('data-source')
-  var input = convertTableToTrimmedArray()
+  var input = convertTableToTrimmedArray(true)
   var settings = getSettings(prefsStore.settings)
   var packageIDEl = document.getElementById('packageID')
+
+
   if(document.getElementById('scormToggle').checked){
     type = 'scorm'
     if (packageIDEl.value.trim() == ''){

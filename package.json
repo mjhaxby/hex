@@ -1,6 +1,6 @@
 {
   "name": "hex",
-  "version": "3.3.0-beta",
+  "version": "3.3.5",
   "description": "Learning activity creator.",
   "main": "main.js",
   "scripts": {
@@ -19,7 +19,7 @@
   "homepage": "https://github.com/mjhaxby/hex",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^27.0.3",
+    "electron": "^28.2.1",
     "electron-packager": "^17.1.2"
   },
   "fontend": {
@@ -29,10 +29,13 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.10",
+    "buffer-image-size": "^0.6.4",
     "electron-context-menu": "^3.6.1",
     "electron-default-menu": "^1.0.2",
     "electron-request": "^1.8.1",
-    "octokit": "^3.1.1"
+    "image-size": "^1.1.1",
+    "octokit": "^3.1.2",
+    "showdown": "^2.1.0"
   },
   "build": {
     "appId": "com.mjhaxby.hex",
@@ -74,6 +77,18 @@
     },
     "deb": {
       "priority": "optional"
-    }
+    },
+    "fileAssociations": [{
+      "ext": "hext",
+      "name": "hex Table File",
+      "description": "hex table file",
+      "role": "Editor"
+    },
+    {
+      "ext": "hexp",
+      "name": "hex Profile",
+      "description": "hex profile",
+      "role": "Editor"
+    }]
   }
 }

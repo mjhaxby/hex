@@ -1,5 +1,7 @@
 const fs = require('fs')
 const path = require('path')
+const showdown  = require('showdown')  
+showdown.setOption('strikethrough',true)  
 
 let openActivityTemplate = function openTemplatePromise(file){
   return new Promise((resolve, reject)=>{
@@ -17,11 +19,21 @@ let openActivityTemplate = function openTemplatePromise(file){
 }
 
 function addActivityTemplateData(activityTemplate, activityData, activitySettings, prefsStore){
+
+  if (prefsStore.hasOwnProperty('markdown_support') && prefsStore.markdown_support){
+    //  TO DO: && if user has enabled this
+    withMarkdown = applyMarkdown(activityData,activitySettings, prefsStore.settings)  
+    activityData = withMarkdown.data
+    activitySettings = withMarkdown.settings
+  }
+
   for (i = 0; i < activityData.length; i++){
     for (j = 0; j < activityData[i].length; j++){
+      // escape "
       activityData[i][j] = activityData[i][j].replaceAll('"','\\"')
     }
-  }
+}
+
   activityDataAsArray = '['
   for(i=0;i<activityData.length;i++){
     activityDataAsArray = activityDataAsArray + '["' + activityData[i].join('","') + '"],'
@@ -64,9 +76,40 @@ function createManifestFile(manifestTemplate, activityDetails){
   return outputData
 }
 
+// convert markdown to HTML for activities that support this
+function applyMarkdown(activityData,activitySettings, settingsInfo){
+  console.log('applying markdown')
+  let converter = new showdown.Converter()    
+  for (i = 0; i < activityData.length; i++){
+    for (j = 0; j < activityData[i].length; j++){      
+      activityData[i][j] = activityData[i][j].replaceAll('\\\\n','\\<span></span>n') // protect \\n (this seems over the top, but it doesn't work another way). We're using <span></span> because any < and > will have already been removed anyway
+      // apply markdown, but remove <p> tags which should never be necessary. Replace \n with <br>
+      activityData[i][j] = converter.makeHtml(activityData[i][j]).replaceAll(/<\/?p>/g,'').replaceAll(/(?:^|[^\\])(\\n)/g,'<br>')
+      activityData[i][j] = activityData[i][j].replaceAll('<span></span>','') // remove this just in case anyway
+      
+      //.replaceAll(/\\\\n/g,'\\!n')
+    }
+  }
+  // data.forEach(line =>{
+  //   line.forEach(cell =>{
+  //     cell = converter.makeHtml(cell)
+  //   })
+  // })
+  settingsInfo.forEach(setting =>{
+    if(setting.type == 'text'){
+      // apply markdown, but remove <p> tags which should never be necessary
+      activitySettings[setting.name] = converter.makeHtml(activitySettings[setting.name]).replaceAll(/<\/?p>/g,'')
+    }
+  })
+  console.log(activityData)
+  console.log(activitySettings)  
+  return {data: activityData, settings: activitySettings}
+}
+
 module.exports = {
   openActivityTemplate,
   addActivityTemplateData,
   openManifestTemplate,
-  createManifestFile
+  createManifestFile,
+  applyMarkdown
 };
