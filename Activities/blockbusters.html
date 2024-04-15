@@ -1141,6 +1141,7 @@
       // originalStartTime = Date.parse(data.startTime)
       gameStartTime = data.gameStartTime
       numberOfGamesPlayed = data.gamesPlayed
+      teams = data.teams
       turn = data.turn
       scells = data.cells
       if (data.seconds != '') { elapsedSeconds = parseFloat(data.seconds) }
@@ -1155,6 +1156,10 @@
         } else {
           announceWinner(winner)
         }
+      } else {
+        setTimeout(() => {
+          updateBoardColors(); // to reflect the new turn
+        }, 500) // slightly delay so we can be sure everything is ready  
       }
     }
 
@@ -1209,7 +1214,7 @@
       // possible to add support for older scorm pages here, using the other function
       scells = cellsForScorm()
       // TO DO: Make and assign the following variables: numberOfGamesPlayed
-      let suspendData = { seconds: newElapsedSeconds, games: numberOfGamesPlayed, turn: turn, cells: scells, gameOver: gameOver, gameStartTime: gameStartTime }
+      let suspendData = { seconds: newElapsedSeconds, games: numberOfGamesPlayed, turn: turn, cells: scells, gameOver: gameOver, gameStartTime: gameStartTime, teams: teams }
       API.LMSSetValue("cmi.suspend_data", JSON.stringify(suspendData)) // Store progress so far
       API.LMSCommit("");
       // TO DO: cancel autosave after x number of error returns?
@@ -1597,8 +1602,9 @@
     function shrinkTextToFit(element, desiredPercent) {
       element.style = "" //reset from any previous changes
       parentHeight = element.parentElement.offsetHeight
-      while (element.offsetHeight > desiredPercent * parentHeight) {
-        var newFontSize = window.getComputedStyle(element).getPropertyValue("font-size").replace('px', '') - 1
+      var newFontSize = window.getComputedStyle(element).getPropertyValue("font-size").replace('px','')
+      while (element.offsetHeight > desiredPercent*parentHeight && newFontSize >= 12){
+        newFontSize--
         if (newFontSize < 12) { // if it get very small, force it to scroll instead
           element.style.overflow = "scroll"
           element.style.height = desiredPercent * parentHeight

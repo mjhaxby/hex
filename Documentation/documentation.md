@@ -77,7 +77,9 @@ This activity shuffles the letters of the answers to create anagram puzzles. You
 Anagram will try to avoid creating anagrams containing potentially offensive words in English and in French. However, please be aware that it will not refuse to create an anagram if it fails to generate a non-offensive one.
 
 ##### Activity settings
-- **Color.** There are a number of color themes to choose from.
+- **Color**. There are a number of color themes to choose from.
+- **Questions limit.** Set to 0 shows all questions, otherwise shows a random number of questions as specified.
+- **Check button label**. Customise text on check button.
 
 ##### Examples
 - British foods.
@@ -92,7 +94,9 @@ In someone *does* try to cheat (saying the word in their own language, telling t
 Some variations are possible. For example, miming instead of explaining words, the whole class explaining to both leaders (who are in competition), one explainer for each team (change after each word)…
 
 ##### Activity settings
-- **Color.** There are a number of color themes to choose from.
+- **Color**. There are a number of color themes to choose from.
+- **Shuffle**. Show the words in a random order.
+- **Re-use words between games**. When disabled, the game will avoid showing words from a previous round when resetting. When enabled, the game can show words from the previous round.
 - **Show penalty buttons**. You can hide these if you'd prefer to keep things simple.
 - **Sounds**. Sound effects can be disabled.
 
@@ -119,12 +123,32 @@ This activity can work as a whole class in teams or with individuals on their ow
 - Jobs.
 - Comic book Superheroes.
 
+#### Cards
+Shows one or many cards on the screen. According to the settings, cards can be turned over or shown on just one side. Cards can be dealt by clicking on the deal button or by clicking on the deck. Turn the card over by clicking on it. Hover over the top of the card to reveal the discard button and on the bottom of the card to reveal the button to return a card to the deck. The … icon at the top reveals extra controls to apply to all cards at once or to restore discarded cards. This is a flexible activity with no set aim and can be used in many different circumstances, including memorization, choosing random items or for simple games. The back of the card is optional.
+
+##### Activities settings
+- **Color**. There are a number of color themes to choose from.
+- **Deal cards**. Default face to show when dealing.
+- **Allow flip cards**. When disabled, cards will be shown in their default position and cannot be turned over.
+- **Maximum cards at once**. Set to 0 for no maximum. Otherwise, this stops the user from drawing more than this number of cards.
+- **Discard style**. Changes only appearance and animations. Trash will show a trashcan icon when hovering over the top of the card, where OK will show a checkmark on either or both sides of the card. Use trash for when discarding is simply to remove the card from the game. Use OK when discarding signifies that the card has been ‘complete’, which can be set for only one side of the card. When set to just one side, the button will always show.
+- **Deal cards**. When enabled, discarding a card triggers a new one to be dealt.
+
+##### Examples
+- Jobs.
+- Fruit (in French and English).
+
 #### Crack the code
 Letters in the answer are replaced with a random emoji. To find the answers, the letter each emoji represents must be supplied. Optionally, a clue can be given (this could be the definition or a translation of the word). This works best with short lists of words, since a long list will reveal all the answers before reaching the end.
 
 ##### Activity settings
 - **Color**. There are a number of color themes to choose from.
 - **Difficulty**. Easy – 5 letters are given. Medium – 3 letters are given. Hard – no letters are given.
+- **Questions limit.** Set to 0 shows all questions, otherwise shows a random number of questions as specified.
+- **Check button label**. Customise text on check button.
+- **Symbols**. Choose which category of emoji to use for the game. Set to custom to include multiple categories at once. 
+- **Game code**. Run the activities multiple times (or press Ctrl+R or Cmd+R to reload). When you have a set of symbols you like, press the button in the top-right corner and copy the code. Pasting that code here will reproduce the same set of symbols every time.
+- **Show game code button**. Enable this first or order to access the game code. It is recommended to disable this before exporting.
 
 ##### Examples
 - Fruit.
@@ -136,6 +160,7 @@ Create a crossword puzzle from the answers and clues. In most cases, not all wil
 - **Color**. There are a number of color themes to choose from.
 - **Grid size**. You can make larger and smaller crossword puzzles. However, unless you have very long words, this is actually not very likely to change the outcome of the algorithm that generates the puzzles.
 - **Pre-fill answers**. See the answers in the grid. This is useful while trying to generate a particularly good puzzle.
+- **Fast generation**. Generates puzzles more quickly, but usually with fewer words. More appropriate for smaller sets of words. Has no impact when using a game code.
 - **Game code**. Copy the code from the activity to always reproduce the same puzzle.
 - **Show game code button**. You can hide the game code button, for example if you think it might cause curious students to waste time.
 
@@ -205,6 +230,7 @@ An activity for a whole class in two teams or two students at a shared device (t
 - **Required similarity to accept answer (%)**. Typing mode only. Difference between submitted answer and all possible correct answers. If the words are sufficiently similar, the answer will be accepted, but with a difference message and sound.
 - **Rows**. The number of rows high for the board. Minimum 4, default 9.
 - **Columns**. The number of columns wide for the board. Minimum 4, default 9.
+- **Column labels**. Label that appears on the bottom of the board to easily identify the column. 
 - **Show question preview**. By default, the questions are visible in the space where they need to be answered to earn the counter. 
 - **Show team builder**. Show a screen at the beginning to write the names of the team mates. These will be shown at the bottom of the screen during their corresponding turns. This is mostly intended for SCORM packages (for which it is always enabled).
 - **New game button**. Customise the wording.
@@ -218,8 +244,27 @@ An activity for a whole class in two teams or two students at a shared device (t
 - Common Kanji (meanings in English).
 - German adjective endings.
 
+#### List order
+Put a list in order. To create a more flexible order, you can provide a range as a percentage in the second column, or put a single number to indicate by how many positions the item can move up or down. To specify a flexible range in just one direction, start with - (for lower) or + (for higher). For example, `0-20%` in the second column will accept any answer in the top 20% portion of the list. A fuzz of `2` would mark as correct an item in any position up to 2 above or below its set position in the list, whereas `+2` will mark correct only if it's up to 2 above its current position. 
+
+##### Activity settings
+- **Color**. There are a number of color themes to choose from.
+- **List color**. The list can show a gradient of colors (from several options) which is updated automatically, or just a single color from the main theme.
+- **Invert list colors**. Swaps the top and bottom of the gradient.
+- **Font size**. You can specify a smaller default font as a percentage. The activity already attempts to make the font as large as possible, so you cannot set a higher font size here.
+- **Accept answers within a range of their position (fuzz).** Enable or disable fuzz.
+- **Default fuzz (+/-)**. Apply fuzz to all items.
+- **Minimum attempts**. Set to 0 to ignore. Otherwise, user must complete this many attempts before the ‘show answer’ button will appear. If 0, the ‘show answer’ button will never appear.
+- **Maximum attempts**. Set to 0 to ignore. Further answers will be blocked after this number of attempts.
+- **Attempts text**. Customise the label for the number of attempts.
+
+##### Examples
+- Colors.
+- Instructions to make tea.
+- Greetings (formal to informal)
+
 #### Match
-Match a prompt to and answer by dragging and dropping. It is possible to have a prompt with no answer or an answer with no prompt (i.e. a trap) by leaving one column blank. Twelve prompts or fewer will be shown in a list, whereas longer lists will be displayed in-line for more compact viewing.
+Match a prompt to an answer by dragging and dropping. It is possible to have a prompt with no answer or an answer with no prompt (i.e. a trap) by leaving one column blank. Twelve prompts or fewer will be shown in a list, whereas longer lists will be displayed in-line for more compact viewing. You can force a list by changing to side-by-side mode.
 
 ##### Activity settings
 - **Color**. There are a number of color themes to choose from.
@@ -228,11 +273,16 @@ Match a prompt to and answer by dragging and dropping. It is possible to have a 
 - **Allow user to switch view mode**. When enabled, the learner can choose between Top And Bottom or Side-By-Side.
 - **Allow user to sort drawable cards alphabetically**. The cards in the bank are shown shuffled by default. However, by default the learner can re-order them alphabetically. Note that, if the activity detects that this would place the answers in the same order as their corresponding prompt, this option will be hidden. 
 - **Allow user to shuffle cards again**. By default, learners can reshuffle the answers in the answer bank.
+- **Lock in place correct answers**. Learners will not be able to unmatch items that have been correctly paired together.
+- - **Minimum attempts**. Set to 0 to ignore. Otherwise, user must complete this many attempts before the ‘show answer’ button will appear. If 0, the ‘show answer’ button will never appear.
+- **Maximum attempts**. Set to 0 to ignore. Further answers will be blocked after this number of attempts.
 - **Check button**. Customise the wording.
+- - **Attempts text**. Customise the label for the number of attempts.
 - **Completion % (scorm only)**. The percentage of correct answers for the activity to be recorded as completed in the LMS. Has no effect when using the activity in **run** mode or when exported as HTML.
 
 ##### Examples
 - British demonyms.
+- Emoji.
 
 #### Treasure hunt
 Each question is displayed individually. To progress to the next question, the learner must type in the answer. The number of words and characters to type in is shown (if an alternative answer is provided, this is given as a range). 
@@ -249,7 +299,7 @@ Each question is displayed individually. To progress to the next question, the l
 - **Winning message**. Customise the wording. This is shown when the last question is answered.
 
 ##### Examples
-- Find three fruits.
+- Find three pieces of fruit.
 
 #### Custom activities
 
@@ -349,7 +399,7 @@ Here are the possibility parameters. Apart from the column names, they are all o
 
 All javascript, HTML and CS must be contained within the same file. The file should not use any external scripts, fonts or images. For the latter two, these can be embedded using base64.
 
-A function called `pageLoad`, taking no arguments, should be used for any javascript code that runs when the DOM is loaded, but this should not be called in the page itself. When **hex** runs or exports this activity, it will add its own call to this function. If there is no code to be loaded, this function should be included anyway. **hex** will add two global arrays: `gameData` and `gameSettings`. `gameData` is a 2D array of the data from the table, where the first level represents rows and the second represents columns. `gameSettings` is an object containing the activity settings as set by the user. Its properties are named according the activity setting names set in the activity file. Below is an example of wha the `pageLoad` function might look like.
+A function called `pageLoad`, taking no arguments, should be used for any javascript code that runs when the DOM is loaded, but this should not be called in the page itself. When **hex** runs or exports this activity, it will add its own call to this function. If there is no code to be loaded, this function should be included anyway. **hex** will add three global arrays: `gameData`,  `gameSettings` and `gameFiles`. `gameData` is a 2D array of the data from the table, where the first level represents rows and the second represents columns. `gameSettings` is an object containing the activity settings as set by the user. Its properties are named according the activity setting names set in the activity file. `gameFiles` is an object of objects containing the data and some meta-data of any files imported (currently only for the *climb* activity). Below is an example of what the `pageLoad` function might look like.
 
 ```
 function pageLoad(){
@@ -368,7 +418,7 @@ Finally, the activity file much include the following script. For simplicity, it
 
 `<script src="activityController.js"></script>`
 
-When running an activity, this passes the `gameData` and `gameSettings` to the activity. When exporting, this is replaced with that same data.
+When running an activity, this passes the `gameData`, `gameSettings` and `gameFiles` to the activity. When exporting, this is replaced with that same data.
 
 ### <a name="activity-settings">Activity settings</a>
 

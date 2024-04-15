@@ -2,6 +2,7 @@
     --bg-color: #F2F3EB;
     --contents-bg-color: #ddded7;
     --fg-color: #000000;
+    --fg-color-secondary: #ddded7;
 }
 
 body{
@@ -33,6 +34,43 @@ h4{
 h5{
     font-size: 1.2em;
 }
+table{
+    border: 1px solid var(--fg-color-secondary);
+    border-collapse: collapse
+}
+
+table td, table th {
+    padding: 0.25em;
+    border: 1px solid var(--bg-color);
+  }
+  table tr:first-child th {
+    border-top: 0;
+  }
+  table tr:last-child td {
+    border-bottom: 0;
+  }
+  table tr td:first-child,
+  table tr th:first-child {
+    border-left: 0;
+  }
+  table tr td:last-child,
+  table tr th:last-child {
+    border-right: 0;
+  }
+
+table th{
+    border: 1px solid var(--fg-color-secondary);
+}
+
+
+tbody tr:nth-child(odd) {
+    background-color: var(--fg-color-secondary);
+    border: 1px solid var(--fg-color-secondary);
+  }
+
+  tbody tr:nth-child(even) td {
+    border: 1px solid var(--fg-color-secondary);
+  }
 
 a{
     font-weight: 500;
@@ -42,6 +80,17 @@ a{
 
 a:hover{
     text-decoration: underline;
+}
+
+code{
+    background-color: var(--fg-color-secondary);
+}
+
+pre code{
+    display: inline-block; 
+    width: 90%;
+    padding: 0.5em;
+    overflow: scroll;
 }
 
 /* iframe#documentation{

@@ -188,13 +188,13 @@
   }
 
   function giveGuess(clue) {
-    var guess = document.getElementById("guessInput").value
+    var guess = tidyWord(document.getElementById("guessInput").value)
     var correct = false
     var closeEnough = false
     var currentClue = clues[clue]
     for (i = 0; i < currentClue.answer.length; i++) {
       // console.log('similarity between ' guess + ' and ' + currentClue.answer[i] + at + similarity(guess,currentClue.answer[i]))
-      if (guess == currentClue.answer[i] || (!gameSettings.caseSensitive && guess.toLowerCase() == currentClue.answer[i].toLowerCase())) {
+      if (guess == tidyWord(currentClue.answer[i]) || (!gameSettings.caseSensitive && guess.toLowerCase() == tidyWord(currentClue.answer[i].toLowerCase()))) {
         correct = true
         i = currentClue.answer.length
       } else if (similarity(guess, currentClue.answer[i]) >= (gameSettings.requiredSimilarity / 100)) {
@@ -218,6 +218,15 @@
       showWrong()
     }
   }
+
+  function tidyWord(word){
+        word = word.replaceAll(/['‘’]/g,'\'') // deal with pesky apostrophes
+        word = word.replaceAll(/(\s)+/g,'$1') // remove duplicate whitespace (might be left over after removing brackets)
+        word = word.replaceAll('&gt;','>') // hex transforms <, so we'll turn it back
+        word = word.replaceAll('&lt;','<') // hex transforms >, so we'll turn it back
+        word = word.trim(); // remove leading and trailing whitespace
+        return word
+      }
 
   function showClue(clue) {
     var clueBox = document.getElementById("clueBox");

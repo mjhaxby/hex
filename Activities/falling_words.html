@@ -8,8 +8,11 @@
       {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait"],"category":"look and feel"},
       {"name":"shuffle","label":"Shuffle","type":"checkbox","default":true,"category":"gameplay"},
       {"name":"soundsEnabled","label":"Sounds","type":"checkbox","default":true,"category":"look and feel"},
-      {"name":"mode","label":"Mode","type":"select","options":["Typing","Multiple choice"],"category":"gameplay"},
-      {"name":"sameAnswers","label":"In multiple choice mode, maintain the same options every time a question reappears","type":"checkbox","default":true,"info":"When enabled, this will always show the same possible answers in the same order for each falling word. Wrong answers will be selected according to their similarity with the correct answer. The range of answers may not be the same from game to game. Always enabled if there four or fewer possible answers.","category":"gameplay"},
+      {"name":"mode","label":"Mode","type":"select","options":["Typing","Multiple choice"],"category":"gameplay","dependents":[
+        {"name":"sameAnswers","enable":"Multiple choice"},
+        {"name":"requiredSimilarity","enable":"Typing"}
+      ]},
+      {"name":"sameAnswers","label":"Maintain the same options every time a question reappears","type":"checkbox","default":true,"info":"When enabled, this will always show the same possible answers in the same order for each falling word. Wrong answers will be selected according to their similarity with the correct answer. The range of answers may not be the same from game to game. Always enabled if there four or fewer possible answers.","category":"gameplay"},
       {"name":"difficulty","label":"Difficulty","type":"select","options":["Very easy","Easy","Medium","Hard","Ultra","Impossible"],"default":"Easy","category":"gameplay"},
       {"name":"requiredSimilarity","label":"Required similarity to accept answer (%)","type":"number","default":90,"min":1,"max":100,"info":"Only for typing mode.","category":"gameplay"},
       {"name":"loopGame","label":"Loop","type":"select","options":["Forever","Missed words first","Missed words only","Off"],"category":"gameplay"},
@@ -421,7 +424,12 @@
         white-space: normal;
         hyphens: auto;
         text-align: center;
-        /* see .card  */
+        /* see .card  */   
+        scrollbar-width: none;    
+      }
+
+      .MCbutton::-webkit-scrollbar {
+        display: none;
       }
 
       .MCbutton:hover{
@@ -905,6 +913,9 @@
               button.style.lineHeight = 8/numLines + 'vh' // height (in vh) of button, divided by the number of lines
               button.offsetWidth;
             }
+            if (fontSize > 12){ // once the size is set, make overflow visible so the scrollbars won't show
+                button.style.overflow = 'visible'
+            }
 
           }
         }
@@ -1284,9 +1295,11 @@
       // to make it not TOO fussy
       function tidyWord(word){
         word = word.toLowerCase();
-        word = word.replace(/['‘’]/g,'\'') // deal with pesky apostrophes
-        word = word.replace(/\([^)]+\)/g,'') // anything in brackets is ignored
-        word = word.replace(/(\s)+/g,'$1') // remove duplicate whitespace (might be left over after removing brackets)
+        word = word.replaceAll(/['‘’]/g,'\'') // deal with pesky apostrophes
+        word = word.replaceAll(/\([^)]+\)/g,'') // anything in brackets is ignored
+        word = word.replaceAll(/(\s)+/g,'$1') // remove duplicate whitespace (might be left over after removing brackets)
+        word = word.replaceAll('&gt;','>') // hex transforms <, so we'll turn it back
+        word = word.replaceAll('&lt;','<') // hex transforms >, so we'll turn it back
         word = word.trim(); // remove leading and trailing whitespace
         return word
       }

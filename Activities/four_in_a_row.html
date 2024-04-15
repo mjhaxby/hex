@@ -3,7 +3,7 @@
     "cols_min":2,
     "rows_min":4,
     "cols":["Question","Answer","Alternative Answer","===="],
-    "scorm_support":false,
+    "scorm_support":true,
     "description":"Two teams take it in turn to choose a column. If they get the answer for the question they want correct, they get to drop a counter. Otherwise, it's over to the other team. Alternative answers will not be used in “Faith” mode.",
     "settings":[
         {"name":"color","label":"Color","type":"select","options":["Magnet","Swedish furniture company","Black and white","Rexby","Blorange"],"category":"look and feel"},
@@ -11,7 +11,9 @@
         {"name":"rows","label":"Rows","type":"number","default":9,"min":4,"max":12,"category":"look and feel"},        
         {"name":"cols","label":"Columns","type":"number","default":9,"min":4,"max":12,"category":"look and feel"},
         {"name":"colLabels","label":"Column labels","type":"select","options":["Numbers","Letters","Chinese","Roman","None"],"category":"look and feel"},
-        {"name":"mode","label":"Mode","type":"select","options":["Faith","Typing"],"info":"In faith mode, learners answer outloud the question, then click to reveal the answer and select whether they knew it or not. In typing mode, they must type the answer.","category":"behaviour"},
+        {"name":"mode","label":"Mode","type":"select","options":["Faith","Typing"],"info":"In faith mode, learners answer outloud the question, then click to reveal the answer and select whether they knew it or not. In typing mode, they must type the answer.","category":"behaviour","dependents":[
+            {"name":"requiredSimilarity","enable":"Typing"}
+        ]},
         {"name":"requiredSimilarity","label":"Required similarity to accept answer (%)","type":"number","default":90,"min":1,"max":100,"info":"Only for typing mode.","category":"behaviour"},
         {"name":"showQPrev","label":"Show question preview","type":"checkbox","default":true,"category":"look and feel"},
         {"name":"teamBuilder","label":"Show team builder","type":"checkbox","default":false,"info":"Always enabled for SCORM packages.","category":"look and feel"},
@@ -328,6 +330,19 @@
             text-align: center;
             vertical-align: bottom;
             transform: translateY(100%)
+        }
+
+        #resetBtn{
+            text-decoration: none;
+            position: absolute;
+            top: 0.5ch;
+            left: 0.5ch;
+            opacity: 50%;
+            width: 1ch;
+        }
+
+        #resetBtn:hover{
+            opacity: 100%;
         }
 
         #newGameButton{
@@ -742,15 +757,19 @@
             var data = JSON.parse(suspendData)
             // originalStartTime = Date.parse(data.startTime)
             gameStartTime = data.gameStartTime
-            numberOfGamesPlayed = data.gamesPlayed            
-            setTeamColor(team)
+            numberOfGamesPlayed = data.gamesPlayed   
+            teams = data.teams                     
             scells = data.cells
             if (data.seconds != '') { elapsedSeconds = parseFloat(data.seconds) }
             restoreMemTable(scells)
             restoreGame()
             team = data.turn
+            setTeamColor(team)
             gameOver = data.gameOver
             gameStarted = true
+            setTimeout(function (){
+                    showTeamTicker(team)
+                },500)  
             if (gameOver) {
                 // var winner = (turn == 'team1') ? 'team2' : 'team1'
                 var winner = team
@@ -813,7 +832,7 @@
             // possible to add support for older scorm pages here, using the other function
             scells = cellsForScorm()
             // TO DO: Make and assign the following variables: numberOfGamesPlayed
-            let suspendData = { seconds: newElapsedSeconds, games: numberOfGamesPlayed, turn: team, cells: scells, gameOver: gameOver, gameStartTime: gameStartTime }
+            let suspendData = { seconds: newElapsedSeconds, games: numberOfGamesPlayed, turn: team, cells: scells, gameOver: gameOver, gameStartTime: gameStartTime, teams: teams }
             API.LMSSetValue("cmi.suspend_data", JSON.stringify(suspendData)) // Store progress so far
             API.LMSCommit("");
             // TO DO: cancel autosave after x number of error returns?
@@ -932,31 +951,8 @@
             let numbersRow = makeNumbersRow()
             gameTable.appendChild(numbersRow)
 
-            if (!gameSettings.scorm) {
-                // set the starting team
-                team = 1
-                setTeamColor(team)
-                // assign questions and answers to cells
-                assignQuestions()
-            } else if (!reset) {
-                let suspendData = API.LMSGetValue("cmi.suspend_data")
-                if (suspendData != "") {
-                    resumeSession(suspendData)
-                } else {
-                    // set the starting team
-                    team = 1
-                    setTeamColor(team)
-                    assignQuestions()
-                    // showNewGameScreen() // in checksoundsandstart
-                }
-            }
-            //load the previews
-            if (gameSettings.showQPrev) {
-                fillQPrev()
-            }
-
-            // function for returning cells from the virtual table
-            memTable.cell = function (row, col) {
+                        // function for returning cells from the virtual table
+                        memTable.cell = function (row, col) {
                 result = this.filter(function (c) { return c.row == row && c.col == col })
                 return result[0];
             }
@@ -971,9 +967,33 @@
                 // if no cells are bottoms, the column is full
                 return -1
             }
+
+            if (!gameSettings.scorm || (gameSettings.scorm && reset)) { // if not scorm, or if scorm but we're resetting
+                // set the starting team
+                team = 1
+                setTeamColor(team)
+                // assign questions and answers to cells
+                assignQuestions()
+            } else if (!reset) {
+                // if not reseting and using scorm, check for suspend data to see if we need to resume the session                
+                suspendData = API.LMSGetValue("cmi.suspend_data")
+                if (suspendData != "") {
+                    resumeSession(suspendData)
+                } else {
+                    // set the starting team
+                    team = 1
+                    setTeamColor(team)
+                    assignQuestions()
+                    // showNewGameScreen() // in checksoundsandstart
+                }
+            }
+            //load the previews
+            if (gameSettings.showQPrev) {
+                fillQPrev()
+            }
         }
 
-        function checkSoundsAndStart() {
+        function checkSoundsAndStart(resume = false) {
             // check that the sounds are ready (or skip if disabled)
             if (!gameSettings.soundsEnabled || (typeof team1GoodSound !== 'undefined' && dropSound !== 'undefined' && team1GoodSound.readyState == 4 && team1BadSound.readyState == 4 && team2GoodSound.readyState == 4 && team2BadSound.readyState == 4 && team1WinSound.readyState == 4 && team2WinSound.readyState == 4 && popSound.readyState == 4 && dropSound.readyState == 4 && genBadSound.readyState == 4)) {
                 // create the sounds object to more easily find the right sound
@@ -985,10 +1005,16 @@
                     pop: popSound
                 }
                 prepareBoard()
-                if(gameSettings.teamBuilder || gameSettings.scorm){
+                if (gameSettings.scorm){
+                    suspendData = API.LMSGetValue("cmi.suspend_data")
+                    if (suspendData == ""){
+                        showNewGameScreen()                        
+                    }
+                } else if(gameSettings.teamBuilder){
                     showNewGameScreen()
                 } else {                
                     gameStarted = true
+                    document.getElementById('resetBtn').classList.remove('hidden')
                 }
             } else {
                 if (soundLoadAttemptCount > 100) {
@@ -1321,26 +1347,36 @@
       }
     }
 
-    function resetGame(){
+    function resetGame(requireConfirm=false){
 
-        // reset variables
-        gameOver = false
-        memTable = []
-        gameStarted = false
-        changeTeamEnabled = true // this will only be set on testing anyway
+        if(!requireConfirm || window.confirm('Do you want to reset the game?')){   
+            
+            if(gameOver){
+                document.getElementById('newGameButton').remove()
+            }
 
-        // empty gameArea
-        document.getElementById('gameArea').innerHTML = ''
-        startConfetti('stop')
-        document.getElementById('newGameButton').remove()
+            // reset variables
+            gameOver = false
+            memTable = []
+            gameStarted = false
+            changeTeamEnabled = true // this will only be set on testing anyway
+    
+            // empty gameArea, team form and ticker
+            document.getElementById('gameArea').innerHTML = ''
+            document.getElementById('formHolder').innerHTML = ''
+            document.getElementById('ticker').innerHTML = ''            
 
-        prepareBoard(true)
-
-        if(gameSettings.teamBuilder || gameSettings.scorm){
-            showNewGameScreen()
-        } else {                
-            gameStarted = true
+            startConfetti('stop')            
+    
+            prepareBoard(true)
+    
+            if(gameSettings.teamBuilder || gameSettings.scorm){
+                showNewGameScreen()
+            } else {                
+                gameStarted = true
+            }
         }
+
     }
 
     function startGame(){
@@ -1354,6 +1390,7 @@
       gameStarted = true
       hideNewGameScreen()
       showTeamTicker(team)
+      document.getElementById('resetBtn').classList.remove('hidden')
     }
 
         function makeRow(rowNum) {
@@ -1566,8 +1603,8 @@
 
         // restores the memTable, except counters which are put in a new property, ready to be dropped
         function restoreMemTable(scells) {
-            scells.forEach(csell => {
-                memCell = memTable.cell(scell.row, scell.col)
+            scells.forEach(scell => {
+                let memCell = memTable.cell(scell.row, scell.col)
                 memCell.q = scell.q
                 memCell.a = scell.a
                 memCell.counterToDrop = scell.c
@@ -1581,10 +1618,9 @@
                 for(let col = 0; col < numCols; col++){
                     let cell = memTable.cell(row, col)
                     if (cell.hasOwnProperty('counterToDrop') && cell.counterToDrop != 0){
-                        setTimeout(function (){
-                            team = cell.counterToDrop
-                            numCountersToDrop++
-                            dropCounter(col)
+                        numCountersToDrop++
+                        setTimeout(function (){                                                        
+                            dropCounter(col,cell.counterToDrop)
                         },100*numCountersToDrop)
                     }
                 }
@@ -1624,8 +1660,7 @@
             r.style.setProperty('--currentTeam', teamHoverColors[team])
         }
 
-        function dropCounter(col) {
-            counterTeam = (team === 1) ? 1 : 2 // make a note of the counterTeam because we'll need it later, when the team will have already changed
+        function dropCounter(col, counterTeam = (team === 1) ? 1 : 2) {
             let emptyRow = memTable.nextEmpty(col)
             let elToDropTo = document.getElementById('row_' + emptyRow + '_col_' + col)
             if (emptyRow >= 0) {
@@ -2109,6 +2144,8 @@
             word = word.replace(/['‘’]/g, '\'') // deal with pesky apostrophes
             word = word.replace(/\([^)]+\)/g, '') // anything in brackets is ignored
             word = word.replace(/(\s)+/g, '$1') // remove duplicate whitespace (might be left over after removing brackets)
+            word = word.replaceAll('&gt;','>') // hex transforms <, so we'll turn it back
+            word = word.replaceAll('&lt;','<') // hex transforms >, so we'll turn it back
             word = word.trim(); // remove leading and trailing whitespace
             return word
         }
@@ -2373,6 +2410,7 @@
 </head>
 
 <body>
+    <button id="resetBtn" onclick="resetGame(true)" class="hidden">×</button>
     <div id="teamBuilder">
         <div id="header">
             <div id="newGame-text-01">New </div>&nbsp;<div id="newGame-text-02">game</div>

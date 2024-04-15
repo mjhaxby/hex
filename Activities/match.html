@@ -6,6 +6,7 @@
     "cols":["Prompt","Answer"],
     "description":"Match two sets of data. You can set traps by leaving either the prompt or the answer blank.",
     "scorm_support":true,
+    "markdown_support":true,
     "empty_cells_allowed":true,
     "settings":[
       {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company 1","Swedish furniture company 2","Save the trees","Seaside","Orchid","Café au lait"],"category":"appearance"},
@@ -14,10 +15,17 @@
       {"name":"allowChangeViewMode","label":"Allow user to switch view mode","type":"checkbox","default":true,"category":"appearance"},
       {"name":"allowAlphabetize","label":"Allow user to sort dragable cards alphabetically","type":"checkbox","default":true,"category":"behavior"},
       {"name":"allowReshuffle","label":"Allow user to shuffle cards again","type":"checkbox","default":true,"category":"behavior"},
+      {"name":"lockCorrectMatches","label":"Lock in place correct answers","type":"checkbox","default":false,"category":"behavior"},      
+      {"name":"minAttempts","label":"Minimum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to show the “show answers” button after a number of attempts.","category":"behavior"},
+      {"name":"maxAttempts","label":"Maximum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to prevent answers after a number of attempts.","category":"behavior"},
       {"name":"checkButton","label":"Check button","type":"text","default":"check","category":"language"},
+      {"name":"attemptsText","label":"Attempts text","type":"text","default":"attempts: ","category":"language"},
       {"name":"pass","label":"Completion % (SCORM only)","type":"number","default":80,"max":100,"category":"behavior"}
     ],
-    "sample_data":[["English","England"],["Welsh","Wales"],["Scottish","Scotland"],["Irish","Ireland"],["British","Britain"],["","Weland"],["Scotish",""],["Anglish",""]]
+    "sample_datas":[
+      [["English","England"],["Welsh","Wales"],["Scottish","Scotland"],["Irish","Ireland"],["British","Britain"],["","Weland"],["Scotish",""],["Anglish",""]],
+      [["happy","😀"],["laughing","😂"],["angelic","😇"],["satisfied","😌"],["in love","🥰"],["scared","😱"],["sad","😢"],["cold","🥶"],["hot","🥵"],["fed up","🙄"],["sleepy","😴"],["angry","😡"]]
+      ]
   }
 *HEX SETTINGS END*-->
 <html>
@@ -237,6 +245,11 @@
         color: var(--fg-color-active);
       }
 
+      button:disabled{
+        border: none;
+        opacity: 0.5;
+      }
+
       .card{
         display: inline-block;
         max-width: 350px;
@@ -330,6 +343,10 @@
       .cemented{
         display: block;
       }
+      .locked{
+        opacity: 1;
+        cursor: default;
+      }
       .wrapper{
         /*width: 100%;*/
 /*          min-height: 30%; */
@@ -356,8 +373,9 @@
         margin-right: auto;
         width: calc(55% - 20px);   
         overflow-y: auto; 
-        height: 75vh;     
+        height: 80vh;     
         padding-top:20px;
+        padding-bottom: 10%;
         --mask: linear-gradient(to bottom, 
           rgba(0,0,0, 0) 0%, rgba(0,0,0, 1) 5%,   rgba(0,0,0, 1) 90%, 
             rgba(0,0,0, 0) 95%, rgba(0,0,0, 0) 0
@@ -499,10 +517,14 @@
       #shrinker{
         background-color: var(--dragable-color-bg);
       }
-
+s
       #shrinkClickArea{
         float: left;
         background-color: var(--dragable-color-bg);
+      }
+
+      #attemptsInfo{
+        font-size: 0.5em;
       }
 
       .horizontalClickArea{
@@ -530,6 +552,11 @@
         margin: 10px;
         /*width: 95%;*/
         z-index: 99;
+      }
+
+      .side#controls{
+        float: left;
+        width: calc(45% - 20px);
       }
 
       .recalculateAnimation{
@@ -643,7 +670,7 @@
               //welcomeDiv.innerHTML = "Welcome " + learnerName + "!";
         
               // set up "number of check buttons" interaction
-              API.LMSSetValue("cmi.interactions.0.id",'Check presses')
+              API.LMSSetValue("cmi.interactions.0.id",'check_press')
               API.LMSSetValue("cmi.interactions.0.type", 'other')
               API.LMSSetValue("cmi.interactions.0.description", 'Number of times check button pressed')
               // TO DO: Set this
@@ -659,7 +686,6 @@
             // this does not seem to reliably fire. may be better just to regularly save progress
             function onUnload(){
               console.log("Unloading!")
-                window.open("https://www.w3schools.com")
                 postProgress()
             }
         
@@ -785,7 +811,7 @@
       var hoveredEl
       var cardContainer
       var staticContainer
-      var attempts
+      var attempts = 0
       var matches = []
       const timeOfPageLoad = Date.now() 
       var elapsedSeconds = 0
@@ -818,6 +844,9 @@
         window.addEventListener('resize', function(event){
           resetCardContainer()
         });
+        if (gameSettings.maxAttempts > 0){
+          showRemainingAttempts()
+        }
       }
 
       function applySettings(){
@@ -922,6 +951,7 @@
         dropBtn = document.getElementById('drop-btn')
         dropCnt = document.getElementById('drop-cont')
         sideModeBtn = document.getElementById('sideMode-btn')
+        controls = document.getElementById('controls')
         if (shrunkCardContainer){ // if the card container has been shrunk, we should undo this before changing mode
           shrinkCardContainer() // actually unshrinks it
         }
@@ -954,6 +984,8 @@
           dropCnt.classList.add('dropdown-content-sideMode')
           // rotate side mode button
           sideModeBtn.style.transform = 'rotate(90deg)'
+          // controls take up less space
+          controls.classList.add('side')
 
         } else { // if turning off side mode
           sideModeOn = false
@@ -982,8 +1014,10 @@
           dropCnt.classList.remove('dropdown-content-sideMode')
           //put side mode button back
           sideModeBtn.style = null
+          // controls take up full width
+          controls.classList.remove('side')
           // fix the card container again
-          cement(cardContainer)
+          cement(cardContainer)        
         }
       }
 
@@ -1063,6 +1097,20 @@
           }
         }
         return matches
+      }
+
+      function getCorrectAnswers(){
+        let answers = []
+        staticList.forEach(staticCard => {
+          let possibleMatches = gameData.filter(dataPoint => dataPoint[0] == staticCard.word)
+          if (possibleMatches.length > 0){
+            // we'll just take the first one
+            // TO DO: indicate when there is more than one correct answer
+            let dragableCard = dragableList.find(item => item.word == possibleMatches[0][1])
+            answers.push({static: staticCard.index, dragable: dragableCard.index})
+          }
+        })        
+        return answers
       }
 
       function reattachCards(matches){
@@ -1342,6 +1390,30 @@
         feedbackEl.classList.add('recalculateAnimation')
         attempts++
         if(gameSettings.scorm){postAnswer(scoreAsPercentage)}
+        if(gameSettings.minAttempts > 0 || gameSettings.maxAttempts > 0){
+          showRemainingAttempts()
+          if ((gameSettings.minAttempts > 0 && attempts >= gameSettings.minAttempts)){
+            showShowAnswersButton()
+          }
+        }
+      }
+
+      function showRemainingAttempts(){
+        if (gameSettings.maxAttempts > 0 && attempts >= gameSettings.maxAttempts){
+          document.getElementById('check-btn').disabled = true
+          lockAllCards()
+        }
+        let attemptsText = document.getElementById('attemptsInfo')
+        attemptsText.style.visibility = 'visible'
+        if (gameSettings.minAttempts > 0 && gameSettings.maxAttempts == 0){
+          attemptsText.innerHTML = gameSettings.attemptsText + ' ' + attempts + '/' + gameSettings.minAttempts
+        } else {
+          attemptsText.innerHTML = gameSettings.attemptsText + ' ' + attempts + '/' + gameSettings.maxAttempts
+        }
+      }
+
+      function showShowAnswersButton(){
+        document.getElementById('show-answers-btn').style.display = 'inline-block'
       }
 
       function checkAllMatches(){
@@ -1353,6 +1425,10 @@
             let dragableCard = staticContainer.children[i].children[1] //answer
             if(compareCards(staticCard,dragableCard)){
               matches.correct.push([staticCard,dragableCard])
+              if (gameSettings.lockCorrectMatches){
+                lockCard(staticCard)
+                lockCard(dragableCard)
+              }
             } else {
               matches.incorrect.push([staticCard,dragableCard])
             }
@@ -1364,6 +1440,31 @@
           }
         }
         return matches
+      }
+
+      function showAnswers(){
+        let matches = getCorrectAnswers()
+        reattachCards(matches)
+        document.getElementById('check-btn').disabled = true
+        lockAllCards()
+      }
+
+      function lockAllCards(){
+       for (let i = 0; i < staticContainer.children.length; i++){
+          lockCard(staticContainer.children[i].children[0])
+          if (staticContainer.children[i].children.length > 1){
+            lockCard(staticContainer.children[i].children[1])
+          }          
+       }
+       for (let i = 0; i < cardContainer.children.length; i++){
+          lockCard(cardContainer.children[i])
+       }
+      }
+
+      function lockCard(element){
+        element.classList.add('locked')
+        element.onmousedown = null
+        element.ontouchstart = null
       }
 
       function compareCards(staticCard,dragableCard){
@@ -1571,11 +1672,14 @@
       <div class="wrapper notransition" id="staticWrapper"> <!-- no transition will be removed after settings are applied-->
         <div id="staticContainer" class="container"></div>
       </div>
-    </div>
       <div id="controls" class="notransition"><!-- no transition will be removed after settings are applied-->
         <button id="check-btn" class="notransition" onclick="getFeedback();">check</button><!-- no transition will be removed after settings are applied-->
         <div id="feedback" style="visibility:hidden;">0/0</div>
+        <button  onclick="showAnswers();" id="show-answers-btn" style="display:none;">show answers</button>
+        <div id="attemptsInfo" style="visibility:hidden;">0/0</div>
       </div>
+    </div>
+
     </body>
     <script src="activityController.js"></script> <!--This space is for either the activityController (when running in electron) or the game data (after export) -->
     <style>
