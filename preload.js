@@ -28,13 +28,16 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'sentInputForSave',
       'getUserActivities',
       'setActivitySettingsDefaults',
+      'customSelectImport',
       'settingsToProfile',
       'profileEditorReady',
       'updateProfile',
       'applyActivityProfile',
       'saveProfile',
       'checkProfileChangesThen',
-      'hotPotsReady'
+      'hotPotsReady',
+      'dataSelectImport',
+      'dataSelectImportFromPath'
     ];
 
     if (validChannels.includes(channel)) {
@@ -67,7 +70,9 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'applyActivitySettings',
       'updateAndApplyActivityProfile',
       'updateProfileToSave',
-      'toCheckProfileChangesThen'
+      'toCheckProfileChangesThen',
+      'customSelectImportFileResult',
+      'dataCellFileImportResult'
     ];
 
     if (validChannels.includes(channel)) {

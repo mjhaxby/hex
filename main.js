@@ -17,6 +17,10 @@ const isMac = process.platform === 'darwin'
 
 const v = app.getVersion().replace(' ', '');
 
+const extensions = {image: ['jpg','jpeg','png','gif','svg','webp'], text: ['txt'], sound: ['mp3', 'wav', 'm4a']} // extensions supported for importing files into data and settings
+
+const debugMode = !app.isPackaged || app.getVersion().includes('alpha');
+
 var config
 var prefsStore // for checking security later
 var currentActivity
@@ -60,7 +64,7 @@ async function checkForUpdate() {
   // console.log(releaseInfo)
   var latestV = releaseInfo.data.tag_name.replace('v', '');
   if (latestV != v && appName != 'Electron') { // don't ask this in dev testing
-    console.log('Update found\nCurrent version: ' + v + '\nNew version: ' + latestV)
+    if(debugMode){console.log('Update found\nCurrent version: ' + v + '\nNew version: ' + latestV)}
     // var changeLog = releaseInfo.data.body.replace('<strong>Changelog</strong>', 'Update available. Here are the changes:\n');
     var changeLog = 'Press download now to see the changelog and download.' // Improve this later.
     const options = {
@@ -74,8 +78,8 @@ async function checkForUpdate() {
 
     dialog.showMessageBox(null, options) // change null to windows.main?
       .then((response) => {
-        console.log('User response to update')
-        console.log(response)
+        if(debugMode){console.log('User response to update')}
+        if(debugMode){console.log(response)}
         if (response.response === 0) {
           shell.openExternal('https://github.com/mjhaxby/hex/releases/latest');
         }
@@ -117,13 +121,13 @@ const createMainWindow = () => {
   // Create the browser window.
   windows['main'] = new BrowserWindow({
     title: "Hex",
-    width: 1024,
-    height: 768,
+    width: 1280,
+    height: 720,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      devTools: !app.isPackaged,
+      devTools: debugMode,
       sandbox: app.isPackaged,
       contentSecurityPolicy: "default-src 'self' data:;" // only own data
     }
@@ -143,13 +147,13 @@ const createActivityWindow = (activityType, data, settings, source, importedFile
   const windowOpts = {
     title: activityType,
     show: false, // hidden at first so that the position can be determined
-    width: 1024,
-    height: 768,
+    width: 1280,
+    height: 720,
     webPreferences: {
       preload: path.join(__dirname, 'preload_activity.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      devTools: !app.isPackaged,
+      devTools: debugMode,
       sandbox: app.isPackaged,
       contentSecurityPolicy: "default-src 'self' data:;"  // only own data
     }
@@ -167,7 +171,7 @@ const createActivityWindow = (activityType, data, settings, source, importedFile
 
   var newWindow = Object.create(activityWindowPrototype);
   newWindow.activityType = activityType
-  newWindow.data = data
+  newWindow.data = structuredClone(data) // experimenting structuredClone(data) to make sure we don't have a reference to data that can be overwritten (particularly for images)… could try [...data] as well
   newWindow.settings = settings
   newWindow.source = source
   newWindow.importedFiles = importedFiles
@@ -202,7 +206,7 @@ const createProfileWindow = () => {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      devTools: !app.isPackaged,
+      devTools: debugMode,
       sandbox: app.isPackaged
     }
   })
@@ -229,7 +233,7 @@ const createDocumentationWindow = () => {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      devTools: !app.isPackaged,
+      devTools: debugMode,
       sandbox: app.isPackaged
     }
   })
@@ -275,11 +279,11 @@ app.whenReady().then(() => {
       if (config.showAdvancedExport) {
         applicationMenu.getMenuItemById('showAdvancedExport').checked = true
         // windows.main.webContents.send('showAdvancedExport')
-        console.log('marking menu item as true')
+        if(debugMode){console.log('marking menu item as true')}
       }
       windows.main.webContents.send('configStore', config)
       // if we're debugging, add the dev tools
-      if (!app.isPackaged) {
+      if (debugMode) {
         let menuItem = applicationMenu.getMenuItemById('tools')
         menuItem.submenu.append(new MenuItem({ role: 'toggleDevTools' }))
       }
@@ -335,14 +339,18 @@ app.on('web-contents-created', (event, contents) => {
         'message': 'Would you like to navigate to this page in your browser? Make sure you trust the author of this activity template.',
         'buttons': ['Yes', 'No']
       }).then(result => {
-        console.log(result)
+        if (debugMode) {
+          console.log(result)
+        }
         try {
           if (result.response != 0) { return; }
           if (result.response == 0) {
             shell.openExternal(navigationUrl);
           }
         } catch (err) {
-          console.log(err)
+          if (debugMode) {
+            console.log(err)
+          }
         }
 
       })
@@ -424,12 +432,14 @@ function findSettingAnomolies(settings) {
     currentSetting = settings[setting.name]
     currentSettingVarType = typeof currentSetting
 
-    if (setting.type == 'select' || setting.type == 'text' || setting.type == 'code' || setting.type == 'language' || setting.type == 'select_import') {
+    if (setting.type == 'select' || setting.type == 'text' || setting.type == 'code' || setting.type == 'language' || setting.type == 'select-import') {
       currentExpectedVarType = 'string'
     } else if (setting.type == 'number') {
       currentExpectedVarType = 'number'
     } else if (setting.type == 'checkbox') {
       currentExpectedVarType = 'boolean'
+    } else if (setting.type == 'font_family') {
+      currentExpectedVarType = 'object'
     } else {
       currentExpectedVarType = 'unknown'
     }
@@ -458,7 +468,9 @@ function reportSettingErrors(errors) {
       errorString += '\nSetting "' + error.name + '" should be a ' + error.expectedType + ' but a ' + error.actualType + ' was supplied.'
     }
   })
-  console.log(settingErrors)
+  if (debugMode) {
+    console.log(errors)
+  }
   dialog.showErrorBox('Error running activity', errorString)
 }
 
@@ -466,8 +478,111 @@ function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+function dataSelectImport(cell,fileTypes,path=false){
+  var validExtensions = []
+
+  var dialogOptions = {
+    title: 'Select file',
+    properties: ['openFile'],
+    filters: []
+  } 
+  if (debugMode) {
+    console.log(cell)
+    console.log(fileTypes)
+    console.log(path)
+  }
+
+  fileTypes.forEach(fileType => {
+    if (extensions.hasOwnProperty(fileType.toLowerCase())){
+      dialogOptions.filters.push({name: capitalizeFirstLetter(fileType), extensions: extensions[fileType.toLowerCase()]})
+      validExtensions.push(...extensions[fileType.toLowerCase()])      
+    } else {
+      if (debugMode) {
+        console.log('File type not found: ' + fileType)
+      }
+    }
+  })  
+
+  if (path){
+    dataSelectImportFromPath(path, validExtensions, cell)
+  } else {
+    dialog.showOpenDialog(windows.main, dialogOptions).then(result => {
+      if (result.cancelled) {
+        console.log("Cancelled")
+        windows.main.webContents.send('dataCellFileImportResult', cell, false)
+        return
+      }
+  
+      dataSelectImportFromPath(result.filePaths[0], validExtensions, cell)
+      
+    })
+  }  
+}
+
+function dataSelectImportFromPath(filePath, validExtensions, cell){
+  const fileExt = path.extname(filePath).toLowerCase().slice(1)
+    if (!validExtensions.includes(fileExt)) {
+      if (debugMode) {
+        console.log("File extension: ." + fileExt)
+        console.log("Valid extensions: ")
+        console.log(validExtensions)
+      }
+      dialog.showErrorBox("Error opening file", "Invalid file extension.")
+      return;
+    }
+    fs.stat(filePath, (err, stats) => {
+      if (err) {
+        if (debugMode) {
+          console.log("An error ocurred reading the file:" + err.message);
+        }
+        dialog.showErrorBox("Error opening file", "The file statistics could not be read.")
+        return;
+      }
+      if (stats.size > (1024 * 500)) { // for now, limit is 500KB
+        console.log("File is too big. " + stats.size + " bytes.");
+        dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 500KB or smaller are supported.")
+        windows.main.webContents.send('dataCellFileImportResult', cell, false)
+      } else {
+        importFileToDataCell(cell,filePath,fileExt,stats)        
+      }
+    })
+}
+
+
+function importFileToDataCell(cell,filePath,fileExt,stats){
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      if (debugMode) {
+        console.log("An error ocurred reading the file:" + err.message);
+      }
+      dialog.showErrorBox("Error opening file", "The file could not be read.")
+      windows.main.webContents.send('dataCellFileImportResult', cell, false)
+      return;
+    }
+
+    let fileStoreItem = { data: data.toString('base64'), ext: fileExt, fileSize: stats.size, type: determineFileType(fileExt) }
+  
+    // for images, record dimensions
+    if (extensions.image.includes(fileExt)){
+      fileStoreItem.dimensions = sizeOfImage(data)
+    }
+
+    // importFileStore['data_' + cell] = fileStoreItem
+
+    windows.main.webContents.send('dataCellFileImportResult', cell, fileStoreItem)
+  })
+}
+
+function determineFileType(fileExt){
+  for (const type in extensions){
+    if(extensions[type].includes(fileExt)){
+      return type
+    }
+  }
+  return null
+}
+
 function customSelectImport(settingId,fileTypes){
-  const extensions = {image: ['jpg','jpeg','png','gif','svg','webp'], text: ['txt'], sound: ['mp3', 'wav', 'm4a']}
   var validExtensions = []
 
   var dialogOptions = {
@@ -480,10 +595,10 @@ function customSelectImport(settingId,fileTypes){
     if (extensions.hasOwnProperty(fileType.toLowerCase())){
       dialogOptions.filters.push({name: capitalizeFirstLetter(fileType), extensions: extensions[fileType.toLowerCase()]})
       validExtensions.push(...extensions[fileType.toLowerCase()])
-      console.log('Adding extensions')
-      console.log(extensions[fileType.toLowerCase()])
     } else {
-      console.log('File type not found: ' + fileType)
+      if (debugMode) {
+        console.log('File type not found: ' + fileType)
+      }
     }
   })
   // if(fileTypes.includes('Images') || fileTypes.includes('images') ){
@@ -495,33 +610,40 @@ function customSelectImport(settingId,fileTypes){
   // TO DO: Add others?
 
   dialog.showOpenDialog(windows.main, dialogOptions).then(result => {
-    if (result.cancelled) {
-      console.log("Cancelled")
+    if (result.cancelled) {      
       windows.main.webContents.send('customSelectImportFileResult', settingId, false)
       return
     }
     const fileExt = path.extname(result.filePaths[0]).toLowerCase().slice(1)
     if (!validExtensions.includes(fileExt)) {
-      console.log("File extension: ." + fileExt)
-      console.log("Valid extensions: ")
-      console.log(validExtensions)
+      if (debugMode) {
+        console.log("File extension: ." + fileExt)
+        console.log("Valid extensions: ")
+        console.log(validExtensions)
+      }
       dialog.showErrorBox("Error opening file", "Invalid file extension.")
       return;
     }
     fs.stat(result.filePaths[0], (err, stats) => {
       if (err) {
-        console.log("An error ocurred reading the file:" + err.message);
+        if (debugMode) {
+          console.log("An error ocurred reading the file:" + err.message);
+        }
         dialog.showErrorBox("Error opening file", "The file statistics could not be read.")
         return;
       }
       if (stats.size > (1024 * 100)) { // for now, limit is 100KB
-        console.log("File is too big. " + stats.size + " bytes.");
+        if (debugMode) {
+          console.log("File is too big. " + stats.size + " bytes.");
+        }
         dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 100KB or smaller are supported.")
         windows.main.webContents.send('customSelectImportFileResult', settingId, false)
       } else {
         fs.readFile(result.filePaths[0], (err, data) => {
           if (err) {
-            console.log("An error ocurred reading the file:" + err.message);
+            if (debugMode) {
+              console.log("An error ocurred reading the file:" + err.message);
+            }
             dialog.showErrorBox("Error opening file", "The file could not be read.")
             windows.main.webContents.send('customSelectImportFileResult', settingId, false)
             return;
@@ -546,7 +668,6 @@ function customSelectImport(settingId,fileTypes){
 function isArrayofStrings(variable) {
   if (!Array.isArray(variable)) {
     return false; // Not an array
-    console.log('Not an array!')
   }
 
   return variable.every((item) => typeof item === 'string');
@@ -560,6 +681,87 @@ function isArrayofArrayofStrings(variable) {
   }
 
   return variable.every((item) => isArrayofStrings(item));
+}
+
+function advancedCheckActivityData(data,exporting=false){
+  if(!Array.isArray(data)){
+    if(debugMode){console.error(`Advanced change activity data: Not an array`)}
+    return false // not an array
+  }
+  let ok = true
+  data.forEach(line =>{
+    if(!Array.isArray(line)){
+      if(debugMode){console.error(`Advanced change activity data: Array does not contain arrays`)}
+      ok = false
+      return false // line is not array (this will only make us leave the forEach)
+    }
+    line.forEach(cell =>{
+      if(typeof cell != 'string'){
+        let properties = Object.getOwnPropertyNames(cell)
+        properties.forEach(property => {
+         if(property != 'image' && property != 'text'){      
+          if(debugMode){console.error(`Advanced change activity data: Invalid property: ${property}`)}
+          ok = false
+          return false
+         } 
+        })
+        if(cell.hasOwnProperty('text') && typeof(cell.text) != 'string'){
+          if(debugMode){console.error(`Advanced change activity data: Text of object is not string`)}
+          ok = false
+          return false
+        }
+        if(cell.hasOwnProperty('image')){    
+          if(debugMode){console.log(cell.image)}      
+          if(exporting && typeof cell.image != 'object' || !exporting && typeof cell.image != 'number'){ // TO DO: make exporting use the number system too in order to reduce file sizes
+            if(debugMode){console.error(`Advanced change activity data: Image data link corrupt: typeof returns ${typeof cell.image}`)}
+            ok = false
+            return false
+          }
+        }
+      }
+    })
+  })
+  return ok
+}
+
+function checkFileStore(store){
+  let ok = true
+  let properties = Object.getOwnPropertyNames(store)
+  properties.forEach(property =>{
+    if(property != 'gameData'){
+      ok = checkImage(store[property])
+    } else {
+      for(let i = 1; i<store.gameData.length; i++){      
+        ok = checkImage(store.gameData[i])
+        if(!ok){
+          return false
+        }
+      }
+    }
+    if(!ok){
+      return false
+    }
+  })
+  return ok
+}
+
+function checkImage(image){
+  let ok = true
+
+  if(typeof image.data != 'string' || typeof image.ext != 'string' || (typeof image.fileSize != 'string' && typeof image.fileSize != 'number')){
+    ok = false
+  }
+
+  // Below is coding to check the file size. However, this doesn't seem reliable, so for now it's disabled.
+
+    //   let bytesEstimate = (image.data.length - 814) / 1.37
+    // if(debugMode){console.log(`Check image: Bytes estimate is ${bytesEstimate}, recorded file size is ${image.fileSize}`)}
+    // if(parseInt(image.fileSize) < bytesEstimate*0.75 || parseInt(image.fileSize) > bytesEstimate*1.25){
+    //   console.error('Advanced change activity data: Size of image seems suspicious')
+    //   ok = false
+    //   return false
+    // }
+    return ok
 }
 
 function verifiyActivityAndSource(activity, source) {
@@ -592,7 +794,9 @@ function validateSender(frame) {
 
 function readActivitySettings(activity, source) {
   return new Promise((resolve, reject) => {
-    console.log(source)
+    if (debugMode) {
+      console.log(source)
+    }
     const activityPath = findActivityPath(activity, source);
 
     activityEditor.openActivityTemplate(activityPath)
@@ -610,17 +814,87 @@ function readActivitySettings(activity, source) {
   });
 }
 
+function activityTemplateOnlyRequiresStrings(){
+  let result = true
+  if(prefsStore.hasOwnProperty('cols')){
+    prefsStore.cols.forEach(col => {
+      if (col.image){
+        result = false
+        return false // leave forEach
+      } else if (col.sound) {
+        result = false
+        return false // leave forEach
+      }
+    })
+  } else {
+    return true
+  }
+  return result
+}
+
+function extractFilesFromGameDataToImportFileStore(data){
+  importFileStore.gameData = [0] // add an empty first array so that we can use existingFile as both a bool and an integer (otherwise existingFile while count as false if 0)
+  if (debugMode) {
+    console.log(data)
+  }
+  for (let row = 0; row < data.length; row++){
+    for (let col = 0; col < data[row].length; col++){
+      let cell = data[row][col]
+      if(typeof cell != 'string'){
+        for (const file in cell){
+          if (file != 'text'){  // ignore text, we can leave this as it is
+            let existingFile = gameFileAlreadyExists(cell[file]) // returns index of existing file
+            if(existingFile){
+              cell[file] = existingFile
+            } else {
+              importFileStore.gameData.push(cell[file])
+              cell[file] = importFileStore.gameData.length-1
+            }
+          }
+        }
+      }
+    }
+  }
+  return data
+}
+
+function gameFileAlreadyExists(fileStoreItem){
+  if (importFileStore.gameData){
+    for (let i = 1; i < importFileStore.gameData.length; i++){
+      let existingFile = importFileStore.gameData[i]
+      // check first the size as this might be quicker than checking the data - most of the time, if these are different, it's not the same file
+      // if (debugMode) {
+      //   console.log(fileStoreItem.fileSize)
+      //   console.log(existingFile.fileSize)
+      //   console.log(fileStoreItem.data)
+      //   console.log(existingFile.data)
+      // }
+      if (fileStoreItem.fileSize == existingFile.fileSize && fileStoreItem.data == existingFile.data){
+        return i
+      }
+    }
+  }
+  return false
+}
+
 function processSaveExport(event,data,purpose='export',path=''){
   if (!validateSender(event.senderFrame)) {
     dialog.showErrorBox('Security error!', 'A renderer sent a signal from a non-local source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
     return null
   }
-  settingErrors = findSettingAnomolies(data.settings)
-  dataOK = isArrayofArrayofStrings(data.input)
-  activityOK = verifiyActivityAndSource(data.activity, data.source)
-  typeOK = (data.type == 'html' || data.type == 'scorm')
-  packageIdOK = (typeof data.packageIdentifier == 'string')
-  settingErrors = findSettingAnomolies(data.settings)
+  let settingErrors = findSettingAnomolies(data.settings)
+  let dataOK
+  let stringsOnlyActivity = activityTemplateOnlyRequiresStrings()
+  // console.log(`Only requires strings? ${stringsOnlyActivity}`)
+  if (stringsOnlyActivity){
+    dataOK = isArrayofArrayofStrings(data.input)
+  } else {
+    dataOK = advancedCheckActivityData(data.input,true)
+  }
+  let activityOK = verifiyActivityAndSource(data.activity, data.source)
+  let typeOK = (data.type == 'html' || data.type == 'scorm')
+  let packageIdOK = (typeof data.packageIdentifier == 'string')
+  // settingErrors = findSettingAnomolies(data.settings)
   if (settingErrors.length == 0 && dataOK && activityOK) {
     if (purpose == 'export'){
       exportActivity(data.input, data.activity, data.settings, data.source, data.type, data.packageIdentifier)
@@ -647,23 +921,40 @@ ipcMain.on("runActivity", function (event, data, settings, activity, source) {
     dialog.showErrorBox('Security error!', 'A renderer sent a signal from a non-local source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
     return null
   }
-  console.log('Running activity')
+  if (debugMode) {
+    console.log('Running activity')
+  }
   // console.log(event)
   // console.log(data)
   if(prefsStore.hasOwnProperty('markdown_support') && prefsStore.markdown_support){
     // TO DO: && if enabled by user
     withMarkdown = activityEditor.applyMarkdown(data, settings, prefsStore.settings)    
-    data = withMarkdown.data
+    data.input = withMarkdown.data
     settings = withMarkdown.settings
   }
-  console.log(activity)
-  console.log(settings)
+  if (debugMode) {
+    console.log(activity)
+    console.log(settings)
+  }
   validateSender(event.senderFrame)
-  settingErrors = findSettingAnomolies(settings)
-  dataOK = isArrayofArrayofStrings(data)
-  activityOK = verifiyActivityAndSource(activity, source)
+  let settingErrors = findSettingAnomolies(settings)
+  let dataOK
+  let fileStoreOK = true
+  let stringsOnlyActivity = activityTemplateOnlyRequiresStrings()
+  if (debugMode) {console.log(`Only requires strings? ${stringsOnlyActivity}`)}
+  if (stringsOnlyActivity){
+    dataOK = isArrayofArrayofStrings(data)
+    if (debugMode) {console.log(`Data ok? ${dataOK}`)}
+  } else {    
+    data = extractFilesFromGameDataToImportFileStore(data)
+    dataOK = advancedCheckActivityData(data)
+    fileStoreOK = checkFileStore(importFileStore)
+    if (debugMode) {console.log(`Data ok? ${dataOK}`)}
+  }
+  let activityOK = verifiyActivityAndSource(activity, source)
+  if (debugMode) {console.log(`Activity ok? ${activityOK}`)}
 
-  if (settingErrors.length == 0 && dataOK && activityOK) {
+  if (settingErrors.length == 0 && dataOK && activityOK && fileStoreOK) {      
     createActivityWindow(activity, data, settings, source, importFileStore)
   } else if (settingErrors.length > 0) {
     reportSettingErrors(settingErrors)
@@ -678,7 +969,9 @@ ipcMain.on("runActivity", function (event, data, settings, activity, source) {
 // type: html scorm
 
 ipcMain.on("exportActivity", function (event) {
-  console.log(event)
+  if (debugMode) {
+    console.log(event)
+  }
   getReadyToExport('html')
 })
 
@@ -709,7 +1002,9 @@ ipcMain.on('readActivityPrefs', function (event, activity, source) {
       prefsStore = readPreferences(activityTemplate)
       if (config.activities && config.activities[source+'_'+activity] && config.activities[source+'_'+activity].default_settings){
         customDefaults = config.activities[source+'_'+activity].default_settings
-        console.log(customDefaults)
+        if (debugMode) {
+          console.log(customDefaults)
+        }
       }
 
       // get some more information for when exporting later
@@ -717,7 +1012,24 @@ ipcMain.on('readActivityPrefs', function (event, activity, source) {
       prefsStore.platform = process.platform
       prefsStore.source = source
       prefsStore.activity = activity
-      console.log(prefsStore)
+      if (debugMode) {
+        console.log(prefsStore)
+      }
+
+      //transform templates into full settings
+      if(prefsStore.hasOwnProperty('settings')){
+        prefsStore.settings = unrollTemplates(prefsStore.settings)
+      }
+
+      // standardise cols to an object (rather than just a string with the col title)
+      if (prefsStore.hasOwnProperty('cols')){
+        for (let i = 0; i < prefsStore.cols.length; i++){
+          if (typeof prefsStore.cols[i] == 'string'){
+
+            prefsStore.cols[i] = {title: prefsStore.cols[i], text: true, image: false}
+          }
+        }
+      }
 
       if (!prefsWaiting.hasOwnProperty('exists')){
         windows.main.webContents.send('setPrefs', prefsStore, prefsWaiting);
@@ -802,6 +1114,14 @@ ipcMain.on('setActivitySettingsDefaults', function (event, settings) {
   setDefaultActivitySettings(settings)
 })
 
+ipcMain.on('dataSelectImport', function(event,cell, fileTypes){
+  dataSelectImport(cell,fileTypes)
+})
+
+ipcMain.on('dataSelectImportFromPath', function(event, cell, fileTypes, path){
+  dataSelectImport(cell,fileTypes, path)
+})
+
 ipcMain.on('customSelectImport', function (event, settingId, fileTypes){
   customSelectImport(settingId, fileTypes)
 })
@@ -813,7 +1133,9 @@ ipcMain.on('settingsToProfile', function (event, activity, source, settings) {
   } else {
     profileStore.activities.push({ activity: activity, source: source, settings: settings })
   }
-  console.log(profileStore)
+  if (debugMode) {
+    console.log(profileStore)
+  }
   if (windows.profileEditor){
     readActivitySettings(activity, source).then(settingControls => {
       windows.profileEditor.webContents.send('addToProfile', activity, source, settings, settingControls)
@@ -822,10 +1144,12 @@ ipcMain.on('settingsToProfile', function (event, activity, source, settings) {
 })
 
 ipcMain.on('updateProfile', function (event, profile){
-  console.log(profile)
-  profile.activities.forEach(activityProfile => {
-    console.log(activityProfile.settings)
-  })
+  if (debugMode) {
+    console.log(profile)
+    profile.activities.forEach(activityProfile => {
+      console.log(activityProfile.settings)
+    })
+  }
   profileStore = profile
 })
 
@@ -877,30 +1201,35 @@ const importTableDialog = () => {
 
   dialog.showOpenDialog(windows.main, dialogOptions).then(result => {
     if (result.cancelled) {
-      console.log("Cancelled")
       return
     }
-    console.log(result)
+    if (debugMode) {
+      console.log(result)
+    }
     const fileExt = path.extname(result.filePaths[0])
     if (fileExt.toLowerCase() != '.hex' &&fileExt.toLowerCase() != '.json' && fileExt.toLowerCase() != '.txt') {
-      console.log("File extension: " + fileExt)
+      if (debugMode) {
+        console.log("File extension: " + fileExt)
+      }
       dialog.showErrorBox("Error opening file", "Invalid file extension. Please select a .txt or .json file.")
       return;
     }
 
     fs.stat(result.filePaths[0], (err, stats) => {
       if (err) {
-        console.log("An error ocurred reading the file:" + err.message);
+        if (debugMode) {
+          console.log("An error ocurred reading the file:" + err.message);
+        }
         dialog.showErrorBox("Error opening file", "The file statistics could not be read.")
         return;
       }
       if (stats.size > (1024 * 1024)) { // slightly arbitarily putting the limit at a megabyte, but this would be a huge table in any case
-        console.log("File is too big. " + stats.size + " bytes.");
+        if(debugMode){console.log("File is too big. " + stats.size + " bytes.")};
         dialog.showErrorBox("Error opening file", "This file is too large for hex to read efficiently. Please choose a file less than a megabyte in size or consider making a smaller activity.")
       } else {
         fs.readFile(result.filePaths[0], 'utf-8', (err, data) => {
           if (err) {
-            console.log("An error ocurred reading the file:" + err.message);
+            if(debugMode){console.log("An error ocurred reading the file:" + err.message)};
             dialog.showErrorBox("Error opening file", "The file could not be read.")
             return;
           }
@@ -912,8 +1241,8 @@ const importTableDialog = () => {
           if (isJson || isTabbed) {
             windows.main.webContents.send('loadInput', data);
           } else {
-            console.log("Analysed as JSON: " + isJson)
-            console.log("Tabs detected: " + isTabbed)
+            if(debugMode){console.log("Analysed as JSON: " + isJson)}
+            if(debugMode){console.log("Tabs detected: " + isTabbed)}
             dialog.showErrorBox("Error opening file", "Invalid file format. Please used tabbed input or JSON.")
             return;
           }
@@ -936,12 +1265,11 @@ const openUserActivitiesDirDialog = () => {
     properties: ['openDirectory', 'createDirectory']
   }).then(result => {
     if (result.canceled) {
-      console.log("Cancelled")
       return
     } else {
-      console.log(result)
+      if(debugMode){console.log(result)}
       config.userActivitiesDir = result.filePaths[0].replace(/(\s+)/g, '\$1')
-      console.log(config)
+      if(debugMode){console.log(config)}
       saveConfigFile();
       windows.main.webContents.send('loadActivities')
       // TODO save config file, reload activities list
@@ -952,10 +1280,10 @@ const openUserActivitiesDirDialog = () => {
 const toggleAdvancedExportOptions = () => {
   if (Menu.getApplicationMenu().getMenuItemById('showAdvancedExport').checked) {
     config.showAdvancedExport = true
-    console.log('Show advanced export options is on')
+    if(debugMode){console.log('Show advanced export options is on')}
   } else {
     config.showAdvancedExport = false
-    console.log('Show advanced export options is off')
+    if(debugMode){console.log('Show advanced export options is off')}
   }
   windows.main.webContents.send('configStore', config)
   saveConfigFile();
@@ -964,10 +1292,10 @@ const toggleAdvancedExportOptions = () => {
 const saveConfigFile = () => {
   fs.writeFile(configFilePath, JSON.stringify(config), { encoding: 'utf8' }, (err) => {
     if (err) {
-      console.log(err);
+      if(debugMode){console.log(err)};
     } else {
-      console.log("Config file updated successfully.")
-      console.log(config)
+      if(debugMode){console.log("Config file updated successfully.")}
+      if(debugMode){console.log(config)}
     }
   })
 }
@@ -1011,19 +1339,22 @@ const exportActivity = (data, activity, settings, source, type = 'html', package
     let activityPath = findActivityPath(activity, source)
 
     activityEditor.openActivityTemplate(activityPath).then(activityTemplate => {
-      settings.scorm = false // add scorm (false) tag to the  settings
-      exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, prefsStore)
-      dialog.showSaveDialog(dialogOptions).then(result => {
-        if (result.canceled) {
-          console.log("Cancelled")
-          return
-        }
-        fs.writeFile(result.filePath, exportData, { encoding: 'utf8' }, (err) => {
-          if (err) {
-            console.log(err);
-          } else {
-            console.log("File written successfully.")
+      activityEditor.openFonts(settings).then ( fontData => {
+        if(debugMode){console.log(fontData)}
+        settings.scorm = false // add scorm (false) tag to the  settings
+        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, prefsStore, fontData)
+        dialog.showSaveDialog(dialogOptions).then(result => {
+          if (result.canceled) {
+            if(debugMode){console.log("Cancelled")}
+            return
           }
+          fs.writeFile(result.filePath, exportData, { encoding: 'utf8' }, (err) => {
+            if (err) {
+              if(debugMode){console.log(err)};
+            } else {
+              if(debugMode){console.log("File written successfully.")}
+            }
+          })
         })
       })
     });
@@ -1045,11 +1376,11 @@ const exportActivity = (data, activity, settings, source, type = 'html', package
     if (config.showScormInfo) { // if user has not said they don't want to see this anymore, we'll show the message with the above settings
       dialog.showMessageBox(dialogOptions).then(result => {
 
-        console.log(result.response)
-        console.log(result.canceled)
+        if(debugMode){console.log(result.response)}
+        if(debugMode){console.log(result.canceled)}
 
         if (result.response == 2) { // This should be result.cancelled, but that's not working for whatever reason
-          console.log("Cancelled")
+          if(debugMode){console.log("Cancelled")}
           return
         }
 
@@ -1091,11 +1422,14 @@ const exportActivity = (data, activity, settings, source, type = 'html', package
 
     activityEditor.openActivityTemplate(activityPath).then(activityTemplate => {
       activityEditor.openManifestTemplate().then(manifestTemplate => {
+      activityEditor.openFonts(settings).then ( fontData => {
+        if(debugMode){console.log(fontData)}
         settings.scorm = true // add scorm tag to the  settings
-        var exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings,prefsStore)
+        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, prefsStore, fontData)
+
         dialog.showSaveDialog(dialogOptions).then(result => {
           if (result.canceled) {
-            console.log("Cancelled")
+            if(debugMode){console.log("Cancelled")}
             return
           }
           let activityDetails = {
@@ -1109,10 +1443,11 @@ const exportActivity = (data, activity, settings, source, type = 'html', package
             zip.addFile('imsmanifest.xml', Buffer.from(manifestData, 'utf8'))
             zip.writeZip(result.filePath)
           } catch (e) {
-            console.log('Unable to create zip file: ' + e)
+            if(debugMode){console.log('Unable to create zip file: ' + e)}
           }
         })
       })
+    })
     });
   }
 
@@ -1141,35 +1476,35 @@ const openTableDialog = () => {
 
   dialog.showOpenDialog(windows.main, dialogOptions).then(result => {
     if (result.cancelled) {
-      console.log("Cancelled")
+      if(debugMode){console.log("Cancelled")}
       return
     }
-    console.log(result)
+    if(debugMode){console.log(result)}
     const fileExt = path.extname(result.filePaths[0])
     if (fileExt.toLowerCase() != '.hex' &&fileExt.toLowerCase() != '.json' && fileExt.toLowerCase() != '.txt') {
-      console.log("File extension: " + fileExt)
+      if(debugMode){console.log("File extension: " + fileExt)}
       dialog.showErrorBox("Error opening file", "Invalid file extension. Please select a .hex or .json or .txt file.")
       return;
     }
 
     fs.stat(result.filePaths[0], (err, stats) => {
       if (err) {
-        console.log("An error ocurred reading the file:" + err.message);
+        if(debugMode){console.log("An error ocurred reading the file:" + err.message)};
         dialog.showErrorBox("Error opening file", "The file statistics could not be read.")
         return;
       }
       if (stats.size > (1024 * 1024)) { // slightly arbitarily putting the limit at a megabyte, but this would be a huge table in any case
-        console.log("File is too big. " + stats.size + " bytes.");
+        if(debugMode){console.log("File is too big. " + stats.size + " bytes.")};
         dialog.showErrorBox("Error opening file", "This file is too large for hex to read efficiently. Please choose a file less than a megabyte in size or consider making a smaller activity.")
       } else {
         fs.readFile(result.filePaths[0], 'utf-8', (err, data) => {
           if (err) {
-            console.log("An error ocurred reading the file:" + err.message);
+            if(debugMode){console.log("An error ocurred reading the file:" + err.message)};
             dialog.showErrorBox("Error opening file", "The file could not be read.")
             return;
           }
 
-          console.log(data)
+          if(debugMode){console.log(data)}
 
           const isJson = !(/[^,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]/.test(
             data.replace(/"(\\.|[^"\\])*"/g, ''))) && eval('(' + data + ')');
@@ -1205,35 +1540,35 @@ const openProfileDialog = () => {
 
   dialog.showOpenDialog(windows.main, dialogOptions).then(result => {
     if (result.cancelled) {
-      console.log("Cancelled")
+      if(debugMode){console.log("Cancelled")}
       return
     }
-    console.log(result)
+    if(debugMode){console.log(result)}
     const fileExt = path.extname(result.filePaths[0])
     if (fileExt.toLowerCase() != '.json' && fileExt.toLowerCase() != '.txt') {
-      console.log("File extension: " + fileExt)
+      if(debugMode){console.log("File extension: " + fileExt)}
       dialog.showErrorBox("Error opening file", "Invalid file extension. Please select a .txt or .json file.")
       return;
     }
 
     fs.stat(result.filePaths[0], (err, stats) => {
       if (err) {
-        console.log("An error ocurred reading the file:" + err.message);
+        if(debugMode){console.log("An error ocurred reading the file:" + err.message)};
         dialog.showErrorBox("Error opening file", "The file statistics could not be read.")
         return;
       }
       if (stats.size > (1024 * 1024)) { // slightly arbitarily putting the limit at a megabyte, but this would be a huge table in any case
-        console.log("File is too big. " + stats.size + " bytes.");
+        if(debugMode){console.log("File is too big. " + stats.size + " bytes.")};
         dialog.showErrorBox("Error opening file", "This file is too large for hex to read efficiently. Please choose a file less than a megabyte in size or consider making a smaller activity.")
       } else {
         fs.readFile(result.filePaths[0], 'utf-8', (err, data) => {
           if (err) {
-            console.log("An error ocurred reading the file:" + err.message);
+            if(debugMode){console.log("An error ocurred reading the file:" + err.message)};
             dialog.showErrorBox("Error opening file", "The file could not be read.")
             return;
           }
 
-          console.log(data)
+          if(debugMode){console.log(data)}
 
           const isJson = !(/[^,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]/.test(
             data.replace(/"(\\.|[^"\\])*"/g, ''))) && eval('(' + data + ')');
@@ -1285,7 +1620,7 @@ const saveTableDialog = (data) => {
 
     dialog.showSaveDialog(dialogOptions).then(result => {
       if (result.canceled) {
-        console.log("Cancelled")
+        if(debugMode){console.log("Cancelled")}
         return
       }
       initiateSaveTable(result.filePath)
@@ -1295,7 +1630,7 @@ const saveTableDialog = (data) => {
 
 const saveProfileDialog = () => {  
 
-    console.log(profileStore)
+    if(debugMode){console.log(profileStore)}
     let defaultPath = openProfilePath
 
     if (defaultPath == ''){
@@ -1314,7 +1649,7 @@ const saveProfileDialog = () => {
 
       dialog.showSaveDialog(dialogOptions).then(result => {
         if (result.canceled) {
-          console.log("Cancelled")
+          if(debugMode){console.log("Cancelled")}
           return
         }
         initiateSaveProfile(result.filePath)
@@ -1327,8 +1662,8 @@ function loadProfileInEditor(){
     activitySettingControlsStore = {}
     readActivitySettings(activityProfile.activity, activityProfile.source).then(settingControls => {
       activitySettingControlsStore[activityProfile.source + '_' + activityProfile.activity] = settingControls
-      console.log(Object.keys(activitySettingControlsStore).length + ' setting controls found')
-      console.log(profileStore.activities.length + ' activity settings in profile')
+      if(debugMode){console.log(Object.keys(activitySettingControlsStore).length + ' setting controls found')}
+      if(debugMode){console.log(profileStore.activities.length + ' activity settings in profile')}
       // when all the activity setting controls have been loaded, send the profile and the setting controls off to the profile editor
       if (Object.keys(activitySettingControlsStore).length == profileStore.activities.length) {
         windows.profileEditor.webContents.send('loadProfile', profileStore, activitySettingControlsStore)
@@ -1399,7 +1734,7 @@ function checkProfileChangesThen(action){
       'defaultId':0,
       'cancelId':2
     }).then(result => {
-      console.log(result)
+      if(debugMode){console.log(result)}
       try {
         if (result.response == 2) { return; } // Cancelled
         if (result.response == 0) { // Yes
@@ -1418,7 +1753,7 @@ function checkProfileChangesThen(action){
           }
         } 
       } catch (err) {
-        console.log(err)
+        if(debugMode){console.log(err)}
       }
 
     })
@@ -1477,7 +1812,7 @@ function initiateSaveProfile(path=openProfilePath){
   }
 
   if (windows.profileEditor){
-    console.log('Getting latest version of profile')
+    if(debugMode){console.log('Getting latest version of profile')}
     windows.profileEditor.webContents.send('updateProfileToSave',path)   
   } else {
     saveProfile(profileStore,path)
@@ -1502,9 +1837,9 @@ function saveProfile(profile,path){
 
   fs.writeFile(path, data, { encoding: 'utf8' }, (err) => {
     if (err) {
-      console.log(err);
+      if(debugMode){console.log(err)};
     } else {
-      console.log("File written successfully.")
+      if(debugMode){console.log("File written successfully.")}
       lastSavedProfile = profileStore
       openProfilePath = path
 
@@ -1534,9 +1869,9 @@ function saveTable(inputData,path){
 
   fs.writeFile(path, data, { encoding: 'utf8' }, (err) => {
     if (err) {
-      console.log(err);
+      if(debugMode){console.log(err)};
     } else {
-      console.log("File written successfully.")
+      if(debugMode){console.log("File written successfully.")}
       // lastSavedProfile = profileStore
 
       // we may be saving in anticipation of opening or closing the file, in which case this variable will have been set
@@ -1554,7 +1889,7 @@ function readPreferences(data) {
   let regex = /<!--\*HEX SETTINGS START\*([.\s\S]+)\*HEX SETTINGS END\*-->/gm
   var dataArea = data.match(regex)[0] // find the pref data with the flags
   var jsonData = dataArea.replace(regex, '$1').trim() // remove the flags and trim
-  // console.log(jsonData)
+  // if(debugMode){console.log(jsonData)}
   if (jsonData) {
     try {
       obj = JSON.parse(jsonData)
@@ -1565,6 +1900,27 @@ function readPreferences(data) {
     obj = { error: 'Hex settings not found.' } // pass on error if we can't find the settings at all
   }
   return obj
+}
+
+function unrollTemplates(settings){
+  let unrolledSettings = []
+  settings.forEach(setting =>{
+    let updatedSetting
+    if(setting.hasOwnProperty('template')){
+      let templateSetting = settings.find(s => s.name == setting.template)
+      if (templateSetting){
+        if(debugMode){console.log(`Copying template settings ${setting.template}`)}
+        updatedSetting = Object.assign({}, templateSetting, setting)
+      } else {
+        if(debugMode){console.error(`Template setting not found: ${setting.template}`)}
+        updatedSetting = setting
+      }
+    } else {
+      updatedSetting = setting
+    }
+    unrolledSettings.push(updatedSetting)
+  })
+  return unrolledSettings
 }
 
 function activityFocused() {
@@ -1589,7 +1945,7 @@ let openConfigFile = function openConfigFilePromise(file) {
   return new Promise((resolve, reject) => {
     fs.readFile(file, 'utf-8', (err, data) => {
       if (err) {
-        console.log("An error ocurred reading the config file:" + err.message);
+        if(debugMode){console.log("An error ocurred reading the config file:" + err.message)};
         reject("Error");
       }
       // console.log(data)
@@ -1602,13 +1958,13 @@ let openConfigFile = function openConfigFilePromise(file) {
 function getConfig() {
   return new Promise((resolve, reject) => {
     if (fs.existsSync(configFilePath)) { // look for config file
-      console.log('Config file path found: ' + configFilePath)
+      if(debugMode){console.log('Config file path found: ' + configFilePath)}
     } else { // create the file if it doesn't exist
       fs.writeFile(configFilePath, JSON.stringify(defaultConfig), { encoding: 'utf8' }, (err) => {
         if (err) {
-          console.log(err);
+          if(debugMode){console.log(err)};
         } else {
-          console.log("Config file create successfully.")
+          if(debugMode){console.log("Config file create successfully.")}
         }
       })
     }
@@ -1630,7 +1986,7 @@ function getConfig() {
         currentConfig = { error: e } // pass on error if there is a json formatting issue
         resolve(currentConfig)
       }
-      console.log(currentConfig)
+      if(debugMode){console.log(currentConfig)}
       // windows.main.webContents.send('setConfig', config); // not using this yet
     })
   });

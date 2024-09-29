@@ -1,6 +1,6 @@
 {
   "name": "hex",
-  "version": "3.3.5",
+  "version": "3.4.1",
   "description": "Learning activity creator.",
   "main": "main.js",
   "scripts": {
@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.10",
+    "async": "^3.2.5",
     "buffer-image-size": "^0.6.4",
     "electron-context-menu": "^3.6.1",
     "electron-default-menu": "^1.0.2",
@@ -78,17 +79,19 @@
     "deb": {
       "priority": "optional"
     },
-    "fileAssociations": [{
-      "ext": "hext",
-      "name": "hex Table File",
-      "description": "hex table file",
-      "role": "Editor"
-    },
-    {
-      "ext": "hexp",
-      "name": "hex Profile",
-      "description": "hex profile",
-      "role": "Editor"
-    }]
+    "fileAssociations": [
+      {
+        "ext": "hext",
+        "name": "hex Table File",
+        "description": "hex table file",
+        "role": "Editor"
+      },
+      {
+        "ext": "hexp",
+        "name": "hex Profile",
+        "description": "hex profile",
+        "role": "Editor"
+      }
+    ]
   }
 }

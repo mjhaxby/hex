@@ -38,6 +38,7 @@ function pageLoad(){
   headerRow(numCols) // add the header row with controls
   addRow(1) // add the first data row
   loadActivities()
+  document.body.appendChild(dragPlaceholder())
   setTimeout(function(){
     document.body.classList.remove('preload');
   },500)
@@ -71,7 +72,7 @@ function run() {
     const selector = document.getElementById('activitySlct')
     var activity = selector.value
     var source = selector.options[selector.selectedIndex].getAttribute('data-source')
-    data = convertTableToTrimmedArray(true)
+    data = convertTableToTrimmedArray(true,true)    
     settings = getSettings(prefsStore.settings)
     console.log(settings)
      //send the info to main process
@@ -82,7 +83,7 @@ function run() {
 }
 
 function exporter(){
-  validity = checkValidity()
+  validity = checkValidity()  
   if (validity.valid){
       ipcRenderer.send('exportActivity'); // since export can be called from elsewhere, we won't bother sending the data from here
   } else {
@@ -129,12 +130,16 @@ function setPrefs(prefs, customDefaults={}){
   tableBody.removeChild(tableBody.children[0])
   headerRow(numCols)
 
+  // disable or re-enable images selector
+  checkDataTypeCols()
+
   //set up settings area
   settingsArea = document.getElementById("settingsArea")
   settingsArea.innerHTML = ""
   if (prefs.hasOwnProperty('settings')){
     makeSettings(prefs.settings) // this will set the factory default settings first, which we should do just in case they've been updated since the defaults were set
     if (Object.keys(customDefaults).length > 0){
+      prefsStore.customDefaults = customDefaults
       setSettings(customDefaults,prefs.settings)
     }
   }
@@ -147,13 +152,13 @@ function setPrefs(prefs, customDefaults={}){
     settingsArea.appendChild(description)
   }
   if (prefs.hasOwnProperty('sample_data')){
-    var example = exampleButton()
+    var example = exampleButton(0,prefs.sample_data.hasOwnProperty('settings'))
     settingsArea.appendChild(example)
   } else if (prefs.hasOwnProperty('sample_datas')){
     // var exampleHolder = document.createElement('div')
     // exampleHolder.setAttribute('id','exampleHolder')
     for (let i=1; i<=prefs.sample_datas.length; i++){
-      var example = exampleButton(i)      
+      var example = exampleButton(i,prefs.sample_datas[i-1].hasOwnProperty('settings'))      
       settingsArea.appendChild(example)
       if (i<prefs.sample_datas.length) {settingsArea.append(' ')} // weirdly this is how we get the space between the other buttons, so we're doing the same here to be consistent
     }
@@ -190,8 +195,9 @@ function setPrefs(prefs, customDefaults={}){
   updateAppearanceForUnused()
 }
 
-function exampleButton(number = 0) {
+function exampleButton(number = 0,includesSettings) {
   var exampleText = 'example'
+  var withSettingsText = 'includes sample settings'
   var functionRef = 'showExample(prefsStore.sample_data)'
   var example = document.createElement('button')
 
@@ -202,7 +208,13 @@ function exampleButton(number = 0) {
 
   example.setAttribute('class', 'exampleBtn')
 
-  example.innerHTML = exampleText
+  example.innerHTML = `${exampleText}`
+  if (includesSettings){
+    example.appendChild(document.createElement('br'))
+    let withSettings = document.createElement('small')
+    withSettings.innerHTML = `${withSettingsText}`
+    example.appendChild(withSettings)
+  }
   example.setAttribute('onclick', functionRef)
   // example.setAttribute('data-category','all')
   return example
@@ -224,32 +236,40 @@ function checkValidity(){
     var colsToCheck
     if (prefsStore.hasOwnProperty('rows_max') && numRows > prefsStore.rows_max){ // if there are more rows than necessary
       rowsToCheck = prefsStore.rows_max // only check max required
+      if (rowsToCheck > numRows){
+        rowsToCheck = numRows
+      }
     } else {
       rowsToCheck = numRows // else check all
     }
     if (prefsStore.hasOwnProperty('cols_max') && numCols > prefsStore.cols_max){ // if there are more cols than necessary
       colsToCheck = prefsStore.cols_max // only check max required
+      if (colsToCheck > numCols){
+        colsToCheck = numCols
+      }
     } else {
       colsToCheck = numCols // else check all
     }
     var nonEmptyRowFound = false // no longer needed?
     var nonEmptyColFound = false // no longer needed?
     var emptyCells = []
-    var inputCell
+    var inputCellText
     for (let row=rowsToCheck; row>0; row--){ // go backwards, so we can ignore excess blanks at the end unless they're important
       // numColsEmptyOnRow = 0
       nonEmptyColFound = false
       for (let col=colsToCheck; col>0; col--){
-        inputCell = document.getElementById('inputCell_' + row + '_' + col)
+        let inputCellText = document.getElementById('inputCellText_' + row + '_' + col)
+        let inputCellFile = document.getElementById('inputCellFile_' + row + '_' + col)
         // we don't need to check for minimum rows by itself because cols can be optional but rows can't (unless blanks are explicitly allowed)
-        if (inputCell.value == '' && ( ((nonEmptyRowFound || nonEmptyColFound) && (prefsStore.hasOwnProperty('cols_min') && col <= prefsStore.cols_min))
+        if ((inputCellText.value == '' && (inputCellFile.classList.contains('disabled') || (!inputCellFile.classList.contains('disabled') && inputCellFile.classList.contains('hidden')))) // cell is empty if there is no text and file holder disabled (signalling it can't be used), or if file holder is not disabled (signalling it can be used) but is hidden (signalling it is empty)
+        && ( ((nonEmptyRowFound || nonEmptyColFound) && (prefsStore.hasOwnProperty('cols_min') && col <= prefsStore.cols_min))
           || ((prefsStore.hasOwnProperty('rows_min') && row <= prefsStore.rows_min) && (prefsStore.hasOwnProperty('cols_min') && col <= prefsStore.cols_min))
         ) ) {
           // numColsEmptyOnRow++
-          emptyCells.push(inputCell) // only remember the empty cells that are important
+          emptyCells.push(inputCellText) // only remember the empty cells that are important
         }
         // this bit not required anymore?
-        if (inputCell.value != '') { // this has to be kept has a seperate if, so not to get mixed up with the other conditions for the if above
+        if (inputCellText.value != '' || (!inputCellFile.classList.contains('disabled') && inputCellFile.classList.contains('hidden'))) { // this has to be kept has a seperate if, so not to get mixed up with the other conditions for the if above
           nonEmptyColFound = true
           nonEmptyRowFound = true
         }
@@ -342,12 +362,27 @@ ipcRenderer.on('getInputForSave', (event,path) => { // main.js requests the data
   sendInput('save',path)
 })
 
+function importImage(cell,path=false){
+  if(path){
+    ipcRenderer.send('dataSelectImportFromPath', cell.id, ['image'], path)
+  } else {    
+    ipcRenderer.send('dataSelectImport', cell.id, ['image'])
+  }
+}
+
+ipcRenderer.on('dataCellFileImportResult', (event,cellID,fileStoreItem) => {
+  // console.log(event)
+  // console.log(cellID)
+  // console.log(fileStoreItem)
+  addImageToCell(cellID,fileStoreItem)
+})
+
 function sendInput(purpose='export',path=''){
   var data = new Object();
   const selector = document.getElementById('activitySlct')
   var activity = selector.value
   var source = selector.options[selector.selectedIndex].getAttribute('data-source')
-  var input = convertTableToTrimmedArray(true)
+  var input = convertTableToTrimmedArray(true,true)
   var settings = getSettings(prefsStore.settings)
   var packageIDEl = document.getElementById('packageID')
 

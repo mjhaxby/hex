@@ -448,9 +448,9 @@
       .buttonNum{
         position: absolute;
         top: 0;
-        left: 0.5vh;
-        padding: 0.5em;
-        font-size: 2vh;
+        left: 0.15em;
+        padding: 0.25em;
+        font-size: 0.75em;   
         border: solid var(--bg-color) 2px;
         border-radius: 7px;
         background-color: var(--fg-color);
@@ -616,10 +616,10 @@
         } else if (gameSettings.difficulty == 'Hard'){
           speed = 3
           waitTime = 1000
-        } else if (gameSettings.difficult == 'Ultra'){
+        } else if (gameSettings.difficulty == 'Ultra'){
           speed = 5
           waitTime = 750
-        } else if (gameSettings.difficult == 'Impossible'){
+        } else if (gameSettings.difficulty == 'Impossible'){
           speed = 7
           waitTime = 250
         }
@@ -685,6 +685,7 @@
       }
 
       function adjustLayout(){
+        clearTimeout(adjustTimeout)
         adjustTimeout = setTimeout(() => {
           var fallenCardPosition
           var fallingCardPosition

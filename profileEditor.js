@@ -4,6 +4,7 @@ var numActivityProfiles = 0
 var profileStore = {name: '', activities: []}
 var activitySettingControlsStore = {}
 
+
 // PAGE FUNCTIONS
 
 document.addEventListener('DOMContentLoaded',pageLoad)

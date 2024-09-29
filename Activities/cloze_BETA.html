@@ -1,0 +1,2763 @@
+<!--*HEX SETTINGS START*
+  {
+    "cols_min":1,
+    "cols_max":4,
+    "rows_min":1,
+    "cols":["Cloze",{"title":"Prompt","text":true,"image":true},"Hint","Traps"],
+    "description":"Fill in the blanks. There are three ways of creating blanks to fill in. (1) Typing, indicated with [square brackets]. (2) Multiple choice, indicated with <=less than|greater than|where answers are separated with a pipe and marked correct with an equals>. (3) Drag-and-drop using {curly brakcets}. Alternative answers can be added with a pipe (|) on typing and multiple choice questions. A tilde (~) indicates an acceptable answer, which will score the point but not be shown at any time. This is useful for drag-and-drop cloze items, where you may wish to accept a possible answer from another drag-and-drop cloze element, without creating another drag element. Regular Expressions can also be used for typing cloze. See the documentation for more details.",
+    "scorm_support":true,
+    "markdown_support":true,
+    "empty_cells_allowed":true,
+    "settings":[
+      {"name":"color","label":"Color","type":"select","options":["Default Light","Default Dark","Dark mode","Lille","university","B5 4eva","bridge of wood","Black and white","Swedish furniture company","Liberty","Colorful"],"category":"appearance"},
+    {"name":"mainFont","label":"Font","type":"font_family","style":"sans-serif","var":"main-font","category":"appearance"},
+      {"name":"fontSize","label":"Font size (%)","type":"number","default":100,"max":500,"category":"appearance"},
+      {"name":"bank","label":"Drag-and-drop bank","type":"select","options":["Whole activity","Per line"],"optionValues":["activity","line"],"category":"behavior"},
+      {"name":"infiniteBank","label":"Items in bank can be reused","type":"checkbox","default":false,"info":"If enabled, each item in the bank is unique, but can be reused.","category":"behavior"},
+      {"name":"shuffleMulti","label":"Shuffle multiple choice items","type":"checkbox","default":true,"info":"If enabled, multiple choice dropdown items will be in a random order.","category":"behavior"},
+      {"name":"lockCorrect","label":"Lock correct answers","type":"checkbox","default":true,"info":"If enabled, learners cannot change an answer once it has been marked correct.","category":"behavior"},
+      {"name":"minAttempts","label":"Minimum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to show the “show answers” button after a number of attempts.","category":"behavior"},
+      {"name":"maxAttempts","label":"Maximum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to prevent answers after a number of attempts.","category":"behavior"},
+      {"name":"checkBehavior","label":"Check sentences","type":"select","options":["Button for activity","Button per line"],"optionValues":["activity","line","auto"],"info":"For SCORM packages, “Automatically when correct” will default to “Button per sentence”","category":"behavior"},
+      {"name":"scoreCalc","label":"Score calculation","type":"select","options":["Point per cloze","Point per line"],"optionValues":["cloze","line"],"category":"behavior"},
+      {"name":"showHints","label":"Hints shown","type":"select","options":["Always","Using hint button","After first attempt","After minimum attempts"],"optionValues":["always","button","attempt","minAttempts"],"category":"behavior"},      
+      {"name":"attemptsText","label":"Attempts text","type":"text","default":"attempts: ","category":"language"},
+      {"name":"showAnswersText","label":"Show answers text","type":"text","default":"reveal answers","category":"language"},
+      {"name":"scoreText","label":"Score text","type":"text","default":"correct: ","category":"language"},
+      {"name":"pass","label":"Completion % (SCORM only)","type":"number","default":80,"max":100,"category":"behavior"}
+    ],
+    "sample_datas":[
+      [["Type your [answer] in this [space]."],["If you put [1] number (or more) in a typing space and no letters, it will be only accept numbers."],["Drag a {word} into a {space}."],["You can also <=select|decide|taste> multiple-choice cloze items."],["Or you can [mix] different {types} in one <=line|word>"]],
+      [["Words ending in a <=vowel|consonant>, {-n|-s}, or {~-n|~-s} are stressed on the [2]nd to last syllable:",{"text":"###Rule 1"},"",""],["examples: {hablan|entrada|animales} {~hablan|~entrada|~animales} {~hablan|~entrada|~animales}",{"text":""},"",""],["",{"text":""},"",""],["Words ending in any <vowel|=consonant>, except {-n|-s} or {~-n|~-s}, are stressed on the <first|=last> syllable",{"text":"###Rule 2"},"",""],["examples: {animal|hablad|error} {~animal|~hablad|~error} {~animal|~hablad|~error}",{"text":""},"",""],["",{"text":""},"",""],["When rules #1 and #2 above are not followed, a written [accent] is used",{"text":"###Rule 3"},"",""],["examples: {información|hablábamos|entró} {~información|~hablábamos|~entró} {~información|~hablábamos|~entró}",{"text":""},"",""],["",{"text":""},"",""],["Written accents are also used to differentiate between words that are pronounced the same but have different meanings",{"text":"###Rule 4"},"",""],["examples: {el|él|si|sí} {~el|~él|~si|~sí} {~el|~él|~si|~sí} {~el|~él|~si|~sí}",{"text":""},"",""]]
+      ]
+  }
+*HEX SETTINGS END*-->
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Cloze</title>
+            <!-- Scripts for SCORM -->
+    <script type="text/javascript">
+        ///////////////////////////////////////////
+        //Begin ADL-provided API discovery algorithm
+        ///////////////////////////////////////////
+        var findAPITries = 0;
+  
+        function findAPI(win)
+        {
+           // Check to see if the window (win) contains the API
+           // if the window (win) does not contain the API and
+           // the window (win) has a parent window and the parent window
+           // is not the same as the window (win)
+           while ( (win.API == null) &&
+                   (win.parent != null) &&
+                   (win.parent != win) )
+           {
+              // increment the number of findAPITries
+              findAPITries++;
+  
+              // Note: 7 is an arbitrary number, but should be more than sufficient
+              if (findAPITries > 7)
+              {
+                 alert("Error finding API -- too deeply nested.");
+                 return null;
+              }
+  
+              // set the variable that represents the window being
+              // being searched to be the parent of the current window
+              // then search for the API again
+              win = win.parent;
+           }
+           return win.API;
+        }
+  
+        function getAPI()
+        {
+           // start by looking for the API in the current window
+           var theAPI = findAPI(window);
+  
+           // if the API is null (could not be found in the current window)
+           // and the current window has an opener window
+           if ( (theAPI == null) &&
+                (window.opener != null) &&
+                (typeof(window.opener) != "undefined") )
+           {
+              // try to find the API in the current window�s opener
+              theAPI = findAPI(window.opener);
+           }
+           // if the API has not been found
+           if (theAPI == null)
+           {
+              // Alert the user that the API Adapter could not be found
+              alert("Unable to find an API adapter");
+           }
+           return theAPI;
+        }
+  
+  
+        ///////////////////////////////////////////
+        //End ADL-provided API discovery algorithm
+        ///////////////////////////////////////////
+      </script>
+      <script type="text/javascript">
+      var API;
+      var learnerName;
+      var autosave;
+  
+      function doLMSInitialize(){
+        //find and returns the API starting with this window
+        API = getAPI();
+        API.LMSInitialize("");
+        //learnerName = API.LMSGetValue("cmi.core.student_name");//write the welcome message
+        //var welcomeDiv = document.getElementById("welcome");
+        //welcomeDiv.innerHTML = "Welcome " + learnerName + "!";
+  
+        // set up "number of check buttons" interaction
+        API.LMSSetValue("cmi.interactions.0.id",'Check presses')
+        API.LMSSetValue("cmi.interactions.0.type", 'other')
+        API.LMSSetValue("cmi.interactions.0.description", 'Number of times check button pressed')
+        // TO DO: Set this
+  
+        let suspendData = API.LMSGetValue("cmi.suspend_data")
+        if (suspendData!= ""){
+          resumeSession(suspendData)
+        }
+  
+        autosave = setInterval(checkForChanges,3*60*1000) // autosave every 3 minutes, so long as there have been some modifications
+      }
+  
+      // this does not seem to reliably fire. may be better just to regularly save progress
+      function onUnload(){
+        console.log("Unloading!")
+          postProgress()
+      }
+  
+      function resumeSession(suspendData){
+        var data = JSON.parse(suspendData)
+        originalStartTime = Date.parse(data.startTime)
+        if (data.seconds != ''){elapsedSeconds = parseFloat(data.seconds)} 
+        restoreProgress(data.progress) // TO DO: write this function
+      }
+
+      function restoreProgress(data){
+        progress = data
+        for (let i = 0; i < progress.length; i++){
+            // let sortArea = document.getElementById(i + '_sortArea')
+            // let wordBank = document.getElementById(i + '_bank')
+            for (let j = 0; j < progress[i].length; j++){
+                clozeEl = document.getElementById(`cloze_${i}_${j}`)
+                if (clozeEl){
+                    if(clozeEl.classList.contains('cloze-space')){
+                        let currentBank
+                        if (gameSettings.bank == 'activity'){
+                            currentBank = bank
+                        } else if (gameSettings.bank == 'line'){
+                            currentBank = document.getElementById(`lineBank_${i}`)
+                        }
+                        let dragCloze = currentBank.querySelector(`[data-value="${progress[i][j]}"]`)
+                        if (dragCloze){
+                            addClozeDragToSpace(dragCloze,clozeEl,true)
+                        }
+                    } else {
+                        clozeEl.value = progress[i][j]
+                        resizeInputToContent(clozeEl)
+                    }
+                }
+            }
+        }
+      }
+
+      function answerChanged(clozeEl,lineID,clozeID,resize=false){
+        if(resize){
+            resizeInputToContent(clozeEl)
+        }       
+        let cloze = clozeLines[lineID].clozes[clozeID]
+        if (cloze.score > 0){
+            cloze.check() // will remove score if necessary
+        }
+      }
+  
+      function postAnswer(score){
+        if (score > 0){
+          API.LMSSetValue("cmi.core.score.raw", score);
+          API.LMSSetValue("cmi.core.score.max", "100");
+          API.LMSSetValue("cmi.core.score.min", "0");
+          // API.LMSSetValue("cmi.comments","Attempts: "+attempts) // in postProgress()
+          // API.LMSSetValue("cmi.core.lesson_status", "passed");
+          if (score >= gameSettings.pass){
+            // to be sure this works
+            API.LMSSetValue("cmi.core.lesson_status", "completed");
+            API.LMSSetValue("cmi.completion_status", "completed");
+          } else {
+            // to be sure this works
+            API.LMSSetValue("cmi.core.lesson_status", "incomplete");
+            API.LMSSetValue("cmi.completion_status", "incomplete");
+          }
+          // API.LMSCommit(""); // in postProgress()
+        } else {
+          API.LMSSetValue("cmi.core.score.raw", "0");
+          API.LMSSetValue("cmi.core.score.max", "100");
+          API.LMSSetValue("cmi.core.score.min", "0");
+          API.LMSSetValue("cmi.core.lesson_status", "failed");
+        }
+        getProgress()
+        postProgress() // saves suspend data and commits      
+      }
+  
+      // checks for changes and saves them if there have been some
+      function checkForChanges(){
+        var oldProgress = JSON.stringify(progress);      
+        getProgress()
+        var progressAsJSON = JSON.stringify(progress)
+        if (oldProgress != progressAsJSON){
+          postProgress()
+          console.log("Changes detected. Autosaving.")
+        } else {
+          console.log("No changes detected, will check again in 3 minutes.")
+        }
+      }
+  
+      function postProgress(){
+        // API.LMSSetValue("cmi.interactions.0.student_response",attempts)
+        newElapsedSeconds = elapsedSeconds + ( (Date.now() - timeOfPageLoad) / 1000 );
+        // var formattedTime = formatSecondsForLMS(newElapsedSeconds);
+        API.LMSSetValue('cmi.core.session_time',formatSecondsForSCORM(newElapsedSeconds))
+        // possible to add support for older scorm pages here, using the other function
+        let suspendData = {seconds: newElapsedSeconds, progress: progress}
+        API.LMSSetValue("cmi.suspend_data",JSON.stringify(suspendData)) // Store progress so far
+        API.LMSCommit("");
+        // TO DO: cancel autosave after x number of error returns?
+        // Maybe:
+        // posted = API.LMSCommit('');
+        // if (!posted) {LMSCommitErrors++} // LMSCommitErrors needs to be declared as global var = 0
+        // if (LMSCommitErrors > 6){clearInterval(autosave)}
+        // TO DO: base64 suspendData to save space. If >4000 characters, don't save
+      }
+  
+      // converts seconds to HHHH:MM:SS.SS
+      function formatSecondsForSCORM(seconds){
+        // get hours and minutes from the seconds
+        let hours = Math.floor((seconds/(60*60)))
+        var secondsRemaining = seconds - (hours*60*60)
+        let minutes = Math.floor((secondsRemaining/60))
+        secondsRemaining -= minutes*60
+              // we'll add a leading zero differently for the seconds, since we also want decimal places
+        if (secondsRemaining < 10){
+          leadingZero = '0'
+        } else {
+          leadingZero = ''
+        }
+        // pad adds leading zero, toFixed(2) keeps two decimal places
+        return (pad(hours,4) + ':' + pad(minutes,2) +  ':' + leadingZero + secondsRemaining.toFixed(2));
+      }
+  
+      // converts seconds to PTnnH:nM:nS
+      function formatSecondsForSCORM2004(seconds) {
+        var hours = Math.floor(seconds / 3600);
+        var minutes = Math.floor((seconds % 3600) / 60);
+        var remainingSeconds = Math.floor(seconds % 60);
+  
+        var formattedTime = "PT";
+        if (hours > 0) {
+          formattedTime += hours + "H";
+        }
+        if (minutes > 0) {
+          formattedTime += minutes + "M";
+        }
+        if (remainingSeconds > 0 || formattedTime === "PT") {
+          formattedTime += remainingSeconds + "S";
+        }
+  
+        return formattedTime;
+      }
+  
+      function pad(num, size) {
+      num = num.toString();
+      while (num.length < size) num = "0" + num;
+      return num;
+      }
+      </script>
+<!-- Scripts for activity -->
+<script>
+
+    var icons = {}
+    let ticking = false;
+    let lastKnownScrollPosition = 0;
+    let bankTop = 0
+    let cloneCounter = {} // for counting duplicates of cards when using infiniteBank
+    var resetBankScrollTimeout
+
+
+    icons.ok = '<svg class="icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;"> <g transform="matrix(1.00921,0,0,1.07529,4.6257,-9.15356)"> <path d="M3.171,72.077C13.238,79.35 21.989,86.754 29.993,94.233C45.493,62.504 63.245,34.81 86.749,15.79" style="fill:none;stroke:inherit;;stroke-width:inherit;"/> </g> </svg>'
+    icons.pin = '<svg class="icon" width="100%" height="100%" viewBox="0 0 500 500" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;"><g transform="matrix(0.622713,0,0,1.07693,107.215,-74.317)"><path d="M89.464,323.91L220.648,323.91L220.648,473.287L229.295,533.29L237.942,473.287L237.942,323.91L369.126,323.91L361.632,285.225L321.557,254.993L305.784,101.387L361.632,86.48L361.632,69.008L96.958,69.008L96.958,86.48L152.805,101.387L137.033,254.993L96.958,285.225L89.464,323.91Z"/> style="fill:inherit;stroke:inherit;stroke-width:inherit;"/></g></svg>'
+    icons.pinned = '<svg class="icon" width="100%" height="100%" viewBox="0 0 500 500" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;"><g transform="matrix(0.622713,0,0,1.07693,107.215,-74.317)"><path d="M89.464,323.91L220.648,323.91L220.648,402.599L229.295,407.823L237.942,402.599L237.942,323.91L369.126,323.91L361.632,285.225L321.557,254.993L305.784,101.387L361.632,86.48L361.632,69.008L96.958,69.008L96.958,86.48L152.805,101.387L137.033,254.993L96.958,285.225L89.464,323.91Z"/> style="fill:inherit;stroke:inherit;stroke-width:inherit;"/></g><path d="M238.688,357.081C229.169,320.877 191.336,304.301 162.925,327.858" style="fill:none;stroke:inherit;stroke-opacity:0.5;stroke-width:8px;"/><g transform="matrix(-1,0,0,1,500,0)">  <path d="M238.688,357.081C229.169,320.877 191.336,304.301 162.925,327.858" style="fill:none;stroke:inherit;stroke-opacity:0.5;stroke-width:8px;"/></g></svg>'
+
+    var clozeLines = []
+
+    // variable for drag-drop
+    var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    var scrollPos1 = 0, scrollPos2 = 0, scrollPos3 = 0, scrollPos4 = 0; // for touch devices
+    var draggingEl
+    var hoveredEl
+    var bank
+    var banks
+    var questionArea
+    var attempts = 0 // for when just one check button
+    var maxScore = 0
+    var numClozes = 0
+    var numDragDropCloze = 0
+
+    var animationMoveHolder = {}
+
+    // variables for scorm
+    var progress = []
+    var autoCheckTimeout = []        
+    var elapsedSeconds = 0
+    const timeOfPageLoad = Date.now()     
+
+    function pageLoad() {      
+        
+            setColorTheme(gameSettings.color.toLowerCase())
+
+            if (gameSettings.checkBehavior == 'activity'){
+                let checkButton = document.getElementById('activityCheckBtn')
+                checkButton.innerHTML = icons.ok
+                checkButton.classList.remove('hidden')                
+                if (gameSettings.minAttempts > 0 | gameSettings.maxAttempts > 0){
+                    let attemptsEl = document.getElementById('attempts')
+                    attemptsEl.innerHTML = attemptsString(0)
+                    attemptsEl.classList.remove('hidden')
+
+                    let revealAnswersButton = document.getElementById('revealAnswersBtn')
+                    revealAnswersButton.innerHTML = gameSettings.showAnswersText
+                }
+                
+            }
+
+            for (let i = 0; i < gameData.length; i++) {
+                // clozeLines.push(makeClozeLine(i, gameData[i]))
+                if (gameData[i][0].length > 0) {
+                    let clozeLine = new ClozeLine(i, gameData[i])
+                    clozeLines.push(clozeLine)
+                    if(gameSettings.scoreCalc == 'line' && clozeLine.clozes.length > 0){
+                        maxScore++
+                    } else if (gameSettings.scoreCalc == 'cloze') {
+                        maxScore += clozeLine.clozes.length
+                    }
+                    numClozes += clozeLine.clozes.length
+                    numDragDropCloze += clozeLine.numDragDropCloze
+                } else {
+                    clozeLines.push(false) // to indicate new blank line instead
+                }
+            }
+
+            questionArea = document.getElementById('questionArea')
+            bank = document.getElementById('bank')            
+            if (gameSettings.bank == 'activity' && numDragDropCloze > 0){
+                bank.parentElement.classList.remove('hidden')
+                enableMoveToSide(bank.parentElement)
+
+                // we will pin the bank by default if more than half of the clozes are drag and drop
+                // (i.e. we are guessing that the learner will more likely want to access the bank most of the time)
+                if (numDragDropCloze >= numClozes/2){
+                    pinBank(document.getElementById('pin'))
+                }
+            }
+
+            let bankEls = []
+
+            clozeLines.forEach(clozeLine => {
+                if (clozeLine) {
+                    questionArea.appendChild(clozeLine.makeHTML())
+                    clozeLine.clozes.forEach((cloze, clozeIndex) => {
+                        if (cloze.type == 'drag' && gameSettings.bank == 'activity') {
+                            cloze.answers.forEach((answer, answerIndex) => {
+                                bankEls.push(dragableElement(answer,answerIndex,clozeLine.id,clozeIndex,'bank'))
+                            })                            
+                        }
+                    })
+                    if (gameSettings.bank == 'activity'){
+                        clozeLine.traps.forEach((trap, trapIndex) => {
+                            bankEls.push(dragableElement(trap,trapIndex,clozeLine.id,clozeLine.clozes.length+1,'bank'))
+                        })
+                    }
+                } else {
+                    questionArea.appendChild(newElement('br'))
+                }
+
+            })
+
+
+            bankEls.shuffle()
+
+            bankEls.forEach(el => {
+                if(!gameSettings.infiniteBank | !elementContainsElementWithHTML(bank, el)){
+                    bank.appendChild(el)
+                }
+            })
+
+            if(gameSettings.bank == 'activity'){
+                showBankScroll(bank)
+            }
+
+            banks = Array.from(document.getElementsByClassName('bank'));
+
+            setTimeout(function(){
+                attemptsTexts = Array.from(document.getElementsByClassName('attempts-text'))                
+                attemptsTexts.forEach(el =>{
+                    shrinkTextToFit(el,0.9)
+                })
+            },100)
+
+            window.onresize = adjustLayout;
+
+            if (gameSettings.scorm){doLMSInitialize()}
+        }    
+
+    function setColorTheme(theme){
+        if (theme != 'default'){
+            document.documentElement.setAttribute('data-theme', theme);
+        }
+      }
+
+    function getProgress(){
+        progress = []
+        clozeLines.forEach(clozeLine => {
+            if(clozeLine){
+                let progressLine = []
+                clozeLine.clozeEls.forEach(cloze => {                    
+                    progressLine.push(cloze.value ?? '')
+                })
+                progress.push(progressLine)
+            } else {
+                progress.push([])
+            }
+        })       
+    }
+
+    function resizeInputToContent(el){
+        if (el.value != ''){
+            let extraSpace = 1 // em
+            if (el.tagName.toLowerCase() == 'select'){extraSpace = 1.5}
+
+            let textWidth = el.value.length * 0.95
+            // maximum 50ch wide
+            if (textWidth > 50){
+                textWidth = 50
+            }
+
+            el.style.width = `calc(${textWidth}ch + ${extraSpace}em)`            
+
+            //  and just in case of extremely small space:
+            el.offsetWidth // force recalc first
+            if(el.offsetWidth > el.parentElement.offsetWidth){
+                el.style.width = el.parentElement.offsetWidth
+            }
+            // a second time with a small delay, since it doesn't always pick up instantly:
+            setTimeout(function(){
+                if(el.offsetWidth > el.parentElement.offsetWidth){
+                    el.style.width = el.parentElement.offsetWidth
+                }
+            },100)
+        } else {
+            el.style.width = null
+        }
+    }
+
+    function dragableElement(answer, answerIndex, clozeLineId, clozeIndex, bankID){
+        if (gameSettings.infiniteBank){
+            cloneCounter[`clozeDrag_${clozeLineId}_${clozeIndex}_${answerIndex}`] = 0
+        }
+        return newElement('div', {
+            id: `clozeDrag_${clozeLineId}_${clozeIndex}_${answerIndex}`,
+            class: 'dragable',
+            onmousedown: 'dragElement(event,this)',
+            ontouchstart: 'dragElement(event,this)',
+            dataOriginBank: bankID,
+            dataLine: bankID == 'bank' ? -1 : clozeLineId, // if in the main bank, then -1 to indicate any line
+            dataValue: answer
+        }, answer)        
+    }
+
+    function ClozeLine(id, data) {
+
+        let index = -1
+
+        this.id = id
+        this.line = data[0].replaceAll(/\[.+?\]|{.+?}|&lt;.+?&gt;/g, function (match) {
+            index++;
+            return `[${index}]`
+        }) // anything between [], {} or <> is replaced with a number
+
+        this.prompt = data.length >= 2 ? data[1] : {}
+        this.hint = data.length >= 3 ? data[2] : ''
+        this.traps = (data.length >= 4 && data[3].length > 0) ? data[3].split(/,|;/) : []
+        // this.attempts = 0 (using attempts per cloze instead of per clozeLine)
+        this.score = 0 // total score for this line
+        this.numDragDropCloze = 0
+
+        let regexFound = findRegex(data[0])
+        data[0] = regexFound.data
+        this.regexStore = regexFound.regex
+
+        let clozes = data[0].match(/\[.+?\]|{.+?}|&lt;.+?&gt;/g)
+
+        var modifClozes = []
+        if (clozes && clozes.length > 0) {
+            // TO DO: Simplify the following – quite a lot of repeated code
+            clozes.forEach((clozeIn, clozeID) => {
+                let lineID = this.id // just for clarity
+                let cloze = { src: clozeIn.trim() } // trim off any white space on cloze (just in case)
+                cloze.answers = [] // initialised just in case
+                cloze.accepts = [] // hidden answers (for text: won't show up in list of correction options; for drag: will accept these if dragged into from another question, but won't add another word)    
+                cloze.regex = []
+                cloze.attempts = 0
+                cloze.score = 0
+                cloze.scoreMultiplier = 1
+                cloze.locked = false
+
+                if (cloze.src[0] == '[') { // [ indicatates typing cloze
+                    cloze.type = 'typing'
+                    cloze.answers = cloze.src.replaceAll(/\[|\]/g, '').split('|') // add multiple answers
+                    for (let i = cloze.answers.length-1; i >= 0; i--) {
+                        cloze.answers[i] = cloze.answers[i].trim() // trim space
+                        let tidyAnswer
+                        if(cloze.answers[i][0] == '~'){ // indicates hidden answer (accept)
+                            let accept = cloze.answers.splice(i,1)[0]
+                            cloze.accepts.push(cleanAnswer(accept.substring(1)))
+                        } else if ((tidyAnswer = cleanAnswer(cloze.answers[i])) != cloze.answers[i]){
+                            cloze.accepts.push(tidyAnswer)
+                        }
+                    }                    
+                } else if (cloze.src[0] == '{') { // { indicates drag cloze
+                    cloze.type = 'drag'
+                    cloze.answers = cloze.src.replaceAll(/{|}/g, '').split('|') // add multiple answers       
+                    for (let i = cloze.answers.length-1; i >= 0; i--) {
+                        cloze.answers[i] = cloze.answers[i].trim()
+                        let tidyAnswer
+                        if(cloze.answers[i][0] == '~'){ // indicates hidden answer (accept)
+                            let accept = cloze.answers.splice(i,1)[0]
+                            cloze.accepts.push(cleanAnswer(accept.substring(1)))
+                        } else if ((tidyAnswer = cleanAnswer(cloze.answers[i])) != cloze.answers[i]){
+                            cloze.accepts.push(tidyAnswer)
+                        }
+                    }
+                    this.numDragDropCloze++
+                } else if (cloze.src[0] == '&') { // &gt; (i.e. <) indicates multiple choice cloze
+                    cloze.type = 'multi'
+                    cloze.options = cloze.src.replaceAll(/&lt;|&gt;/g, '').split('|') // add all possible options
+                    cloze.answers = []
+                    for (let i = 0; i < cloze.options.length; i++) {
+                        cloze.options[i] = cloze.options[i].trim()
+                        if (cloze.options[i][0] == '=') { // identify options marked as correct
+                            cloze.options[i] = cloze.options[i].substring(1).trim() // remove =
+                            cloze.answers.push(cloze.options[i]) // add to list of answers
+                        }
+                    }
+                    if (gameSettings.shuffleMulti){
+                        cloze.options.shuffle()
+                    }
+                }
+
+                let toRemove = []
+                for(let i = 0; i<cloze.answers.length;i++){
+                    if(cloze.answers[i].match(/%regex%[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)){
+                        cloze.regex.push(this.regexStore[cloze.answers[i].substring(7)])
+                        toRemove.unshift(i) // add to array backwards so we can remove these after                 
+                    }
+                }   
+
+                toRemove.forEach(index =>{
+                    cloze.answers.splice(index,1)
+                })
+
+
+                cloze.check = () => {
+                    let i = clozeID
+                    let answerGiven = this.clozeEls[i].value
+                    let answerEl
+                    if (cloze.type == 'drag' && this.clozeEls[i].children.length > 1){ // if it's not just the empty inner element
+                        answerEl = this.clozeEls[i].children[1]
+                    } else {
+                        answerEl = this.clozeEls[i]
+                    }
+
+                    // test for any regex
+                    let regexMatch = false
+                    cloze.regex.forEach(regex =>{
+                        if(regex.test(answerGiven)){
+                            regexMatch = true
+                        }
+                    })
+                    
+                    // try without cleaning it first, particularly for multiple choice, but also just in case of little bugs, then try clean version on both answers and accepts list
+                    if(regexMatch || cloze.answers.includes(answerGiven) || cloze.answers.includes(cleanAnswer(answerGiven)) || cloze.accepts.includes(cleanAnswer(answerGiven))){
+                        cloze.score = 1 * cloze.scoreMultiplier
+                        if (!answerEl.classList.contains('locked') && !answerEl.parentElement.classList.contains('locked')){
+                            // mark as correct so long as it's not been locked
+                            answerEl.classList.add('correct')    
+                            if (cloze.type == 'drag'){
+                                answerEl.parentElement.classList.add('correct')
+                            }  
+                        }    
+                        if(gameSettings.lockCorrect){
+                            cloze.lock()
+                        }
+                        // console.log(`${answerGiven} is correct`)
+                    } else {
+                        cloze.score = 0
+                        answerEl.classList.remove('correct')
+                        if (cloze.type == 'drag'){
+                            answerEl.parentElement.classList.remove('correct')
+                        }    
+                        // console.log(`${answerGiven} is incorrect`)
+                        answerEl.classList.add('wrong-shake')
+                            setTimeout(function(){
+                                answerEl.classList.remove('wrong-shake')
+                            },500)
+                    }
+                    if((answerGiven && answerGiven.length > 0 | cloze.score == 0)){
+                        cloze.attempts++                    
+                        if (gameSettings.maxAttempts > 0 && cloze.attempts >= gameSettings.maxAttempts){
+                            cloze.scoreMultiplier = 0                        
+                            cloze.revealAnswer()
+                            cloze.lock()
+                        }
+                        if(cloze.score == 0 && this.hint.length > 0 && ((gameSettings.showHints == 'attempt' && cloze.attempts == 1) || (gameSettings.showHints == 'minAttempts' && cloze.attempts == gameSettings.minAttempts))){
+                            showHint(id)
+                        }
+                    }
+                }
+                
+
+                cloze.revealAnswer = (force=false) => {
+                    if ((!cloze.locked && cloze.score == 0) || force){
+                        let clozeEl = document.getElementById(`cloze_${lineID}_${clozeID}`)
+                        let wasCorrect = false
+                        if(cloze.answers.length > 0 | cloze.accepts.length > 0){ // only try to put the answer in if there is one (possible to put in an empty cloze or to only use a regex)
+                            if(cloze.type == 'drag'){
+                                let clozeDrag = document.querySelector(`[data-value="${cloze.answers[0]}"][data-line="${gameSettings.bank == 'activity' ? -1 : lineID}"]`) ?? cloze.getFirstAvailableAcceptableDragItem()
+                                if(clozeDrag){
+                                    if (clozeDrag.parentElement.classList.contains('cloze-space')){
+                                        // if already in a space
+                                        clozeDrag.parentElement.classList.remove('filled')
+                                        if(clozeDrag.parentElement.classList.contains('correct')){
+                                            clozeDrag.parentElement.classList.remove('correct') //remove the correct mark if there is one   
+                                            clozeDrag.parentElement.classList.remove('locked') //remove the correct mark if there is one   
+                                            let stolenCloze = clozeLines[clozeDrag.parentElement.getAttribute('data-line')].clozes[clozeDrag.parentElement.getAttribute('data-cloze')]
+                                            if(stolenCloze){
+                                                stolenCloze.score = 0
+                                                stolenCloze.locked = false
+                                                // we need to pretend this was wrong so that we can automatically fill it later
+                                            }
+                                            wasCorrect = true
+                                        }
+                                        clozeDrag.parentElement.value = null // remove value from space                                    
+                                    }                                
+                                    if(clozeEl.classList.contains('filled')){
+                                        // if cloze el already has a (presumably wrong) answer
+                                        let wrongAnswer = clozeEl.querySelector('.exdragable')
+                                        if(wrongAnswer){                                        
+                                            if(gameSettings.infiniteBank){
+                                                wrongAnswer.remove()
+                                            } else {
+                                                let originBank = document.getElementById(wrongAnswer.getAttribute('data-origin-bank'))
+                                                originBank.appendChild(wrongAnswer)   
+                                                wrongAnswer.classList.remove('exdragable')    
+                                                wrongAnswer.classList.add('dragable')                                 
+                                            }
+                                        }                                    
+                                    }
+                                    addClozeDragToSpace(clozeDrag,clozeEl,true)
+                                }
+                            } else if (cloze.type == 'typing') {
+                                if(cloze.answers.length > 2){
+                                    clozeEl.value = `${cloze.answers[0]} ・ ${cloze.answers[1]} …`
+                                    clozeEl.setAttribute('onclick',`showMoreAnswers(${lineID},${clozeID})`)
+                                    clozeEl.classList.add('expandable-answer')
+                                    clozeEl.readonly = true
+                                } else if (cloze.answers.length == 2) {
+                                    clozeEl.value = `${cloze.answers[0]}/${cloze.answers[1]}`
+                                } else if (cloze.answers.length == 1){
+                                    clozeEl.value = cloze.answers[0]
+                                } else if (cloze.answers.length == 0) {
+                                    // ideally shouldn't happen, but could do if there are accepts, but no answers
+                                    clozeEl.value = ''
+                                }
+                                 
+                                resizeInputToContent(clozeEl)
+                            } else {
+                                clozeEl.value = cloze.answers[0]
+                                resizeInputToContent(clozeEl)
+                            }
+                        } else { // if there is no answer, indicate this by leaving it blank
+                            // pretty sure it's impossible to have an empty drag cloze, but just in case
+                            if(cloze.type == 'drag' && clozeEl.classList.contains('filled')){
+                                returnDroppedClozeDragToBank(clozeEl.querySelector('.exdragable'))
+                            } else {
+                                clozeEl.value = ''
+                                resizeInputToContent(clozeEl)
+                            }
+                        }
+                        cloze.lock()
+                        // in the slightly unlikely (but far from impossible) event that a drag item was put into an "acceptable" space, we'll transfer it's scoring, otherwise mark not count it in scoring
+                        if(wasCorrect){
+                            cloze.score = 1
+                            clozeEl.classList.add('correct')
+                        } else {
+                            cloze.scoreMultiplier = 0                            
+                        }
+                    }
+                }
+
+                cloze.lock = () => {
+                    let clozeEl = document.getElementById(`cloze_${lineID}_${clozeID}`)
+                    clozeEl.classList.add('locked')
+                    cloze.locked = true
+                }
+
+                // for drag elements with no "answer" but only accept items - find the first 
+                cloze.getFirstAvailableAcceptableDragItem = () => {
+                    for (let i = 0; i<cloze.accepts.length; i++){
+                        let clozeDrag = document.querySelector(`[data-value="${cloze.accepts[i]}"][data-line="${gameSettings.bank == 'activity' ? -1 : lineID}"]`)
+                        if (clozeDrag && !clozeDrag.parentElement.classList.contains('locked') && !clozeDrag.parentElement.classList.contains('correct')){
+                            // if this drag item is not in a space marked as "locked" (meaning it has the correct answer filled in by the user or by the activity) or "correct" (meaning it's been marked correct but not locked due to gameSettings)
+                            return clozeDrag
+                        }
+                    }
+                    return undefined
+                }
+
+
+
+                modifClozes.push(cloze)
+            })
+        }
+
+        
+
+        this.clozes = modifClozes        
+
+        this.check = function () {
+            for (let i = 0; i < this.clozeEls.length; i++){
+                this.clozes[i].check()
+            }        
+            
+            let minimumAttemptsReached = false    
+
+            if (gameSettings.checkBehavior == 'line' && gameSettings.minAttempts > 0){                                    
+                for (let i = 0; i < this.clozes.length; i++){
+                        let revealAnswersBtn = document.getElementById('revealAnswersBtn_'+this.id)
+                        if (this.clozes[i].attempts == gameSettings.minAttempts && revealAnswersBtn.classList.contains('hidden')){
+                            minimumAttemptsReached = true
+                            i = this.clozes.length
+                        }
+                    }
+            }
+            
+            this.updateAttemptsView()
+
+            if(gameSettings.checkBehavior == 'line'){                
+                let score = calculateScore()
+                updateScoreView(score)
+                fillButtonWithScore(this.id)
+                if(gameSettings.scorm){                
+                    postAnswer(Math.floor(score/maxScore*100))
+                }
+                
+                if (minimumAttemptsReached && this.score < 1){
+                    // only show button if they haven't scored 100%
+                    showRevealAnswersButton(this.id)
+                }
+                
+                if(this.isCompleted()){
+                    disableLineButtons(this.id)
+                }
+            }
+        }
+
+        this.isCompleted = function (){
+            // returns completed if the item has been answered correctly or the answer has been filled in with the 'reveal answers' button (it is locked)
+            for(let i=0; i<this.clozes.length; i++){
+                if(!this.clozes[i].locked && this.clozes[i].score < 1){
+                    return false
+                }
+            }
+            return true
+        }
+
+        this.revealAnswers = function(){
+            this.clozes.forEach(cloze => {
+                cloze.revealAnswer()
+            })
+            if(gameSettings.checkBehavior == 'line' && this.isCompleted()){ // we will check this before disabling, because if the activity creator has made a very weird activity, some of the answers might not be filled in yet
+                disableLineButtons(this.id)
+            }
+        }
+
+        this.makeHint = function(){
+            let hintWrapper = document.createElement('div')
+            hintWrapper.classList.add('hint-wrapper')
+            hintEl = document.createElement('div')
+            hintEl.id = this.id + '_hint'
+            hintEl.classList.add('hint')
+            hintEl.innerHTML = `<span class='hint-text'>${this.hint}</span>`
+            if (gameSettings.showHints == 'button' | gameSettings.showHints == 'attempt' | gameSettings.showHints == 'minAttempts'){
+                hintBtn = document.createElement('button')
+                hintBtn.id = this.id + '_hintButton'
+                hintBtn.setAttribute('onclick',`showHint(${this.id})`)
+                hintBtn.classList.add('hint-btn')
+                hintBtn.innerHTML = '?'                    
+                closeHintBtn = document.createElement('button')
+                closeHintBtn.innerHTML = '×'
+                closeHintBtn.classList.add('close-hint-btn')
+                closeHintBtn.setAttribute('onclick',`showHint(${this.id},false)`)
+                hintEl.insertBefore(closeHintBtn,hintEl.firstChild)
+                hintEl.classList.add('hidden')
+                if (gameSettings.showHints == 'attempt' || gameSettings.showHints == 'minAttempts'){
+                    hintBtn.classList.add('hidden')
+                    hintWrapper.classList.add('attempt')
+                } else {
+                    hintWrapper.classList.add('withButton')
+                }
+                hintWrapper.appendChild(hintBtn)
+            }
+            hintWrapper.appendChild(hintEl)
+            return hintWrapper
+        }
+
+        this.updateAttemptsView = function (){
+            let attemptsViewEl = document.getElementById('attempts_'+id)
+            if (attemptsViewEl){
+                let highestAttemptsInLine = 0
+                this.clozes.forEach(cloze =>{
+                    if(cloze.attempts > highestAttemptsInLine){
+                        highestAttemptsInLine = cloze.attempts
+                    }
+                })
+                attemptsViewEl.innerHTML = attemptsString(highestAttemptsInLine)
+            }
+        }
+
+        this.makeHTML = function () {
+            let clozeLineAndControls = newElement('div', properties = {class: 'cloze-line-controls-wrapper'})
+            let wrapper = newElement('div', properties = { id: `clozeLine_${id}`, class: 'cloze-line-wrapper' })
+            let clozeEls = []
+            let lineBank = newElement('div',{id: 'lineBank_'+id, class: 'bank'})
+            let bankEls = []
+            
+
+            if(this.prompt.hasOwnProperty('text')){
+                wrapper.appendChild(makePrompt(this.prompt))
+            }
+
+            this.clozes.forEach((cloze, index) => {
+                if (cloze.type == 'typing') {
+                    clozeEls.push(typingCloze(id, index, cloze))
+                } else if (cloze.type == 'multi') {
+                    clozeEls.push(multiCloze(id, index, cloze))
+                } else if (cloze.type == 'drag') {
+                    clozeEls.push(dragSpace(id, index, cloze))
+                    if (gameSettings.bank == 'line') {                    
+                        cloze.answers.forEach((answer, answerIndex) => {
+                            bankEls.push(dragableElement(answer,answerIndex,id,index,'lineBank_'+id))
+                        })
+                    }        
+                }
+            })
+            if (gameSettings.bank == 'line'){
+                this.traps.forEach((trap, trapIndex) => {
+                    bankEls.push(dragableElement(trap,trapIndex,id,clozes.length+1,'lineBank_'+id))
+                })
+            }
+
+            bankEls.shuffle()
+
+            bankEls.forEach(el => {
+                if(!gameSettings.infiniteBank | !elementContainsElementWithHTML(lineBank, el)){
+                    lineBank.appendChild(el)
+                }
+            })
+
+            // go through the line until we get to a [
+            var lineBuff = '' // to add on each character so far
+            // let lineAsArray = this.line.split('')
+
+            for (i = 0; i < this.line.length; i++) {
+                let char = this.line[i]
+                if (char != '[' || i == this.line.length ) {
+                    lineBuff += char
+                } else { // when we've found a [
+                    // add all the text so far to a span element
+                    wrapper.appendChild(newElement('span', properties = { class: 'line-text' }, lineBuff))
+                    lineBuff = '' // clear the buffer
+                    // locate the cloze number
+                    let clozeNum = parseInt(this.line.substring(i).match(/\d+(?=\])/))
+                    // add the relevant cloze element
+                    wrapper.appendChild(clozeEls[clozeNum])
+                    // skip i to the end of ]
+                    i = i + this.line.substring(i).indexOf(']')
+                }
+            }
+            wrapper.appendChild(newElement('span', properties = { class: 'line-text' }, lineBuff))
+
+            // this.html = wrapper
+            this.clozeEls = clozeEls
+
+            clozeLineAndControls.appendChild(wrapper)
+            let controlsWrapper = newElement('div',{class: 'controls-wrapper'})            
+
+            if (this.clozes.length > 0 && gameSettings.checkBehavior == 'line'){
+                controlsWrapper.appendChild(makeCheckButtonWrapper(id))
+                clozeLineAndControls.classList.add('with-button')
+                if (gameSettings.minAttempts > 0 | gameSettings.maxAttempts > 0){
+                    controlsWrapper.appendChild(makeAttemptsView(this.id))
+                    controlsWrapper.appendChild(makeRevealAnswersButton(id))
+                    clozeLineAndControls.classList.add('with-attempts')                    
+                }
+            }
+            clozeLineAndControls.appendChild(controlsWrapper)
+            if (lineBank.children.length > 0){
+                clozeLineAndControls.appendChild(lineBank)
+            }
+            if (this.hint.length > 0){
+                clozeLineAndControls.appendChild(newElement('div',{class: 'break'}))
+                clozeLineAndControls.appendChild(this.makeHint())
+            }
+            
+            return clozeLineAndControls
+        }
+
+        let typingCloze = function (lineId, clozeIndex, cloze) {
+            let el = newElement('input', { id: `cloze_${lineId}_${clozeIndex}`, class: 'cloze-typing', onkeyup: 'resizeInputToContent(this)', onchange: `answerChanged(this,${lineId},${clozeIndex},resize=true)` }) // will need to add more here (maybe even a div)
+            
+            // check all answers to see if they're all answers
+            var isNumberCloze = true
+            if(cloze.answers.length > 0){
+                cloze.answers.forEach(answer =>{
+                    if(isNaN(parseFloat(answer))){
+                        isNumberCloze = false
+                    }
+                })
+            } else {
+                // if there are no answers (which is stupid, but it's not impossible), don't make it a number cloze
+                isNumberCloze = false
+            }
+            if(isNumberCloze){
+                el.type = 'number'
+            }
+            // TO DO: change size according to length of cloze item (option to disable this?)
+            return el
+        }
+
+        let multiCloze = function (lineId, clozeIndex, cloze) {
+            let el = newElement('select', { id: `cloze_${lineId}_${clozeIndex}`, class: 'cloze-select', onchange: `answerChanged(this,${lineId},${clozeIndex},resize=true)` })
+            el.appendChild(newElement('option'))            
+            cloze.options.forEach(option => {
+                let optionEl = newElement('option', {}, option)
+                el.appendChild(optionEl)
+            })
+            return el
+        }
+
+        let dragSpace = function (lineId, clozeIndex, cloze) {
+            let el = newElement('div', { id: `cloze_${lineId}_${clozeIndex}`, class: 'cloze-space', dataLine: lineId, dataCloze: clozeIndex }, newElement('div', { class: 'inner-space' }, '&nbsp;'))
+            return el
+        }        
+
+        let makePrompt = function(prompt){
+            let el = newElement('div',{class: 'prompt'})
+            if (prompt.hasOwnProperty('image')){
+                let promptImage = makeImageElement(prompt.image)
+                promptImage.title = prompt.text
+                el.appendChild(promptImage)
+            } else {
+                el.innerHTML = prompt.text
+            }
+            return el
+        }
+    }
+    
+    function findRegex(string){
+            // we don't want any regex to be an "accepted" answer (since we're going to put it in a separate place anyway – so they're all essentially accepted), so first remove any confusing ~
+            string = string.replaceAll(/([\[\|])\~(\/.+\/[\]\|])/g,'$1$2')
+            // find all Regex, along with the characters that encloses the answer – either [, ] or |            
+            let unpreppedRegexes = string.match(/[\[\|]\/.+\/[\]\|]/g)
+            let regexStrings = []
+            let regexBank = {}
+            // with all the regex we've found
+            if(unpreppedRegexes){
+                    unpreppedRegexes.forEach(unpreppedRegex =>{
+                    let regexString = unpreppedRegex.substring(2,unpreppedRegex.length-2) // remove first two and last two characters
+                    if(!regexStrings.includes(regexString)){ // we may as well avoid duplicates, but could also allow for a way of establishing variables in the hex editor later
+                        regexStrings.push(regexString)
+                    }
+                })
+            }
+            // now identify replace these with a placeholder in the string (otherwise any [ or ] or | are going to cause parsing issues for the clozeLines) and create the regex
+            regexStrings.forEach(regexString =>{                
+                let uuid = uuidv4()
+                string = string.replaceAll(`/${regexString}/`,`%regex%${uuid}`)
+                regexBank[uuid] = new RegExp(regexString)
+            })
+            return {data: string, regex: regexBank}
+        }
+    
+    function cleanAnswer(text){
+        if(text){
+            text = text.toLowerCase();
+            text = text.replace(/['‘’]/g, '\'') // deal with pesky apostrophes
+            text = text.replace(/\([^)]+\)/g, '') // anything in brackets is ignored
+            text = text.replace(/(\s)+/g, '$1') // remove duplicate whitespace (might be left over after removing brackets)
+            text = text.trim(); // remove leading and trailing whitespace
+            return text
+        } else {
+            return ''
+        }
+    }
+
+    function makeImageElement(image){
+        let ext =  image.ext == 'svg' ? 'svg+xml' : image.ext
+        return newElement('img',{src:'data:image/' + ext + ';base64,' + image.data})
+    }
+
+    function makeAttemptsView(id){
+        return newElement('div',properties = {id: `attempts_${id}`, class: 'attempts', dataLine: id}, attemptsString(0))
+    }
+
+    function makeRevealAnswersButton(id){
+        return newElement('button',properties = {class: 'reveal-answers-btn hidden', id: `revealAnswersBtn_${id}`, onclick: `clozeLines[${id}].revealAnswers()`},gameSettings.showAnswersText)
+    }
+
+    function makeCheckButtonWrapper(id){
+        return newElement('div',properties = {class: 'check-wrapper', id: `checkWrapper_${id}`}, makeCheckButton(id))
+    }
+
+    function makeCheckButton(id){
+        return newElement('button',properties = {class: 'check-btn', id: `checkBtn_${id}`, onclick: `clozeLines[${id}].check()`}, icons.ok)
+    }
+
+    function disableLineButtons(id){
+        let revealAnswersBtn = document.getElementById('revealAnswersBtn_'+id)
+        let checkBtn = document.getElementById('checkBtn_'+id)
+        if(revealAnswersBtn){
+            revealAnswersBtn.disabled = true
+        }
+        checkBtn.disabled = true
+    }
+
+    // this function is just for the button per line
+    function showRevealAnswersButton(id){
+        let revealAnswersBtn = document.getElementById('revealAnswersBtn_'+id)
+        let checkBtn = document.getElementById('checkBtn_'+id)
+        let attemptsText = document.getElementById('attempts_'+id)
+        animateMoveElementPrepare(checkBtn.parentElement)
+        animateMoveElementPrepare(attemptsText)
+
+        revealAnswersBtn.classList.remove('hidden')
+        revealAnswersBtn.style.opacity = 0
+        fadeElementIn(revealAnswersBtn)
+
+        animateMoveElementToNewPosition(checkBtn.parentElement)
+        animateMoveElementToNewPosition(attemptsText)
+    }
+
+    function updateAttemptsViews(){
+        if(gameSettings.minAttempts > 0 | gameSettings.maxAttempts > 0){
+            if(gameSettings.checkBehavior == 'line'){
+                clozeLines.forEach(line =>{
+                    if(line){
+                        line.updateAttemptsView()
+                    }
+                })
+            } else {
+                document.getElementById('attempts').innerHTML = attemptsString(attempts)
+            }
+        }
+    }
+
+    function updateScoreView(score){
+        let attemptsEl = document.getElementById('attempts')
+        let bottomBtns = document.getElementById('bottomButtons')
+        let scoreEl = document.getElementById('score')    
+        let animateCheckBtn = false
+        let animateAttemptsEl = false
+
+        if(scoreEl.classList.contains('hidden')){            
+            if(attemptsEl.classList.contains('hidden')){
+                animateMoveElementPrepare(bottomBtns)
+                animateCheckBtn = true
+            } else {
+                animateMoveElementPrepare(attemptsEl)
+                animateAttemptsEl = true
+            }
+        }
+
+        scoreEl.innerHTML = `<div class="score-text-wrapper"><div class="score-text" id="scoreText">${gameSettings.scoreText}</div></div><div class="attempts-num">${Math.round((score+Number.EPSILON)*100)/100}/${maxScore}`
+
+        if(scoreEl.classList.contains('hidden')){
+            scoreEl.classList.remove('hidden')
+            // but fade in
+            fadeElementIn(scoreEl)
+            // make sure text fits
+            shrinkTextToFit(document.getElementById('scoreText'),0.9)
+            // animate other elements
+            if(animateCheckBtn){
+                animateMoveElementToNewPosition(bottomBtns)
+            }
+            if (animateAttemptsEl){
+                animateMoveElementToNewPosition(attemptsEl)
+            }
+        }        
+    }
+
+    function fillButtonWithScore(id){
+        let score = clozeLines[id].score
+        let btn = document.getElementById('checkBtn_'+id)
+        var background = document.getElementById('checkBtnBg_'+id)
+        if(!background){
+            // background = newElement('div',{class: 'check-btn-correct-background-outer', id: 'checkBtnBg_'+id},newElement('div',{class: 'check-btn-correct-background-inner', id: 'checkBtnBg_'+id}))
+            background = newElement('div',{class: 'check-btn-correct-background', id: 'checkBtnBg_'+id})
+            btn.appendChild(background)
+        }
+        setTimeout(function(){        
+            background.style.top = (100-(score*100)) + '%'
+        },100)
+    }
+
+    function attemptsString(numAttempts){
+        return `<div class="attempts-text-wrapper"><div class="attempts-text">${gameSettings.attemptsText}</div></div><div class="score-num">${numAttempts}/${gameSettings.maxAttempts <= gameSettings.minAttempts ? gameSettings.minAttempts : gameSettings.maxAttempts}`
+    }
+
+    function showMoreAnswers(lineID,clozeID){
+        let allAnswers = ''
+        let clozeEl = clozeLines[lineID].clozeEls[clozeID]
+        clozeLines[lineID].clozes[clozeID].answers.forEach(answer =>{
+            allAnswers += answer +' ・ '
+        })        
+        clozeEl.setAttribute('onclick',`showFewerAnswers(${lineID},${clozeID})`)
+        clozeEl.value = allAnswers.substring(0,allAnswers.length-3)
+        resizeInputToContent(clozeEl)
+    }
+
+    function showFewerAnswers(lineID,clozeID){
+        let clozeEl = clozeLines[lineID].clozeEls[clozeID]
+        clozeEl.value = `${clozeLines[lineID].clozes[clozeID].answers[0]} ・ ${clozeLines[lineID].clozes[clozeID].answers[1]} …`
+        clozeEl.setAttribute('onclick',`showMoreAnswers(${lineID},${clozeID})`)
+        resizeInputToContent(clozeEl)
+    }
+
+
+    function revealAllAnswers(){
+        let disableButtonsAfter = true
+        clozeLines.forEach(clozeLine => {
+            if(clozeLine){
+                clozeLine.revealAnswers()
+                if(!clozeLine.isCompleted()){
+                    // in case of an error in the activity and the answer isn't filled in
+                    disableButtonsAfter = false                     
+                }
+            }
+        })   
+        if(disableButtonsAfter){
+            let checkBtn = document.getElementById('activityCheckBtn')
+            let revealAnswersBtn = document.getElementById('revealAnswersBtn')
+            checkBtn.disabled = true
+            revealAnswersBtn.disabled = true
+        }     
+    }
+
+    function checkAll(){
+        attempts++
+        clozeLines.forEach(line =>{
+            if(line){
+                line.check()
+            }
+        })
+        if(gameSettings.checkBehavior == 'activity'){
+            updateAttemptsViews()
+            if(gameSettings.maxAttempts > 0 || gameSettings.minAttempts > 0){
+                let checkBtn = document.getElementById('activityCheckBtn')
+                let revealAnswersBtn = document.getElementById('revealAnswersBtn')
+                if (gameSettings.minAttempts > 0 && attempts == gameSettings.minAttempts){
+                    animateMoveElementPrepare(checkBtn)
+                    revealAnswersBtn.classList.remove('hidden')
+                    fadeElementIn(revealAnswersBtn)
+                    animateMoveElementToNewPosition(checkBtn)
+                }
+                if (gameSettings.maxAttempts > 0 && attempts >= gameSettings.maxAttempts){
+                    revealAllAnswers()
+                    checkBtn.disabled = true
+                    revealAnswersBtn.disabled = true
+                }
+            }
+        }
+        let score = calculateScore()
+        updateScoreView(score)
+        if (gameSettings.scorm){
+            postAnswer(Math.floor(score/maxScore*100))
+        }
+    }    
+
+    function calculateScore(){
+        let total = 0
+        clozeLines.forEach(line =>{
+            let subTotal = 0
+            if(line && line.clozes.length > 0){
+                line.clozes.forEach(cloze =>{
+                    subTotal += cloze.score
+                })
+                // always use the percentage style for the line score (this is used to "fill" the button when checking per line)
+                line.score = (subTotal / line.clozes.length)
+                if (gameSettings.scoreCalc == 'cloze'){
+                    total += subTotal
+                } else if (gameSettings.scoreCalc == 'line'){
+                    total += line.score
+                }
+                
+            }
+        })
+        return total
+    }
+
+    function showHint(id,show=true){
+            let hintEl = document.getElementById(id + '_hint')
+            let btn = document.getElementById(id + '_hintButton')
+            if (show){ 
+                btn.style.left = btn.offsetLeft - 5 + 'px'
+                btn.style.top = btn.offsetTop - 5 + 'px'            
+                btn.classList.add('hidden')
+                hintEl.classList.remove('hidden')
+                // hint wrapper class changes from attempt to hint, as the hint can now be shown and hidden with the same behaviour
+                hintEl.parentElement.classList.remove('attempt')
+                hintEl.parentElement.classList.add('withButton')
+            } else {                                
+                hintEl.classList.add('hidden')
+                setTimeout(function(){
+                    btn.classList.remove('hidden')
+                },500)
+            }            
+        }
+
+    function newElement(tag, properties = {}, innerHTML = '') {
+        let el = document.createElement(tag)
+        for (const property in properties) {
+            let propertyName = property.replaceAll(/([A-Z])/g, '-$1').toLowerCase() // change camel case to - seperation
+            el.setAttribute(propertyName, properties[property])
+        }
+        if (typeof innerHTML == 'string') {
+            el.innerHTML = innerHTML
+        } else {
+            el.appendChild(innerHTML)
+        }
+        return el
+    }
+
+    function dragElement(e, el) {
+        e = e || window.event;
+        e.preventDefault();
+        var hoveredSpace
+        var overCard
+
+        if(gameSettings.infiniteBank && !el.classList.contains('exdragable')){
+            let parent = el.parentElement
+            el = el.cloneNode(true)
+            cloneCounter[el.id]++
+            el.id = el.id + '_' + cloneCounter[el.id]    
+            parent.appendChild(el)    
+        }
+
+        // console.log(e)
+        if (e.type == 'mousedown') {
+            pos3 = e.pageX;
+            pos4 = e.pageY;
+        } else if (e.type == 'touchstart') {
+            pos3 = e.touches[0].pageX;
+            pos4 = e.touches[0].pageY;
+            // if (e.touches.length > 1){
+            //   console.log(e)
+            //   scrollPos3 = e.touches[1].pageX;
+            //   scrollPos4 = e.touches[1].pageY;
+            // }
+        }
+        if (el.classList.contains('exdragable')) {
+            //   detachCards(el,el.parentElement.children[0],pos3,pos4)
+            el.parentElement.classList.remove('filled')
+            el.parentElement.value = null // remove value from space
+            el.classList.remove('exdragable')
+            el.classList.add('dragable')
+            pickUpCard(el, pos3, pos4)
+        } else {
+            pickUpCard(el, pos3, pos4)
+        }        
+
+        document.onmouseup = closeDragElement;
+        document.ontouchend = closeDragElement;
+        document.ontouchcancel = closeDragElement
+        document.onmousemove = elementDrag;
+        document.ontouchmove = elementDrag;
+        // el.style.zIndex = cardCount * 100 // TO DO??
+        draggingEl = el;
+
+        function elementDrag(e) {
+            e = e || window.event;
+            if (e.type == 'mousemove') {
+                e.preventDefault();
+            }
+            // calculate the new cursor position:
+            if (e.type == 'mousemove') {
+                pos1 = pos3 - e.pageX;
+                pos2 = pos4 - e.pageY;
+                pos3 = e.pageX;
+                pos4 = e.pageY;
+            } else if (e.type == 'touchmove') {
+                pos1 = pos3 - e.touches[0].pageX;
+                pos2 = pos4 - e.touches[0].pageY;
+                pos3 = e.touches[0].pageX;
+                pos4 = e.touches[0].pageY;
+                // get positions for second finger if present for scrolling on touch device while moving
+                if (e.touches.length > 1) {
+                    if (scrollPos3 == 0 || scrollPos4 == 0) { // can't get these when starting touch event, so do it now if null
+                        scrollPos3 = e.touches[1].pageX;
+                        scrollPos4 = e.touches[1].pageY;
+                    } else {
+                        scrollPos1 = scrollPos3 - e.touches[1].pageX;
+                        scrollPos2 = scrollPos4 - e.touches[1].pageY;
+                        scrollPos3 = e.touches[1].pageX;
+                        scrollPos4 = e.touches[1].pageY;
+                    }
+                }
+            }
+            // set the element's new position:
+            el.style.top = (el.offsetTop - pos2) + "px";
+            el.style.left = (el.offsetLeft - pos1) + "px";
+            if (e.type == 'mousemove') {
+                overSpace = checkOverSpace(e.clientX, e.clientY, draggingEl)
+            } else if (e.type == 'touchmove') {
+                overSpace = checkOverSpace(e.touches[0].clientX, e.touches[0].clientY, draggingEl)
+                if (e.touches.length > 1) {
+                    // set scroll position on touch devices
+                    console.log('scroll')
+                    document.body.scrollTop = document.body.scrollTop + scrollPos2
+                    document.body.scrollLeft = document.body.scrollLeft + scrollPos1
+                    console.log(scrollPos1 + " " + scrollPos2 + " " + scrollPos4 + " " + scrollPos4)
+                } else {
+                    scrollPos1, scrollPos2, scrollPos3, scrollPos4 = 0 // reset these if no longer using two fingers so they're ready for next time
+                }
+            }
+            if (overSpace != null && draggingEl != null && overSpace) {
+                // el.classList.add('hovered') // I'M NOT SURE WHY THIS WAS EVER HERE? REMOVE???
+                hoveredSpace = overSpace
+            } else {
+                // overSpace = null
+                hoveredSpace = null
+            }
+        }
+
+        function closeDragElement(e) {
+            // stop moving when mouse button is released:
+            e = e || window.event;
+            e.preventDefault();
+            let originBank = document.getElementById(draggingEl.getAttribute('data-origin-bank'))
+
+            // for touch device, only drop element if there are no more fingers held down
+            animateMoveElementPrepare(draggingEl,true)
+            if (!((e.type == 'touchend' || e.type == 'touchcancel') && e.touches.length > 0)) {
+                redoZIndex(el.parentElement)
+                document.onmouseup = null;
+                document.onmousemove = null;
+                document.ontouchmove = null;
+                document.ontouchend = null;
+                document.ontouchcancel = null;
+                scrollPos1, scrollPos2, scrollPos3, scrollPos4 = 0
+                let lineId = el.getAttribute('data-line')                
+                if (hoveredSpace && (gameSettings.bank == 'activity' | hoveredSpace.getAttribute('data-line') == lineId)) { // if over a space (and in bank-per-line mode, a space of that cloze)                      
+                    addClozeDragToSpace(draggingEl,hoveredSpace)
+                } else {                    
+                    if (!gameSettings.infiniteBank){                                   
+                        // add back to original bank (if not infinite bank mode)
+                        originBank.appendChild(draggingEl)
+
+                        if (e.type == 'mouseup') {
+                            clientX = e.clientX
+                            clientY = e.clientY
+                            pageX = e.pageX
+                            pageY = e.pageY
+                        } else if (e.type == 'touchend' || e.type == 'touchcancel') {
+                            clientX = e.changedTouches[0].clientX
+                            clientY = e.changedTouches[0].clientY
+                            pageX = e.changedTouches[0].pageX
+                            pageY = e.changedTouches[0].pageY
+                        }                        
+                    }
+                    let moreBtn = originBank.querySelector('.more-btn')
+                    if (moreBtn){
+                        originBank.appendChild(moreBtn)
+                        draggingEl.classList.add('hidden') // also hide this, since it's now at the end
+                    } else {
+                        showBankScroll(originBank) // if there isn't one, check that we don't need one now
+                    }
+                    }
+                }
+            
+            // let droppedCard = draggingEl
+            dropCard(draggingEl)          
+            animateMoveElementToNewPosition(el,true)
+
+            // put more button back to the end if there is one
+
+        }
+    }
+
+    // this function is currently only being used in a situation where it should never be run, but I wrote it after most things, so it might be possible to simplify some other code with this
+    function returnDroppedClozeDragToBank(clozeDrag){
+        clozeDrag.parentElement.classList.remove('filled')
+        clozeDrag.parentElement.style = null
+        clozeDrag.classList.remove('exdragable')
+
+        if(gameSettings.infiniteBank){
+            clozeDrag.remove()
+        } else {
+            let originBank = document.getElementById(clozeDrag.getAttribute('data-origin-bank'))
+            originBank.appendChild(clozeDrag)
+        }
+    }
+
+    function addClozeDragToSpace(clozeDrag,space,setSizeOfSpace=false){
+        let draggingSize = getCalculatedSizeWithoutPadding(clozeDrag)
+        clozeDrag.style.width = draggingSize.width + 'px'; // fix width temporarily
+        clozeDrag.style.height = draggingSize.height + 'px'; // fix height temporarily
+
+        (function(element) {
+        setTimeout(() => {
+            element.style.width = null
+            element.style.height = null
+        }, 500);
+        })(clozeDrag);  
+
+        // when restoring progress, the size won't have been set by hovering, so we'll do it here
+        if(setSizeOfSpace){
+            space.style.width = clozeDrag.offsetWidth
+        }
+
+        space.classList.add('filled')
+        space.classList.remove('hovered')
+        space.appendChild(clozeDrag)
+        space.value = clozeDrag.innerHTML // assign value of space to the word
+        clozeDrag.classList.add('exdragable')
+        clozeDrag.classList.remove('dragable')
+
+        lineID = space.getAttribute('data-line')
+        clozeID = space.getAttribute('data-cloze')
+
+        answerChanged(space,lineID,clozeID)
+    }
+
+    function redoZIndex(container) { // this should keep stacked cards in z order compared to when they were last picked up
+        for (i = 0; i < container.children.length; i++) {
+            if (container.children[i].style.zIndex > 0) { // move all elements with zIndex higher than 0 down one
+                container.children[i].style.zIndex--
+            }
+            // this isn't quite perfect (in theory cards will "jump" to the bottom if they get to 0),
+            //but we can't go into negative numbers because it makes them impossible to pick up
+            //and by giving recently selected cards cardCount * 100, they should stay above 0 for a long time
+        }
+    }
+    function checkOverSpace(x, y, draggingEl) {
+        // console.log('checkingOverSpace')
+        let spaces = document.querySelectorAll('.cloze-space')
+        var hoveringSpace = null
+        for (let i = 0; i < spaces.length; i++) {
+            let space = spaces[i]
+            if (!space.classList.contains('filled')) {
+                spacePosition = space.getBoundingClientRect();
+                // console.log(spacePosition)
+                // console.log(x+', '+y)
+                // console.log(cardPosition.left + ', ' + cardPosition.right + ', ' + cardPosition.top + ', ' + cardPosition.bottom)
+                if (x >= spacePosition.left && x <= spacePosition.right && y >= spacePosition.top && y <= spacePosition.bottom) {
+                    //   answer = container.children[i].children[0]; // can't just return here because we also need to remove hovering class from other elements
+                    draggingEl.classList.add('hovering')
+                    // let spaceDummy = document.getElementById('dummyClozeSpace')
+                    // spaceDummy.style.left = spacePosition.x 
+                    // spaceDummy.style.top = spacePosition.y 
+                    // spaceDummy.style.width = draggingEl.offsetWidth
+                    space.style.width = draggingEl.offsetWidth                    
+                    space.classList.add('hovered')
+                    hoveringSpace = space
+                } else {
+                    space.classList.remove('hovered') 
+                    space.style.width = null
+                }
+            }
+        }
+        if (hoveringSpace == null) {
+            draggingEl.classList.remove('hovering')
+        }
+        // if (hoveringSpace) { console.log('hovering') }
+        return hoveringSpace;
+    }
+    // function overSpace(el){
+    //   if (draggingEl != null){
+    //     el.classList.add('hovered')
+    //     console.log('over space')
+    //   }
+    // }
+
+    function pickUpCard(dragableCard, mouse_x, mouse_y) {
+        // prepare to animate other cards in the bank
+        let bankCards = []
+        if(dragableCard.parentElement.classList.contains('bank')){
+            bankCards = Array.from(dragableCard.parentElement.children)
+            tryToShowMore(dragableCard.parentElement)
+            bankCards.forEach(card =>{
+                if(card.id != dragableCard.id){
+                    animateMoveElementPrepare(card)
+                }
+            })
+        }
+        dragableCard.classList.remove('dragable')
+        dragableCard.classList.add('dragging')
+        // set the element's new position:
+        dragableCard.style.top = mouse_y - (dragableCard.offsetHeight / 2) + "px";
+        dragableCard.style.left = mouse_x - (dragableCard.offsetWidth / 2) + "px";
+        if (gameSettings.bank == 'line'){
+            document.getElementById(`clozeLine_${dragableCard.getAttribute('data-line')}`).parentElement.classList.add('dragging-from')
+        }
+        document.body.appendChild(dragableCard) // move element to main body so it can be moved around outside bank/space
+        // animate other cards in the bank
+        if(bankCards.length > 0){
+            bankCards.forEach(card =>{
+                if(card.id != dragableCard.id){
+                    animateMoveElementToNewPosition(card)
+                }
+            })
+        }
+    }
+    function dropCard(dragableCard) {
+        dragableCard.classList.remove('dragging')
+        dragableCard.classList.remove('hovering')
+        dragableCard.classList.add('dragable')
+        if (gameSettings.bank == 'line'){
+            setTimeout(function(){
+                //small delay to improve animations
+                document.getElementById(`clozeLine_${dragableCard.getAttribute('data-line')}`).parentElement.classList.remove('dragging-from')
+            },500)
+        }
+        if(gameSettings.infiniteBank && !draggingEl.classList.contains('exdragable')){
+            // if infinite bank and card is not dropped into a space, then delete it
+            draggingEl.remove()
+        }
+        draggingEl = null;
+        hoveredSpace = null;
+        // reset the card container height if it's become too small (this could happen after resizing the window)
+        // if (cardContainer.scrollHeight > cardContainer.clientHeight){
+        //   resetCardContainer()
+        // }
+    }
+
+    function elementContainsElementWithHTML(parentElement, targetElement) {
+    // Get the innerHTML of the target element
+    const targetInnerHTML = targetElement.innerHTML;
+
+    // Get all child elements of the parent element
+    const children = parentElement.children;
+
+    // Loop through the children and check if any child's innerHTML matches the target innerHTML
+    for (let i = 0; i < children.length; i++) {
+        if (children[i].innerHTML === targetInnerHTML) {
+            return true;
+        }
+    }
+
+    // Return false if no match is found
+    return false;
+}
+
+    function adjustLayout(){
+        clearTimeout(resetBankScrollTimeout);
+        banks.forEach(bankEl =>{
+            bank.style.overflow = 'hidden'; // temporarily hide overflow
+        })
+        resetBankScrollTimeout = setTimeout(() => {
+            banks.forEach(bankEl => {
+                bank.style.overflow = null;
+                resetBankScroll(bank)
+            })            
+        },500)  
+    }
+
+    function resetBankScroll(bankEl){
+        console.log('resetting')
+        for(let i=0; i<bankEl.children.length; i++){
+            bankEl.children[i].classList.remove('hidden')
+            if(bankEl.children[i].classList.contains('more-btn')){
+                bankEl.children[i].remove()
+            }
+        }
+        bankEl.offsetWidth // recalculate    
+        showBankScroll(bankEl)    
+    }
+
+    function showBankScroll(bankEl){
+        let bankPos = bankEl.getBoundingClientRect()
+        let hideSome = false
+        for(let i=0; i<bankEl.children.length; i++){
+            if(bankEl.children[i].classList.contains('dragable')){
+                if(!hideSome){
+                    let pos = bankEl.children[i].getBoundingClientRect()
+                    if (pos.bottom > bankPos.bottom + 5){
+                        bankEl.children[i].classList.add('hidden')
+                        hideSome = true
+                    }
+                } else { 
+                    // if we've already hidden one, we need to hide the rest
+                    bankEl.children[i].classList.add('hidden')
+                }            
+            }
+        }
+        if(hideSome){
+            bankEl.appendChild(moreBankButton())
+        }
+    }
+
+    function tryToShowMore(bankEl){
+        let moreBtn = bankEl.querySelector('.more-btn')
+        let startUnhiding = false
+        if(moreBtn){
+            for(let i=0; i<bankEl.children.length-2; i++){
+                if((!bankEl.children[i].classList.contains('hidden') && bankEl.children[i+1].classList.contains('hidden')) || 
+                bankEl.children[i+1].classList.contains('hidden') && startUnhiding){
+                    bankEl.children[i+1].classList.remove('hidden')
+                    bankEl.offsetWidth // recalc
+                    let pos = bankEl.children[i+1].getBoundingClientRect()
+                    let bankPos = bankEl.getBoundingClientRect()
+                    if (pos.bottom > bankPos.bottom + 5){
+                        bankEl.children[i].classList.add('hidden')
+                    }                    
+                    let anyHidden = bankEl.querySelectorAll('.hidden')
+                    if(anyHidden.length == 0){
+                        moreBtn.remove()
+                        return // nothing more to do
+                    } else {
+                        startUnhiding = true // if we've found one to unhide, we can continue to try to unhide others (still going always with the one ahead)
+                    }
+                }
+            } 
+        }
+    }
+
+    function moreBankButton(){
+        return newElement('button',{class: 'more-btn', onclick: 'showMoreInBank(this)'},'➜')
+    }
+
+    function showMoreInBank(btn){
+        let bankEl = btn.parentElement
+        let startUnhiding = false
+        for(let i=0; i<bankEl.children.length; i++){
+            if(bankEl.children[i].classList.contains('dragable')){
+                if(!bankEl.children[i].classList.contains('hidden')){
+                    // hide everything so far that hasn't been hidden
+                    bankEl.children[i].classList.add('hidden')
+                    if(i == bankEl.children.length-2){
+                        // if we just hid the last one
+                        i = -1 // go back to the beginning and start unhiding
+                        startUnhiding = true
+                    } else if (bankEl.children[i+1].classList.contains('hidden')){
+                        startUnhiding = true
+                    }
+                } else if (startUnhiding) {
+                    bankEl.children[i].classList.remove('hidden')
+                    bankEl.offsetWidth // recalculate
+                    let pos = bankEl.children[i].getBoundingClientRect()  
+                    let bankPos = bankEl.getBoundingClientRect()              
+                    if (pos.bottom > bankPos.bottom){
+                        bankEl.children[i].classList.add('hidden')                                        
+                        return; // don't try to unhide anymore
+                    }
+                }
+            }
+        }
+    }
+
+
+    function bankMove(scrollPos, bankEl){
+    bankPos = bankEl.getBoundingClientRect()
+    // bankDummy = document.getElementById(bankEl.id + 'Dummy')
+    if (scrollPos > bankTop){
+        if (!bankEl.classList.contains('side')){
+            bankEl.style.left = 'calc(1em - ' + (bankPos.width) + 'px)'
+            // add class after moved out the way
+            setTimeout(() => {
+                bankEl.classList.add('side')
+            },1000)              
+
+            // contentsDummy.classList.add('sideMode')            
+        }
+        
+    } else {
+        bankEl.style.left = null
+        bankEl.style.top = bankTop
+        setTimeout(() => {            
+            bankEl.classList.remove('side')
+            // contentsDummy.classList.remove('sideMode')
+        },1000)
+        
+    }
+}
+
+function pinBank(btn){
+    btn.parentElement.classList.add('pinned')
+    btn.setAttribute('onclick','unpinBank(this)')
+    btn.innerHTML = icons.pinned
+}
+
+function unpinBank(btn){
+    btn.parentElement.classList.remove('pinned')
+    btn.setAttribute('onclick','pinBank(this)')
+    btn.innerHTML = icons.pin
+}
+
+    function bankSizeChange(event, dummyEl){
+        dummyEl.style.height = event[0].borderBoxSize[0].blockSize + 'px'      
+    }
+
+    function enableMoveToSide(bankEl){
+
+        bankID = bankEl.id
+        bankPos = bankEl.getBoundingClientRect()
+
+        var bankDummyEl = document.createElement('div')
+        bankDummyEl.setAttribute('id',bankID+'Dummy')
+        bankDummyEl.style.height = bankPos.height
+        
+
+        bankTop = bankPos.top // remember its normal position
+
+        bankEl.parentElement.insertBefore(bankDummyEl,bankEl)
+
+        bankEl.style.top = bankTop
+        bankEl.classList.add('moveable')
+
+        let indicatorArrow = newElement('div',{class:'indicator arrow right', onclick: `unpinBank(document.getElementById('pin'))`})
+        bankEl.appendChild(indicatorArrow)
+
+        let pin = newElement('button',{id: 'pin', class: 'icon', onclick: 'pinBank(this)'},icons.pin)
+        bankEl.appendChild(pin)
+        
+
+        // we need to know when the bank element moves
+        new ResizeObserver((event) => {bankSizeChange(event, bankDummyEl)}).observe(bankEl)
+
+        document.addEventListener("scroll", (event) => {
+            lastKnownScrollPosition = window.scrollY;
+        
+            if (!ticking) {
+            window.requestAnimationFrame(() => {
+                bankMove(lastKnownScrollPosition, bankEl);
+                ticking = false;
+            });
+        
+            ticking = true;
+            }
+        });
+        } 
+
+        function shrinkTextToFit(element, desiredPercent) {
+      element.style = "" //reset from any previous changes
+      parentHeight = element.parentElement.offsetHeight
+      var newFontSize = window.getComputedStyle(element).getPropertyValue("font-size").replace('px','')
+      while (element.offsetHeight > desiredPercent*parentHeight && newFontSize >= 12){
+        newFontSize--
+        if (newFontSize < 12) { // if it get very small, force it to scroll instead
+          element.style.overflow = "scroll"
+          element.style.height = desiredPercent * parentHeight
+        } else {
+          element.style.fontSize = newFontSize
+        }
+      }
+      element.style.height = desiredPercent * parentHeight
+    }
+
+    // transition opacity must be set
+    function fadeElementIn(el){
+        el.style.opacity = 0
+        el.style.transition = 'none'
+        setTimeout(function(){
+            el.style.transition = null
+            el.style.opacity = null            
+        },1)
+
+    }
+
+    function elementPosition(element) {
+            let rect = element.getBoundingClientRect()
+            return { x: rect.x + window.scrollX, y: rect.y + window.scrollY }
+        }
+
+        function getCalculatedSizeWithoutPadding(element){
+        var cs = getComputedStyle(element);
+
+        var paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+        var paddingY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+
+        var borderX = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+        var borderY = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+
+        // Element width and height minus padding and border
+        elementWidth = element.offsetWidth - paddingX - borderX;
+        elementHeight = element.offsetHeight - paddingY - borderY;
+        var output = new Object();
+        output = {width: elementWidth, height: elementHeight}
+        return output
+      }
+
+    function animateMoveElementPrepare(el,opacity=false){
+        animationMoveHolder[el.id] = elementPosition(el)
+        if (opacity){
+            el.style.display = 'inline-block'
+        }
+        // console.log(animationMoveHolder[el.id])
+    }
+
+    function animateMoveElementToNewPosition(element, opacity=false, delay = 0, aboveAll = true, speed = false) {
+            // Calculate the differences
+            let originalPosition = animationMoveHolder[element.id]
+            if (originalPosition){
+                let newPosition = elementPosition(element)
+                let deltaX = originalPosition.x - newPosition.x; // Δx = x2 - x1
+                let deltaY = originalPosition.y - newPosition.y; // Δy = y2 - y1            
+        
+                // Apply the transform to an element
+                element.classList.add('noanimation')
+                element.style.transform = `translate(${deltaX}px, ${deltaY}px)`;                
+
+                //Override the hidden class temporarily so we can animate opacity if necessary
+                if(opacity && element.classList.contains('hidden')){
+                    element.style.opacity = 1
+                    element.style.pointerEvents = 'none' // disable pointer events so as not to trigger bank hover
+                }
+
+                if (aboveAll) {
+                    element.style.zIndex = '999'
+                }
+                if (speed) {
+                    element.style.transition = 'transform ' + speed + 'ms ease-in-out, opacity ' + speed + 'ms ease-in-out'
+                    setTimeout(function () {
+                        element.style.transition = null
+                    }, speed)
+                    // console.log(speed)
+                }
+                element.offsetWidth // recalculate positions
+                // remove transform (and opacity) to element after short delay
+                setTimeout(function () {
+                    element.classList.remove('noanimation')
+                    if(!opacity | !element.classList.contains('hidden')){
+                        // only do movement animation if we're not doing opacity or we are but it's not hidden anyway
+                        element.style.transform = null 
+                    }        
+                    element.style.opacity = null // animate opacity back to original setting           
+                    setTimeout(function () {
+                        //cancel any temporary changes
+                        element.style.zIndex = null
+                        element.style.display = null
+                        element.style.transform = null
+                        element.style.pointerEvents = null
+                        delete animationMoveHolder[element.id]
+                    }, 800)
+                }, 10 + (100 * delay))
+            }
+        }
+
+    // because crypto won't work unless on https:
+    function uuidv4() {
+        return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+            (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
+        );
+    }
+
+    // function animateMoveElementToNewPosition(el){
+    //     // TO DO: calculate time based on distance for a constant speed
+
+    //     if(animationMoveHolder.hasOwnProperty(el.id)){
+    //         let elPos = el.getBoundingClientRect()
+    //         let elParent = el.parentElement
+
+    //         document.body.appendChild(el)
+
+    //         el.style.position = 'absolute'
+    //         el.style.left = animationMoveHolder[el.id].x
+    //         el.style.top = animationMoveHolder[el.id].y
+    //         el.style.transition = 'top 500ms, left 500ms, opacity 500ms'
+    //         el.style.zIndex = '999'
+    //         setTimeout(function(){          
+    //             let elParentStyle = window.getComputedStyle(elParent)      
+    //             el.style.left = elPos.x
+    //             el.style.top = elPos.y                                
+    //         },1)
+    //         setTimeout(function(){
+    //             elParent.appendChild(el) // this won't take into account position in the parent! but for this scenario, this shouldn't matter
+    //             el.style.position = null
+    //             el.style.left = null
+    //             el.style.top = null
+    //             el.style.transition = null
+    //             el.style.zIndex = null
+    //             delete animationMoveHolder[el.id]
+    //         },501)
+    //     } else {
+    //         console.log(`Will not animate ${el.id}, no position was saved in animationMoveHolder.`)
+    //     }
+    // }
+
+
+    Array.prototype.shuffle = function () {
+        let currentIndex = this.length, randomIndex;
+
+        // While there remain elements to shuffle.
+        while (currentIndex > 0) {
+
+            // Pick a remaining element.
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+
+            // And swap it with the current element.
+            [this[currentIndex], this[randomIndex]] = [
+                this[randomIndex], this[currentIndex]];
+        }
+        return this
+    }
+
+</script>
+<style>    
+    :root {
+        --bg-color: #F2F3EB;
+        --bg-color-secondary: #eff0e7;
+        --fg-color: #000000;
+        --cloze-typing-bg: #FFCAB1;
+        --cloze-typing-fg: #000000;
+        --cloze-select-bg: #FFCAB1;
+        --cloze-select-fg: #000000;
+        --cloze-drag-bg: #FFCAB1;
+        --cloze-drag-fg: #000000;
+        --cloze-space:#d4d4cd;
+        --correct-bg: #8CC084;
+        --correct-fg: #000000;
+        --bank-bg: #C1D7AE;        
+        --hint-bg: rgb(132, 192, 189);
+        --button-bg: #F2F3EB;
+        --button-fg: #000000;
+        /* --button-highlight: rgba(193, 215, 174, 0.5); */
+        --button-highlight: #C1D7AE;
+        --color3: #8CC084;
+    }
+
+    [data-theme="default dark"] {
+        --bg-color: #2E4057;
+        --bg-color-secondary: #1c2635;
+        --fg-color: #F6D8AE;
+        --cloze-typing-bg: #2E4057;
+        --cloze-typing-fg: #F6D8AE;
+        --cloze-select-bg: #2E4057;
+        --cloze-select-fg: #F6D8AE;
+        --cloze-drag-bg: #2E4057;
+        --cloze-drag-fg: #F6D8AE;
+        --cloze-space:#425c7f;
+        --correct-bg: #1d6a11;
+        --correct-fg: #FFFFFF;
+        --bank-bg: #425c7f;        
+        --hint-bg: #1d2939;
+        --button-bg: #F6D8AE;
+        --button-fg: #2E4057;
+        --button-highlight: rgba(246, 216, 174, 0.5);
+    }
+
+    [data-theme="black and white"] {
+        --bg-color: #ffffff;
+        --fg-color: #000000;
+        --bg-color-secondary: #d3d3d3;
+        --cloze-typing-bg: #c4c4c4;
+        --cloze-typing-fg: #000000;
+        --cloze-select-bg: #c4c4c4;
+        --cloze-select-fg: #000000;
+        --cloze-drag-bg: #c4c4c4;
+        --cloze-drag-fg: #000000;
+        --cloze-space:#696969;
+        --correct-bg: #8CC084;
+        --correct-fg: #000000;
+        --bank-bg: #a2a2a2;        
+        --hint-bg: rgb(202, 202, 202);
+        --button-bg: #eaeaea;
+        --button-fg: #000000;
+        --button-highlight: #C1D7AE;
+        --color3: #09b500;
+    }
+
+    [data-theme="swedish furniture company"] {
+        --bg-color: #fffbe0;
+        --fg-color: #0015b5;
+        --word-bg: #FFE305;
+        --word-fg: #00094c;
+        --cloze-typing-bg: #FFE305;
+        --cloze-typing-fg: #00094c;
+        --cloze-select-bg: #FFE305;
+        --cloze-select-fg: #00094c;
+        --cloze-drag-bg: #FFE305;
+        --cloze-drag-fg: #00094c;
+        --cloze-space:#364dff;
+        --correct-bg: #85c2ff;
+        --correct-fg: #00094c;
+        --bank-bg: #364dff;        
+        --hint-bg: #fff49e;
+        --button-bg: #FFE305;
+        --button-fg: #00094c;
+        --button-highlight: #FFE305;
+        --color3: #364dff;
+    }
+
+    /* https://coolors.co/acb4d7-e7e7e7-f9c784-fc7a1e-f24c00 */
+    [data-theme="liberty"] {
+        --bg-color: #485696;
+        --fg-color: #E7E7E7;
+        --bg-color-secondary: #4f5fa4;
+        --cloze-typing-bg: #F24C00;
+        --cloze-typing-fg: #E7E7E7;
+        --cloze-select-bg: #F24C00;
+        --cloze-select-fg: #E7E7E7;
+        --cloze-drag-bg: #F24C00;
+        --cloze-drag-fg: #E7E7E7;
+        --cloze-space:#E7E7E7;
+        --bank-bg: #E7E7E7;
+        --sortArea-bg: #485696;
+        --hint-bg: #ad3700;
+        --button-bg: #F24C00;
+        --button-fg: #E7E7E7;
+        --button-highlight: #F24C00;
+    }
+
+    [data-theme="dark mode"] {
+        --bg-color: #000000;
+        --bg-color-secondary: #222222;
+        --fg-color: #ffffff;
+        --cloze-typing-bg: rgb(46, 46, 46);
+        --cloze-typing-fg: #ffffff;
+        --cloze-select-bg: rgb(46, 46, 46);
+        --cloze-select-fg: #ffffff;
+        --cloze-drag-bg: rgb(46, 46, 46);
+        --cloze-drag-fg: #ffffff;
+        --cloze-space:rgb(62, 62, 62);
+        --correct-bg: #00530a;
+        --correct-fg: #ffffff;
+        --bank-bg: rgb(62, 62, 62);
+        --sortArea-bg: rgb(96, 96, 96);
+        --hint-bg: #0015b5;
+        --button-bg: #000000;
+        --button-fg: #ffffff;
+        --button-highlight: #8f8f8f;
+        --color3: #8f8f8f;
+    }
+
+    [data-theme="lille"] {
+        --bg-color: #FFFFFF;
+        --fg-color: #002D2D;
+        --bg-color-secondary: #FAF0E1;
+        --cloze-typing-bg: #5862ed;
+        --cloze-typing-fg: #89e0b1;
+        --cloze-select-bg: #5862ed;
+        --cloze-select-fg: #89e0b1;
+        --cloze-drag-bg: #5862ed;
+        --cloze-drag-fg: #89e0b1;
+        --cloze-space:#7abaff;
+        --correct-bg: #89e0b1;
+        --correct-fg: #5862ed;
+        --bank-bg: #7abaff;
+        --sortArea-bg: #FFFFFF;
+        --hint-bg: #89e0b1;
+        --button-bg: #5862ed;
+        --button-fg: #FFFFFF;
+        --button-highlight: #89e0b1;
+        --color3: #7abaff;
+    }
+
+    [data-theme="university"] {
+        --bg-color: #FAF0E1;
+        --fg-color: #020034;
+        --bg-color-secondary: #ffffff;
+        --cloze-typing-bg: #FAF0E1;
+        --cloze-typing-fg: #020034;
+        --cloze-select-bg: #FAF0E1;
+        --cloze-select-fg: #020034;
+        --cloze-drag-bg: #FAF0E1;
+        --cloze-drag-fg: #020034;
+        --cloze-space:#FC535C;
+        --bank-bg: #FC535C;
+        --correct-bg: #89e0b1;
+        --correct-fg: #020034;
+        --sortArea-bg: #FFFFFF;
+        --hint-bg: #5862ED;
+        --button-bg: #020034;
+        --button-fg: #FFFFFF;
+        --button-highlight: #020034;
+        --color3: #7abaff;
+    }
+
+    [data-theme="b5 4eva"] {
+        --bg-color: #FFFFFF;
+        --fg-color: #2d0505;
+        --bg-color-secondary: #FAF0E1;
+        --cloze-typing-bg: #ffd24b;
+        --cloze-typing-fg: #fc535c;
+        --cloze-select-bg: #ffd24b;
+        --cloze-select-fg: #fc535c;
+        --cloze-drag-bg: #ffd24b;
+        --cloze-drag-fg: #fc535c;
+        --correct-bg: #89e0b1;
+        --correct-fg: #2d0505;
+        --cloze-space:#5862ED;
+        --bank-bg: #5862ED;
+        --sortArea-bg: #FFFFFF;
+        --hint-bg: #5862ED;
+        --button-bg: #fc535c;
+        --button-fg: #FFFFFF;
+        --button-highlight: #ffd24b;
+        --color3: #7abaff;
+    }
+
+    [data-theme="bridge of wood"] {
+        --bg-color: #FFFFFF;
+        --fg-color: #2d0505;
+        --bg-color-secondary: #FAF0E1;
+        --cloze-typing-bg: #ffb4d2;
+        --cloze-typing-fg: #2d0505;
+        --cloze-select-bg: #ffb4d2;
+        --cloze-select-fg: #2d0505;
+        --cloze-drag-bg: #ffb4d2;
+        --cloze-drag-fg: #2d0505;
+        --cloze-space:#7abaff;
+        --correct-bg: #89e0b1;
+        --correct-fg: #2d0505;
+        --bank-bg: #7abaff;
+        --sortArea-bg: #FFFFFF;
+        --hint-bg: #ff6941;
+        --button-bg: #ffb4d2;
+        --button-fg: #FFFFFF;
+        --button-highlight: #7abaff;
+        --color3: #ffb4d2;
+    }
+
+    [data-theme="colorful"] {
+        --bg-color: #e4e1e1;
+        --fg-color: #2d0505;
+        --bg-color-secondary: #FAF0E1;
+        --cloze-typing-bg: #ffdd00;
+        --cloze-typing-fg: #2d0505;
+        --cloze-select-bg: #00ff99;
+        --cloze-select-fg: #2d0505;
+        --cloze-drag-bg: #fd5f9e;
+        --cloze-drag-fg: #2d0505;
+        --cloze-space:#ffb4d2;
+        --correct-bg: #71e46f;
+        --correct-fg: #2d0505;
+        --bank-bg: #7abaff;
+        --sortArea-bg: #FFFFFF;
+        --hint-bg: #ff6941;
+        --button-bg: #7abaff;
+        --button-fg: #FFFFFF;
+        --button-highlight: #7abaff;
+        --color3: #ffb4d2;
+    }
+
+    body {
+        font-family: var(--main-font), Arial;
+        font-size: 2em;
+        text-align: left;
+        background-color: var(--bg-color);
+        color: var(--fg-color);
+        width: 95%;
+    }
+
+    input, select, .cloze-space{
+        margin-top: 0.1em;
+        margin-bottom: 0.1em;
+    }
+
+    input,
+    select {
+        font-family: inherit;
+        font-size: inherit;
+        text-align: inherit;
+        border-style: none;
+        /* background-color: var(--bg-color); */
+        background-color: silver;
+        color: var(--fg-color);
+        padding: 0.2em;
+        width: calc(1ch + 2em);
+        max-width: 90vw;
+        transition: width 0.2s, padding-left 0.3s, padding-right 0.3s;
+        min-height: 1em;
+    }
+
+    select{
+        width: calc(1ch + 3em);
+        border-top: 0.1em solid var(--cloze-select-fg);
+        border-radius: 0 0 0.25em 0.25em;
+
+    }
+
+    input{
+        border-bottom: 0.1em solid var(--cloze-typing-fg);
+        border-radius: 0.25em 0.25em 0 0;
+    }
+
+    input[type=number]{
+        text-align: right;
+    }
+
+    input:focus{
+
+    }
+
+
+    button {
+        background-color: var(--button-bg);
+        color: var(--button-fg);
+        border: 2px solid var(--button-fg);
+        border-radius: 5px;
+        box-shadow: var(--button-highlight) 0 0 0 0;
+        transition: box-shadow .4s ease-in-out, -webkit-box-shadow .4s ease-in-out, opacity 0.4s, border-width 0.4s, transform .8s, font-size .4s;
+        user-select: none;
+        padding: 0.5em;
+        font-family: inherit;
+    }
+
+    button:hover {
+        box-shadow: var(--button-highlight) 0 0 0 0.25em;
+    }
+
+    button:active {
+        box-shadow: var(--button-highlight) 0 0 0 0.09em;
+        border-width: 4px;
+        opacity: 0.6;
+    }
+
+    button:disabled {
+        pointer-events: none;
+        opacity: 0.8;
+    }
+
+    .bank, #bankWrapper{
+        background-color: var(--bank-bg);
+        border-radius: 0.25em;
+        z-index: 998;
+        max-height: 50vh;        
+        overflow: visible;
+    }
+
+    .cloze-line-controls-wrapper .bank{
+        position: absolute;
+        left: 1em;
+        top: 100%;
+        opacity: 0;
+        transform: scaleY(0);
+        transform-origin:top;
+        transition: opacity 300ms, transform 300ms;        
+    }
+
+    .cloze-line-controls-wrapper:hover .bank, .dragging-from .bank{
+        opacity: 1;
+        transform: scaleY(1);
+    }
+
+    .icon {
+        stroke: var(--button-fg);
+        stroke-width: 10px;
+        fill: var(--button-fg);
+    }
+
+    .cloze-line-controls-wrapper{
+        display: flex;
+        flex-wrap: wrap;
+        position: relative;
+        margin: 0.5em;
+        margin-left: 1em;
+        padding: 0.5em;
+        border-radius: 0.25em;
+        align-items: stretch;
+        transition: background-color 0.3s;
+    }
+
+    .cloze-line-controls-wrapper:hover{
+        background-color: var(--bg-color-secondary);
+    }
+
+
+    .cloze-line-wrapper {
+        width: 100%;  
+        line-height: 1.2em;      
+    }
+
+    .cloze-line-controls-wrapper.with-button .cloze-line-wrapper{
+        width: calc(100% - 2em) !important;
+    }
+
+    .cloze-line-controls-wrapper.with-button.with-attempts .cloze-line-wrapper{
+        width: calc(100% - 4.5em) !important;
+    }
+
+    .controls-wrapper{
+        max-width: 4.5em;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        align-content: center;
+        flex-wrap:wrap;
+    }
+
+    .cloze-typing{
+        background-color: var(--cloze-typing-bg);
+        color: var(--cloze-typing-fg);
+    }
+
+    .cloze-select{
+        background-color: var(--cloze-select-bg);
+        color: var(--cloze-select-fg);
+    }
+
+    .cloze-space, .cloze-space-dummy {
+        background-color: var(--cloze-space);
+        display: inline-block;
+        width: 2.5em;
+        /* height: 2em; */
+        border-radius: 0.25em;
+        transition: width 0.5s, padding-left 0.5s, padding-right 0.5s;
+        padding: 0.25em;
+        z-index: 100;
+    }
+
+    .cloze-space.filled{
+        padding: 0;
+        opacity: 1;
+    }
+
+    .cloze-space.hovered{
+        padding-left: 0.01em;
+        padding-right: 0.01em;
+        /* opacity: 0; */
+    }
+
+    .cloze-space.filled .inner-space {
+        display: none;        
+    }
+
+    .cloze-space-dummy{
+        position: absolute;
+        padding-left: 0.01em;
+        padding-right: 0.01em;
+        z-index: 1;
+    }
+
+    .dragable,
+    .dragging,
+    .exdragable {
+        display: inline-block;
+        border: solid var(--cloze-drag-fg) 0.1em;
+        padding: 0.25em;
+        background-color: var(--cloze-drag-bg);
+        cursor: pointer;
+        border-radius: 0.25em;
+        color: var(--cloze-drag-fg);
+        margin: 0.25em;
+        z-index: 100;
+        transition: transform 500ms, opacity 500ms;
+        /* white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;         */
+        max-width: 50vw;
+        line-height: 1em;
+    }
+
+    .dragging {
+        cursor: move;
+        position: absolute;
+        margin: 0px;
+        z-index: 999;
+    }
+
+    .exdragable {
+        margin: 0;
+    }
+
+    .attempts, .score{
+        display: flex;
+        flex-direction: column;
+        max-width: 2em;
+        margin-left: 0.5em;
+        align-items: center;
+        justify-content: center;
+        transition: transform 500ms, opacity 500ms;
+    }
+
+    .attempts-text-wrapper, .score-text-wrapper{
+        display: flex;
+        height: 20%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .attempts-text, .score-text{
+        font-size: 0.5em;
+        overflow-x: auto;
+        overflow-wrap: break-word;
+        white-space: normal;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .expandable-answer{
+        cursor: pointer;
+        pointer-events: all !important;
+    }
+
+    #infoWrapper{
+        margin: auto;
+        width: 4em;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #attempts, #score{
+        width: 2em;
+        margin-left: 0.5em;
+        margin-right: 0.5em;
+    }
+
+    .check-wrapper{
+        /* height: 100%; */
+        position: relative;
+        width: 2em;
+        transition: transform 500ms;
+    }
+
+    .check-btn {
+        position: absolute;
+        display: block;
+        border-radius: 2.5em;
+        width: 2.5em;
+        height: 2.5em;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%,-50%);
+        overflow: hidden;        
+    }
+
+    .check-btn-correct-background{
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: var(--correct-bg);        
+        left: 0;
+        top: 100%; /* will move */
+        z-index: -1;
+        transition: 1s;
+    }
+
+    .more-btn{
+        position: absolute;
+        bottom: 1.5em;
+        right: 3em;
+        border-radius: 2.5em;
+        width: 2.5em;
+        height: 2.5em;                
+        transition: opacity 500ms, bottom 300ms, transform 300ms;
+    }
+
+    .side .more-btn{
+        opacity: 0;
+        /* in side mode, put it in the middle */
+        bottom: 50%;
+        transform: translateY(50%);
+    }
+
+    .side:hover .more-btn{
+        opacity: 1;
+    }
+
+    .correct, .locked.correct, .locked .correct{
+        background-color: var(--correct-bg);   
+        color: var(--correct-fg);
+        filter: none !important; /* don't apply the locked filter if they got it correct */
+    }
+
+    .locked{
+        pointer-events: none;
+        background-color: var(--correct-bg);
+        filter: grayscale(60%);
+    }
+
+    /* for drag elements in position once locked */
+    .locked .exdragable{    
+        background-color: var(--correct-bg);
+    }
+    
+    .wrong-shake{
+        animation: shake 0.5s
+    }
+
+    .arrow.right {
+    transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+  }
+  
+  .arrow.left {
+    transform: rotate(135deg);
+    -webkit-transform: rotate(135deg);
+  }
+  
+  .arrow.up {
+    transform: translateY(2px) rotate(-135deg);
+    -webkit-transform:  translateY(2px) rotate(-135deg);
+  }
+  
+  .arrow.down {
+    transform: translateY(-2px) rotate(45deg);
+    -webkit-transform: translateY(-2px) rotate(45deg);
+  }
+
+  #pin{
+    /* float: right; */
+    /* margin-right: -1.5em; */
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 4em;
+    height: 4em;
+    background: none;
+    border: none;
+    /* Don't show unless in side mode: */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 300ms, transform 500ms;    
+  }
+
+  #pin .icon{
+    fill: var(--bg-color);
+    stroke: var(--bg-color);
+  }
+
+  .side:hover #pin{
+    opacity: 0.9;
+    pointer-events: all;
+    box-shadow: none;
+  }
+
+  .side:hover #pin:hover, .pinned #pin{
+    opacity: 1;
+    pointer-events: all;
+    box-shadow: none;
+  }
+
+  .pinned #pin{
+    transform: translateY(5px)    
+  }
+
+  .indicator{
+    border: solid var(--bg-color);
+    border-width: 0 0.125em 0.125em 0;
+    padding: 0.25em;
+    float: right;
+    opacity: 0;
+    transition: 0.5s;
+    margin-right: -0.1em;
+  }
+
+  .side .indicator{
+    opacity: 1;
+  }
+
+
+    .side:hover, .pinned{
+        left: 0 !important;
+    } 
+
+    .side .indicator{
+        opacity: 1;
+    }
+
+    .side:hover .indicator, .pinned .indicator{
+        transform: rotate(135deg);
+        -webkit-transform: rotate(135deg);
+    }
+
+    .moveable{
+    position: fixed;
+}
+
+    .prompt{
+        width: 100%;
+    }
+    
+    .prompt img{
+        width: 200px;
+        height: auto;
+    }
+
+.hint-wrapper {
+  flex-basis: 100%;
+  /* height: 0; */
+}
+
+        .hint-wrapper.withButton{
+            min-height: 1.5em;
+        }
+
+        .hint {
+            border-radius: 5px;
+            background-color: var(--hint-bg);
+            padding: 10px;
+            /* margin-bottom: 10px; */
+            transition: opacity .8s, transform .8s, margin .8s, padding .8s, height .8s;
+            transform-origin: top;
+        }
+
+        .hint.hidden{
+            display: block; /* override normal property of hidden */
+            opacity: 0;
+            height: 0;
+            margin: 0px;
+            padding: 0;
+            transform: scaleY(0)
+        }
+
+        .hint-text{
+            transition: opacity .2s, font-size .4s;
+        }
+
+        .hidden .hint-text, .hidden .close-hint-btn{
+            opacity: 0; 
+            font-size: 1px;
+        }
+
+        .hint-btn{
+            border-radius: 100%;
+            aspect-ratio: 1/1;
+            margin: 0.5em;
+            height: 2em;
+            animation: grow 300ms;
+        }
+
+        .close-hint-btn, .reset-btn{
+            float: right;
+            opacity: 0.5;
+            border-radius: 100%;
+            border: none;
+            background: none;            
+        }
+
+        .close-hint-btn:hover, .reset-btn:hover{
+            box-shadow: none;
+            border: none;
+            opacity: 1;
+        }
+
+
+
+    #bankWrapper {
+        /* position: relative; */
+        min-height: 2.5em;
+        padding: 0.5em;
+        width: 800px;        
+        overflow:visible;
+        transition: 1s;
+        left: 5%;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        /* line-height: 125%; */
+    }
+
+    #bankWrapper:before{
+        content: "";
+        background-color: var(--bank-bg);
+        position: absolute;
+        left: -1000px;
+        width: 1000px;
+        top: 0;
+        height: 100%;
+    }
+
+    #bankWrapper .bank{
+        width: calc(100% - 2em);
+        float: left;        
+    }
+
+    #bankDummy{
+        display: block;
+        background-color: var(--bank-bg);
+        width: 500%;
+        margin-left: -100%;
+    }
+
+    #bottomButtons{
+        display: flex;
+        width: 100%;
+        justify-content: center;
+        align-items: center;
+        transition: transform 0.8s;
+    }
+
+
+    #activityCheckBtn{
+            position: unset;
+            margin: 1em;
+            /* margin-left: auto; */
+            /* margin-right: auto; */
+            transform: none;
+            width: 4em;
+            height: 4em;
+            padding: 1em;
+        }
+
+    @keyframes shake {
+        0% { transform: translate(0.5px, 0.5px) rotate(0deg); }
+        10% { transform: translate(-0.5px, -1px) rotate(-1deg); }
+        20% { transform: translate(-1.5px, 0px) rotate(1deg); }
+        30% { transform: translate(1.5px, 1px) rotate(0deg); }
+        40% { transform: translate(0.5px, -0.5px) rotate(1deg); }
+        50% { transform: translate(-0.5px, 1px) rotate(-1deg); }
+        60% { transform: translate(-1.5px, 0.5px) rotate(0deg); }
+        70% { transform: translate(1.5px, 0.5px) rotate(-1deg); }
+        80% { transform: translate(-1.5px, -0.5px) rotate(1deg); }
+        90% { transform: translate(0.5px, 1px) rotate(0deg); }
+        100% { transform: translate(0.5px, -1px) rotate(-1deg); }
+      }
+
+      @keyframes grow{
+            0% {transform: scale(0)}
+            100% {transform: scale(100%)}
+        }
+
+
+      .hidden{
+            opacity: 0;
+            display: none;
+        }
+
+        .noanimation {
+            transition: all 0s !important;
+        }
+</style>
+
+
+
+<body>
+    <div id="bankWrapper" class="hidden"><div id="bank" class="bank"></div></div>
+    <div id="questionArea"></div>    
+    <div id="infoWrapper"><div id="attempts" class="attempts hidden"></div><div id="score" class="score hidden"></div></div>
+    <div id="bottomButtons">
+        <button id="activityCheckBtn" class="check-btn hidden" onclick="checkAll()"></button><button id="revealAnswersBtn" class="hidden reveal-answers-btn" onclick="revealAllAnswers()"></button>
+    </div>    
+</body>
+<script src="activityController.js"></script>
+<!--This space is for either the activityController (when running in electron) or the game data (after export) -->
+
+</html>

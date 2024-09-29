@@ -1,6 +1,26 @@
 var settingsVisible = { main: false }
 
 const languages = [{code: "af", label: "Afrikaans"}, {code: "sq", label: "Albanian - shqip"}, {code: "am", label: "Amharic - አማርኛ"}, {code: "ar", label: "Arabic - العربية"}, {code: "an", label: "Aragonese - aragonés"}, {code: "hy", label: "Armenian - հայերեն"}, {code: "ast", label: "Asturian - asturianu"}, {code: "az", label: "Azerbaijani - azərbaycan dili"}, {code: "eu", label: "Basque - euskara"}, {code: "be", label: "Belarusian - беларуская"}, {code: "bn", label: "Bengali - বাংলা"}, {code: "bs", label: "Bosnian - bosanski"}, {code: "br", label: "Breton - brezhoneg"}, {code: "bg", label: "Bulgarian - български"}, {code: "ca", label: "Catalan - català"}, {code: "ckb", label: "Central Kurdish - کوردی (دەستنوسی عەرەبی)"}, {code: "zh", label: "Chinese - 中文"}, {code: "zh-HK", label: "Chinese (Hong Kong) - 中文（香港）"}, {code: "zh-CN", label: "Chinese (Simplified) - 中文（简体）"}, {code: "zh-TW", label: "Chinese (Traditional) - 中文（繁體）"}, {code: "co", label: "Corsican"}, {code: "hr", label: "Croatian - hrvatski"}, {code: "cs", label: "Czech - čeština"}, {code: "da", label: "Danish - dansk"}, {code: "nl", label: "Dutch - Nederlands"}, {code: "en", label: "English"}, {code: "en-AU", label: "English (Australia)"}, {code: "en-CA", label: "English (Canada)"}, {code: "en-IN", label: "English (India)"}, {code: "en-NZ", label: "English (New Zealand)"}, {code: "en-ZA", label: "English (South Africa)"}, {code: "en-GB", label: "English (United Kingdom)"}, {code: "en-US", label: "English (United States)"}, {code: "eo", label: "Esperanto - esperanto"}, {code: "et", label: "Estonian - eesti"}, {code: "fo", label: "Faroese - føroyskt"}, {code: "fil", label: "Filipino"}, {code: "fi", label: "Finnish - suomi"}, {code: "fr", label: "French - français"}, {code: "fr-CA", label: "French (Canada) - français (Canada)"}, {code: "fr-FR", label: "French (France) - français (France)"}, {code: "fr-CH", label: "French (Switzerland) - français (Suisse)"}, {code: "gl", label: "Galician - galego"}, {code: "ka", label: "Georgian - ქართული"}, {code: "de", label: "German - Deutsch"}, {code: "de-AT", label: "German (Austria) - Deutsch (Österreich)"}, {code: "de-DE", label: "German (Germany) - Deutsch (Deutschland)"}, {code: "de-LI", label: "German (Liechtenstein) - Deutsch (Liechtenstein)"}, {code: "de-CH", label: "German (Switzerland) - Deutsch (Schweiz)"}, {code: "el", label: "Greek - Ελληνικά"}, {code: "gn", label: "Guarani"}, {code: "gu", label: "Gujarati - ગુજરાતી"}, {code: "ha", label: "Hausa"}, {code: "haw", label: "Hawaiian - ʻŌlelo Hawaiʻi"}, {code: "he", label: "Hebrew - עברית"}, {code: "hi", label: "Hindi - हिन्दी"}, {code: "hu", label: "Hungarian - magyar"}, {code: "is", label: "Icelandic - íslenska"}, {code: "id", label: "Indonesian - Indonesia"}, {code: "ia", label: "Interlingua"}, {code: "ga", label: "Irish - Gaeilge"}, {code: "it", label: "Italian - italiano"}, {code: "it-IT", label: "Italian (Italy) - italiano (Italia)"}, {code: "it-CH", label: "Italian (Switzerland) - italiano (Svizzera)"}, {code: "ja", label: "Japanese - 日本語"}, {code: "kn", label: "Kannada - ಕನ್ನಡ"}, {code: "kk", label: "Kazakh - қазақ тілі"}, {code: "km", label: "Khmer - ខ្មែរ"}, {code: "ko", label: "Korean - 한국어"}, {code: "ku", label: "Kurdish - Kurdî"}, {code: "ky", label: "Kyrgyz - кыргызча"}, {code: "lo", label: "Lao - ລາວ"}, {code: "la", label: "Latin"}, {code: "lv", label: "Latvian - latviešu"}, {code: "ln", label: "Lingala - lingála"}, {code: "lt", label: "Lithuanian - lietuvių"}, {code: "mk", label: "Macedonian - македонски"}, {code: "ms", label: "Malay - Bahasa Melayu"}, {code: "ml", label: "Malayalam - മലയാളം"}, {code: "mt", label: "Maltese - Malti"}, {code: "mr", label: "Marathi - मराठी"}, {code: "mn", label: "Mongolian - монгол"}, {code: "ne", label: "Nepali - नेपाली"}, {code: "no", label: "Norwegian - norsk"}, {code: "nb", label: "Norwegian Bokmål - norsk bokmål"}, {code: "nn", label: "Norwegian Nynorsk - nynorsk"}, {code: "oc", label: "Occitan"}, {code: "or", label: "Oriya - ଓଡ଼ିଆ"}, {code: "om", label: "Oromo - Oromoo"}, {code: "ps", label: "Pashto - پښتو"}, {code: "fa", label: "Persian - فارسی"}, {code: "pl", label: "Polish - polski"}, {code: "pt", label: "Portuguese - português"}, {code: "pt-BR", label: "Portuguese (Brazil) - português (Brasil)"}, {code: "pt-PT", label: "Portuguese (Portugal) - português (Portugal)"}, {code: "pa", label: "Punjabi - ਪੰਜਾਬੀ"}, {code: "qu", label: "Quechua"}, {code: "ro", label: "Romanian - română"}, {code: "mo", label: "Romanian (Moldova) - română (Moldova)"}, {code: "rm", label: "Romansh - rumantsch"}, {code: "ru", label: "Russian - русский"}, {code: "gd", label: "Scottish Gaelic"}, {code: "sr", label: "Serbian - српски"}, {code: "sh", label: "Serbo-Croatian - Srpskohrvatski"}, {code: "sn", label: "Shona - chiShona"}, {code: "sd", label: "Sindhi"}, {code: "si", label: "Sinhala - සිංහල"}, {code: "sk", label: "Slovak - slovenčina"}, {code: "sl", label: "Slovenian - slovenščina"}, {code: "so", label: "Somali - Soomaali"}, {code: "st", label: "Southern Sotho"}, {code: "es", label: "Spanish - español"}, {code: "es-AR", label: "Spanish (Argentina) - español (Argentina)"}, {code: "es-419", label: "Spanish (Latin America) - español (Latinoamérica)"}, {code: "es-MX", label: "Spanish (Mexico) - español (México)"}, {code: "es-ES", label: "Spanish (Spain) - español (España)"}, {code: "es-US", label: "Spanish (United States) - español (Estados Unidos)"}, {code: "su", label: "Sundanese"}, {code: "sw", label: "Swahili - Kiswahili"}, {code: "sv", label: "Swedish - svenska"}, {code: "tg", label: "Tajik - тоҷикӣ"}, {code: "ta", label: "Tamil - தமிழ்"}, {code: "tt", label: "Tatar"}, {code: "te", label: "Telugu - తెలుగు"}, {code: "th", label: "Thai - ไทย"}, {code: "ti", label: "Tigrinya - ትግርኛ"}, {code: "to", label: "Tongan - lea fakatonga"}, {code: "tr", label: "Turkish - Türkçe"}, {code: "tk", label: "Turkmen"}, {code: "tw", label: "Twi"}, {code: "uk", label: "Ukrainian - українська"}, {code: "ur", label: "Urdu - اردو"}, {code: "ug", label: "Uyghur"}, {code: "uz", label: "Uzbek - o‘zbek"}, {code: "vi", label: "Vietnamese - Tiếng Việt"}, {code: "wa", label: "Walloon - wa"}, {code: "cy", label: "Welsh - Cymraeg"}, {code: "fy", label: "Western Frisian"}, {code: "xh", label: "Xhosa"}, {code: "yi", label: "Yiddish"}, {code: "yo", label: "Yoruba - Èdè Yorùbá"}, {code: "zu", label: "Zulu - isiZulu"}]
+const fonts = [
+    {name: 'Arial', style: 'sans-serif', src: 'websafe', isFont: true},
+    {name: 'Brush Script MT', style: 'cursive', src: 'websafe', isFont: true},
+    {name: 'Cabin', style: 'sans-serif', src:'fonts/Cabin.ttf', format: 'ttf', isFont: true},
+    {name: 'Courier New', style: 'monospace', src: 'websafe', isFont: true},
+    {name: 'Garamond', style: 'serif', src: 'websafe', isFont: true},      
+    {name: 'Georgia', style: 'serif', src: 'websafe', isFont: true},  
+    {name: 'Grandstander', style: 'sans-serif', src:'fonts/Grandstander.ttf', format: 'ttf', isFont: true},
+    {name: 'Kode-Mono', style: 'monospace', src:'fonts/KodeMono.ttf', format: 'ttf', isFont: true},
+    {name: 'Lora', style: 'serif', src:'fonts/Lora.ttf', format: 'ttf', isFont: true},
+    {name: 'Niconne', style: 'cursive', src:'fonts/Niconne-Regular.ttf', format: 'ttf', isFont: true},
+    {name: 'Playwrite', style: 'cursive', src:'fonts/Playwrite.ttf', format: 'ttf', isFont: true},
+    {name: 'ShareTech', style: 'sans-serif', src:'fonts/ShareTech-Regular.ttf', format: 'ttf', isFont: true},
+    {name: 'ShareTech-Mono', style: 'monospace', src:'fonts/ShareTechMono-Regular.ttf', fornat: 'ttf', isFont: true},        
+    {name: 'Short Stack', style: 'cursive', src:'fonts/ShortStack.ttf', format: 'ttf', isFont: true},
+    {name: 'Tahoma', style: 'sans-serif', src: 'websafe', isFont: true},    
+    {name: 'Times New Roman', style: 'serif', src: 'websafe', isFont: true},        
+    {name: 'Trebuchet MS', style: 'sans-serif', src: 'websafe', isFont: true},
+    {name: 'Verdana', style: 'sans-serif', src: 'websafe', isFont: true}
+    ]
 const sysLang = Intl.DateTimeFormat().resolvedOptions().locale
 var dependentLoopTracker = {}
 
@@ -51,7 +71,12 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
             newInput.id = prefix + 'setting_' + settings[i].type + '_' + settings[i].name
             newInput.type = settings[i].type
             newInputLabel.for = prefix + 'setting_' + settings[i].type + '_' + settings[i].name
-            newInputLabel.innerHTML = settings[i].label
+            if (settings[i].hasOwnProperty('variables') && settings[i].label.includes('$')){
+                // if there are variables, apply these to the label
+                newInputLabel.innerHTML = applyVariables(settings[i].label, settings[i].variables)
+            } else {
+                newInputLabel.innerHTML = settings[i].label
+            }             
             if (settings[i].hasOwnProperty('dependents')){
                 // if there are dependents, set up to react when the settings change
                 newInput.setAttribute('onchange','settingChanged(this)')
@@ -106,12 +131,19 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
                 newSetting.appendChild(makeInfoHover(settings[i].info,settingsArea.id))
             }
             // selects are a bit different, so we'll make that separately
-        } else if (settings[i].type == 'select' | settings[i].type == 'language' | settings[i].type == 'select_import') {
+        } else if (settings[i].type == 'select' | settings[i].type == 'language' | settings[i].type == 'select-import' || settings[i].type == 'font_family') {
             newSelect = document.createElement('select')
             newSelect.id = prefix + 'setting_' + settings[i].type + '_' + settings[i].name
             newSelectLabel = document.createElement('label')
             newSelectLabel.for = prefix + 'setting_' + settings[i].type + '_' + settings[i].name
-            newSelectLabel.innerHTML = settings[i].label
+
+            if (settings[i].hasOwnProperty('variables') && settings[i].label.includes('$')){
+                // if there are variables, apply these to the label
+                newSelectLabel.innerHTML = applyVariables(settings[i].label, settings[i].variables)
+            } else {
+                newSelectLabel.innerHTML = settings[i].label
+            }       
+            
             if (settings[i].hasOwnProperty('dependents')){
                 // if there are dependents, set up to react when the settings change
                 newSelect.setAttribute('onchange','settingChanged(this)')
@@ -120,10 +152,15 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
             if (settings[i].hasOwnProperty('info')) {
                 newSelectLabel.appendChild(makeInfoHover(settings[i].info,settingsArea.id))
             }
-            if (settings[i].type == 'select' | settings[i].type == 'select_import'){
+            if (settings[i].type == 'select' | settings[i].type == 'select-import'){
                 for (let j = 0; j < settings[i].options.length; j++) {
-                    let newOption = document.createElement('option')                    
-                    newOption.innerHTML = settings[i].options[j]
+                    let newOption = document.createElement('option')                
+                    if(settings[i].hasOwnProperty('variables') && settings[i].options[j].includes('$')){
+                        newOption.innerHTML = applyVariables(settings[i].options[j],settings[i].variables)
+                    } else {
+                        newOption.innerHTML = settings[i].options[j]
+                    }
+                    
                     // if the value of the option has been provided, use that as its value, otherwise just use the optional label
                     if (settings[i].hasOwnProperty('optionValues') && j < settings[i].optionValues.length){
                         newOption.value = settings[i].optionValues[j]
@@ -135,12 +172,13 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
                 if (settings[i].hasOwnProperty('default')) {
                     newSelect.value = settings[i].default
                 }
-                if (settings[i].type == 'select_import'){
+                if (settings[i].type == 'select-import'){
                     let newOption = document.createElement('option')
                     newOption.innerHTML = 'custom…'
                     newOption.value = ''
                     newSelect.appendChild(newOption)
-                    newSelect.setAttribute('onchange',`customSelectImport(this,"${settings[i].name}")`)
+                    newSelect.setAttribute('onchange','settingChanged(this)')
+                    // newSelect.setAttribute('onchange',`customSelectImport(this,"${settings[i].name}")`)
                 }       
             } else if (settings[i].type == 'language') {
                 let selectIndex = -1
@@ -155,6 +193,29 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
                 }
                 if (selectIndex > -1){
                     newSelect.selectedIndex = selectIndex
+                }
+            } else if (settings[i].type == 'font_family'){
+                let selectIndex = -1
+                let numFontsAdded = 0
+                fonts.forEach((font) => {
+                    // add all fonts, using only styles listed (either as a string or array) or if no styles given, all of them
+                    if (!settings[i].hasOwnProperty('style') || (settings[i].hasOwnProperty('style') && (settings[i].style == font.style || (typeof settings[i].style == 'object' && settings[i].style.includes(font.style))))){
+                        let newOption = document.createElement('option')
+                        newOption.value = font.name
+                        newOption.innerHTML = font.name
+                        newSelect.appendChild(newOption)
+                        // if no other default is specified, select ShareTech if available, if not select ShareTech-Mono if available
+                        if (!settings[i].hasOwnProperty('default') && (font.name == 'ShareTech'
+                        || (settings[i].style != 'sans-serif' | (typeof settings[i].style == 'object' && !settings[i].style.includes('sans-serif'))) && font.name == 'ShareTech-Mono')){
+                            selectIndex = numFontsAdded
+                        }
+                        numFontsAdded++
+                    }                    
+                })
+                if (selectIndex > -1){
+                    newSelect.selectedIndex = selectIndex
+                } else {
+                    newSelect.selectedIndex = 0
                 }
             }
             // // add category (if it has one, otherwise set to "general")
@@ -265,13 +326,20 @@ function getSettings(settings, activityName = '', sourceName = '') { // gets the
                     settingsToReturn[settings[i].name] = false;
                 }
             } else if (settings[i].type == 'number') {
-                settingsToReturn[settings[i].name] = parseFloat(settingEl.value) // for numbers, parse as number
+                let val = parseFloat(settingEl.value) // for numbers, parse as number         
+                if (isNaN(val)){
+                    settingsToReturn[settings[i].name] = 0
+                } else {
+                    settingsToReturn[settings[i].name] = val          
+                }                
             } else if (settings[i].type == 'text'){
                 // for text, santitize HTML, replace \n with <br> (and \\n with \n)
                 settingsToReturn[settings[i].name] = settingEl.value.replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll(/(?<!\\)\\n/g,'<br>').replaceAll(/\\\\n/g,'\\n')
+            } else if (settings[i].type == 'font_family'){
+                settingsToReturn[settings[i].name] = fonts.find(font => font.name == settingEl.value)     
+                settingsToReturn[settings[i].name].var = settings[i].var
             } else { // for everything else, just get its value
-                settingsToReturn[settings[i].name] = settingEl.value
-                
+                settingsToReturn[settings[i].name] = settingEl.value                
             }
         }
     }
@@ -287,6 +355,8 @@ function settingChanged(el){
     if (setting){
         if (settingType == 'number'){
             checkMinMax(el)
+        } else if (settingType == 'select-import'){
+            customSelectImport(el,settingName)
         }
 
         if (setting.hasOwnProperty('dependents')){
@@ -308,17 +378,40 @@ function checkMinMax(el){
     }
 }
 
+// replace $0, $1 etc. with variables
+function applyVariables(string,variables){
+    let newString = ''
+    for (let i = 0; i<string.length; i++){
+        if (string[i] == '$'){
+            let number = string.slice(i+1).match(/^\d+/)
+            if (number && variables.length-1 <= parseInt(number[0])){
+                newString += variables[parseInt(number[0])]
+                i += number[0].length
+            } else {
+                newString += string[i]
+            }
+        } else {
+            newString += string[i]
+        }
+    }
+    return newString
+}
+
 function checkDependents(value,setting){
     setting.dependents.forEach(dependent =>{
-        let dependentDiv = document.querySelector('div.setting[data-setting-name="' + dependent.name + '"]')
-
+        let dependentName = dependent.name
+        if (setting.hasOwnProperty('variables') && dependent.name.includes('$')){
+            dependentName = applyVariables(dependentName,setting.variables)
+        }
+        let dependentDiv = document.querySelector('div.setting[data-setting-name="' + dependentName + '"]')
         if (!dependentDiv){
-            console.error('Error finding dependent setting div')
+            console.error(`Error finding dependent setting div ${dependentName}`)
             return
         } else { // if the div exists
-            let dependentType = dependentDiv.getAttribute('data-setting-type')
-            let dependentEl = document.getElementById(`setting_${dependentType}_${dependent.name}`)
-            let dependentSetting = prefsStore.settings.find(setting => setting.name == dependent.name)
+            let dependentType = dependentDiv.getAttribute('data-setting-type')            
+
+            let dependentEl = document.getElementById(`setting_${dependentType}_${dependentName}`)
+            let dependentSetting = prefsStore.settings.find(setting => setting.name == dependentName)
             
             // enable or disable the dependent
             if (dependent.hasOwnProperty('enable')){
@@ -330,7 +423,7 @@ function checkDependents(value,setting){
             }
             
             // set values according to triggers
-            if (dependent.hasOwnProperty('triggers')){
+            if (dependent.hasOwnProperty('triggers')){                
                 let trigger = dependent.triggers.find(trigger => trigger.this == value) // find the trigger for the current value
                 if (trigger){
                     // if there's a trigger, set its value
@@ -480,7 +573,15 @@ function showExample(sampleData) {
             return
         }
     }
-    convertArrayToTableData(sampleData)
+    if(sampleData.hasOwnProperty('activity')){
+        convertArrayToTableData(sampleData.activity)
+    } else {
+        convertArrayToTableData(sampleData)
+    }
+    if(sampleData.hasOwnProperty('settings')){
+        resetSettingsToDefault(true)
+        setSettings(sampleData.settings)
+    }
 }
 
 function checkSettings(profileSettings, activitySettings) {
@@ -504,14 +605,22 @@ function checkSettings(profileSettings, activitySettings) {
                 } else {
                     setting.valid = false
                 }
-            } else if (originalSetting.type == 'select' || originalSetting.type == 'language' || originalSetting.type == 'select_import') {
-                if (originalSetting.options.includes(setting.value)) {
+            } else if (originalSetting.type == 'select' || originalSetting.type == 'select-import') {
+                if (originalSetting.options.includes(setting.value) || originalSetting.hasOwnProperty('optionValues') && originalSetting.optionValues.includes(setting.value)) {
                     setting.valid = true
-                } else if (originalSetting.type == 'select_import' && setting.value == 'custom_' + originalSetting.name) {
+                } else if (originalSetting.type == 'select-import') {
                     setting.valid = true                                    
                 } else {                    
                     setting.valid = false
                 }
+            } else if (originalSetting.type == 'font_family'){
+                if (fonts.map(font => font.name).includes(setting.value.name) && (!originalSetting.hasOwnProperty('style') || originalSetting.style.includes(setting.value.style))){
+                    setting.valid = true
+                } else if (setting.hasOwnProperty('custom') && originalSetting.hasOwnProperty('custom')){ // TO DO: Allow importing custom fonts - this is just here to future proof for now!
+                    setting.valid = true
+                }
+            } else if (originalSetting.type == 'language' && languages.map(language => language.code).includes(setting.value)) {
+                setting.value == true
             } else if (originalSetting.type == 'checkbox') {
                 if (typeof setting.value == 'boolean') {
                     setting.valid = true
@@ -531,7 +640,21 @@ function checkSettings(profileSettings, activitySettings) {
     return profileSettings
 }
 
-function setSettings(settings, settingControls, showErrors = true, activity = '', source = '', settingsArea = document.getElementById('settingsArea')) {
+function resetSettingsToDefault(overrideToFactory = false,settingControls = prefsStore.settings){
+    let settings = {}
+    if(prefsStore.hasOwnProperty('customDefaults') && !overrideToFactory){
+        settings = prefsStore.customDefaults
+    } else {
+        prefsStore.settings.forEach(setting =>{
+            if(setting.hasOwnProperty('default')){
+                settings[setting.name] = setting.default
+            }
+        })        
+    }
+    setSettings(settings, settingControls, false)
+}
+
+function setSettings(settings, settingControls = prefsStore.settings, showErrors = true, activity = '', source = '', settingsArea = document.getElementById('settingsArea')) {
     var deletedErrors = []
     var invalidErrors = []
 
@@ -556,10 +679,11 @@ function setSettings(settings, settingControls, showErrors = true, activity = ''
                     } else {
                         activitySettingEl.checked = false
                     }
-                } else if (activitySetting.type == 'select' || activitySetting.type == 'language' || activitySetting.type == 'select_import') {
+                } else if (activitySetting.type == 'select' || activitySetting.type == 'language' || activitySetting.type == 'select-import' || activitySetting.type == 'font_family') {
                     let selectedIndex = -1
+                    let val = activitySetting.type == 'font_family' ? setting.value.name : setting.value // use .value.name instead of .value for font settings
                     for (let i = 0; i < activitySettingEl.options.length; i++) {
-                        if (activitySettingEl.options[i].value == setting.value) {
+                        if (activitySettingEl.options[i].value == val) {
                             selectedIndex = i
                         }
                     }
@@ -567,6 +691,7 @@ function setSettings(settings, settingControls, showErrors = true, activity = ''
                 } else if (activitySetting.type == 'text' || activitySetting.type == 'number') {
                     activitySettingEl.value = setting.value
                 }
+                settingChanged(activitySettingEl)
             } else { // setting is not valid
                 // mark it in red
                 activitySettingEl.classList.add('invalidSetting')
