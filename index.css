@@ -1,17 +1,28 @@
+:root{
+  --bg-color: #F2F3EB;
+  --fg-color: #5A5A5A;
+  --fg-color-shade2: #474544;
+  --fg-color-shade3: #535150;
+  --bg-color-shade1: #E8E9E1;
+  --bg-color-shade2: #ddded7;
+  --bg-color-shade3: #d5d6cf;
+
+}
+
 @font-face{
   font-family: "ShareTech";
-  src: url("ShareTech-Regular.ttf");
+  src: url("fonts/ShareTech-Regular.ttf");
 }
 
 @font-face{
   font-family: "ShareTechMono";
-  src: url("ShareTechMono-Regular.ttf")
+  src: url("fonts/ShareTechMono-Regular.ttf")
 }
 
 body{
   font-family: "ShareTech", Arial;
   text-align: center;
-  background: #F2F3EB;
+  background: var(--bg-color);
   height: 100vh;
   overflow-y: hidden;
   user-select: none
@@ -28,14 +39,36 @@ body{
   opacity: 0.5;
 }
 
+.disabled.inputCellFile{
+  pointer-events: all;
+}
+
+.disabled img, .disabled svg{
+  -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
+  filter: grayscale(100%);
+}
+
 hr{
-  border: solid 0.5px #474544;
+  border: solid 0.5px var(--fg-color-shade2);
   opacity: 50%;
   margin: 1em;
   z-index: -1;
 }
 
 button {
+  background: none;
+  border: solid 2px var(--fg-color-shade2);
+  color: var(--fg-color-shade2);
+  cursor: pointer;
+  display: inline-block;
+  outline: none;
+  padding: 10px 35px;
+  /* text-transform: uppercase; */
+  /* -webkit-transition: all 0.3s;
+  -moz-transition: all 0.3s;
+  -ms-transition: all 0.3s;
+  -o-transition: all 0.3s; */
+  transition: all 0.3s;
   overflow: visible;
 }
 
@@ -44,7 +77,7 @@ button, select {
 }
 
 button, input, select, textarea {
-  color: #5A5A5A;
+  color: var(--fg-color);
   font: inherit;
   margin: 0;
 }
@@ -60,8 +93,8 @@ textarea {
 input[type='text'], [type='email'], [type='number'], select, textarea {
   background: none;
   border: none;
-  border-bottom: solid 2px #474544;
-  color: #474544;
+  border-bottom: solid 2px var(--fg-color-shade2);
+  color: var(--fg-color-shade2);
   font-size: 1.000em;
   font-weight: 400;
   letter-spacing: 1px;
@@ -73,11 +106,11 @@ input[type='text'], [type='email'], [type='number'], select, textarea {
   -ms-box-sizing: border-box;
   -o-box-sizing: border-box;
   box-sizing: border-box;
-  -webkit-transition: all 0.3s;
-  -moz-transition: all 0.3s;
-  -ms-transition: all 0.3s;
-  -o-transition: all 0.3s;
-  transition: all 0.3s;
+  -webkit-transition: border 0.3s;
+  -moz-transition: border 0.3s;
+  -ms-transition: border 0.3s;
+  -o-transition: border 0.3s;
+  transition: border 0.3s;
 }
 
 input:disabled, select:disabled{
@@ -94,11 +127,11 @@ input[type='checkbox']{
   background-color: #ddded7;
   margin: 0.5em;
   font: inherit;
-  /* color: #474544; */
+  /* color: var(--fg-color-shade2); */
   width: 1em;
   height: 1em;
   border: none;
-  border-bottom: solid 2px #474544;
+  border-bottom: solid 2px var(--fg-color-shade2);
   /* transform: translateY(0.15em); */
   display: inline-grid;
   place-content: center;
@@ -110,7 +143,7 @@ input[type="checkbox"]::before {
   height: 0.65em;
   opacity: 0;
   transition: 0.25s ease-in-out;
-  box-shadow: inset 1em 1em #474544;
+  box-shadow: inset 1em 1em var(--fg-color-shade2);
   /* Windows High Contrast Mode */
   background-color: CanvasText;
   transform-origin: bottom left;
@@ -128,8 +161,7 @@ select {
   -webkit-appearance: none;
   padding: 10px;
   padding-right: 32px;
-  text-transform: lowercase;
-  margin-bottom: 0.5em;
+  text-transform: lowercase;  
 }
 
 select::-ms-expand {
@@ -137,8 +169,9 @@ select::-ms-expand {
 }
 
 textarea{
-  background: #ddded7;
+  background: var(--bg-color-shade2);
   font-family: "ShareTechMono","Courier New";
+  border-bottom: none;
 }
 
 table{
@@ -150,18 +183,31 @@ table{
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  border-collapse: collapse;
 }
 
 td, th{
+  position: relative;
   padding: 5px;
-  vertical-align: middle;
-  /* margin-left: 0.3em;
-  margin-right: 0.3em; */
-  border-left: 0.5em;
-  border-right: 0.5em;
+  vertical-align: bottom;
+  border-left: 1em;
+  border-right: 1em;
   border-style: solid;
-  border-color: #ddded7;
-  transition: all 0.3s;
+  border-color: var(--bg-color-shade2);
+  transition: all 0.3s;  
+  min-height: 1em;
+}
+
+td.expanded{
+  border-bottom: solid 2px var(--fg-color-shade2);
+}
+
+tr:hover .dataCell{
+  background-color: var(--bg-color-shade3);
+}
+
+tr:hover .dataCell.selected{
+  background-color: var(--fg-color-shade3);
 }
 
 input[type='text'].invalid{
@@ -169,17 +215,17 @@ input[type='text'].invalid{
 }
 
 .selected{
-  background-color: #474544;
-  color: #F2F3EB;
+  background-color: var(--fg-color-shade2);
+  color: var(--bg-color);
 }
 
 input[type='text'].selected{
-  border-bottom: solid 2px #F2F3EB;
-  color: #F2F3EB;
+  border-bottom: solid 2px var(--bg-color);
+  color: var(--bg-color);
 }
 
 .hidden{
-  display: none;
+  display: none !important;
   visibility: hidden;
   opacity: 0;
 }
@@ -188,29 +234,24 @@ input[type='text'].selected{
   width: 50px;
 }
 
-.colHeader{
+.rowHeader{
   transform: translateY(0.3em);
+  min-width: 2.5em;
+  height: 2em; /* doesn't affect much but needs this so that selectAreaRow can grow */
 }
 
-button {
-  background: none;
-  border: solid 2px #474544;
-  color: #474544;
-  cursor: pointer;
-  display: inline-block;
-  outline: none;
-  padding: 10px 35px;
-  /* text-transform: uppercase; */
-  -webkit-transition: all 0.3s;
-  -moz-transition: all 0.3s;
-  -ms-transition: all 0.3s;
-  -o-transition: all 0.3s;
-  transition: all 0.3s;
+.rowHeader:hover .rowControls{
+  opacity: 1;
 }
+
+/* .rowHeader.withExpanded{
+  height: 5em;
+} */
+
 
 button:hover {
-  background: #474544;
-  color: #F2F3EB;
+  background: var(--fg-color-shade2);
+  color: var(--bg-color);
 }
 
 button:disabled, button:disabled:hover{
@@ -224,11 +265,144 @@ label{
   padding-right: 0.5em;
 }
 
-.inputCell{
+.dataCell{
+  position: relative;
+  min-width: 15em;
+}
+
+.inputCellExtension.hidden{
+  display: none;
+}
+
+.inputCellText, .inputCellTextMirror, .inputCellExtension{
   width: 100%;
-  display: inline-block;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
   margin: auto;
   text-overflow: ellipsis;
+}
+
+.withPreview .inputCellText{
+  width: calc(100% - 2.25em);
+}
+
+.inputCellMore, .inputCellImageSelector{  
+  border: none;
+  text-align: center;
+}
+
+.inputCellMore{
+  width: 14px;
+  /* padding: 0.125em; */
+  padding: 0;
+  position: absolute;
+  top: 0;
+  left: calc(100% + 1px);
+  z-index: 99;
+  height: 100%;
+}
+
+th .inputCellMore{
+  left: auto;
+  right: 1px;
+  opacity: 0;
+}
+
+.inputCellImageSelector{
+  height: 1.75em;
+  width: 1.75em;
+  margin: 0.125em;
+  padding: 1px;
+}
+
+.inputCellImageSelector svg{
+  fill: rgb(71,69,68);
+  /* width: 1em;
+  height: 1em; */
+}
+
+.inputCellImageSelector:hover svg{
+  fill: var(--bg-color-shade2);  
+}
+
+.inputCellImageSelector:disabled, .inputCellImageSelector:disabled:hover{
+  opacity: 0.5;
+  /* background: var(--bg-color-shade2);  */
+  border: none;
+}
+
+.inputCellImageSelector:hover:disabled svg{
+  fill: rgb(71,69,68);
+}
+
+.inputCellFile{
+  display: inline-block;
+  position: relative;
+  max-height: 1em;
+  width: 1em;
+  margin: 0.125em;
+  margin-left: 1.125em;
+  transition: transform .5s ease-in-out;
+}
+
+.inputCellFile svg{
+  width: 100%;
+  height: 100%;
+}
+
+.inputCellFile:hover{
+  transform: scale(400%) translateX(-20%);
+}
+
+.inputCellFile:hover .fileDeleteBtn{
+  transform: scale(50%) translateX(-20%);
+}
+
+.expanded .inputCellFile:hover .fileDeleteBtn{
+  transform: none;  
+}
+
+.expanded .inputCellFile:hover .fileDeleteBtn.hidden{
+  transform: none;  
+  opacity: 0.5;
+}
+
+/* larger preview when expanded (override normal hover behaviour) */
+.expanded .inputCellFile, .expanded .dataImagePreview, .expanded .inputCellFile:hover{
+  width: auto;
+  max-width: calc(100% - 0.25em);
+  max-height: 5em;
+  transform: none;
+  margin: 0.25em;
+}
+
+/* in the case of containing an SVG, the data image preview will just set a height of 5em */
+.expanded div.dataImagePreview{
+  height: 5em;
+}
+
+.dragPlaceholder{
+  background-color: var(--bg-color);
+  position: absolute;
+  opacity: 50%;
+  z-index: 999;
+  pointer-events: none;
+  padding: 0.5em;  
+}
+
+.dataImagePreview{
+  max-height: 100%;
+  width: 100%;
+  height: auto;
+  transform: scale(300%);
+}
+
+.inputCellTextMirror{
+  resize: none;
+  max-height: 300px;
+  background-color: var(--bg-color-shade1);
+  width: calc(100% - 2em);
 }
 
 .rowNumber{
@@ -282,6 +456,10 @@ label{
   transition: 0.3s;
 }
 
+th:hover .miniBtn, th:hover .inputCellMore{
+  opacity: 1
+}
+
 .miniBtn:hover{
   background: none;
   color: inherit;
@@ -299,7 +477,7 @@ label{
   /* font-size: 1em; */
   display: block;
   position: relative;
-  /* color: #5A5A5A; */
+  /* color: var(--fg-color); */
   z-index: 999;
   float: left;
   margin-top: 0.5em;
@@ -333,7 +511,7 @@ label{
   padding: 3px;
   z-index: 1;
   transition: 0.3s;
-  background-color: #474544;
+  background-color: var(--fg-color-shade2);
   opacity: 0;
   float: left;
 }
@@ -351,14 +529,18 @@ label{
 
 .selectAreaRow{
   margin-top: -2.25em;
-  height: 2em;
+  height: 100%; /* will be about 2em most of the time */
   width: 100%;
 }
 
 .selectAreaCol:hover, .selectAreaRow:hover{
-  /* background-color: #474544; */
+  /* background-color: var(--fg-color-shade2); */
   opacity: 0.1;
 }
+
+/* .rowHeader.withExpanded .selectAreaRow{
+  height: 100%;
+} */
 
 .arrow {
   border: solid black;
@@ -387,6 +569,33 @@ label{
   -webkit-transform: translateY(-2px) rotate(45deg);
 }
 
+.fileDeleteBtn{
+  background-color: var(--bg-color-shade2);
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1px;
+  border-radius: 100%;
+  font-size: 1em;
+  top: 0;
+  right: 0;
+  height: 1em;
+  width: 1em;  
+  transform: scale(100%);  
+}
+
+.fileDeleteBtn.hidden{
+  /* override usual hidden attributes */
+  display: flex !important;
+  visibility: visible;
+
+  opacity: 0;
+  transform: scale(0);  
+  pointer-events: none;  
+}
+
+
 .infoContainer{
   position: relative;
   display: inline-block;
@@ -400,9 +609,9 @@ label{
   height: 0.8em;
   font-size: 0.8em;
   line-height: 0.7em;
-  color: #F2F3EB;
-  background-color: #474544;
-  border: solid 1px #474544;
+  color: var(--bg-color);
+  background-color: var(--fg-color-shade2);
+  border: solid 1px var(--fg-color-shade2);
   text-align: center;
 }
 
@@ -417,9 +626,9 @@ label{
   margin: 1px;
   font-size: 0.9em;
   overflow: scroll;
-  color: #F2F3EB;
-  background-color: #474544;
-  border: solid 2px #474544;
+  color: var(--bg-color);
+  background-color: var(--fg-color-shade2);
+  border: solid 2px var(--fg-color-shade2);
   transition: visibility 0.5s, opacity 0.5s;
   opacity: 0;
   z-index: 99;
@@ -466,9 +675,9 @@ label{
   position: relative;
   box-sizing: border-box; /* to stop padding adding width */
   border: none;
-  border-bottom: solid 2px #474544;
-  color: #474544;
-  background: #ddded7;
+  border-bottom: solid 2px var(--fg-color-shade2);
+  color: var(--fg-color-shade2);
+  background: var(--bg-color-shade2);
   font-family: "ShareTechMono","Courier New";
   clear: both;
   height: calc(100% - 250px);
@@ -491,7 +700,7 @@ label{
 }
 
 #previewArea{
-  border: solid 2px #474544;
+  border: solid 2px var(--fg-color-shade2);
   width: 80%;
   margin: auto;
   visibility: hidden;
@@ -508,7 +717,7 @@ label{
 }
 
 #categoryPicker{
-  background-color: #ddded7;
+  background-color: var(--bg-color-shade2);
   float: left;
   font-size: 1.25em;
   font-weight: 600;
@@ -529,6 +738,10 @@ label{
 .setting{
   width: 100%;
   -webkit-column-break-inside: avoid;
+}
+
+.setting input, select{
+  margin-bottom: 0.5em;
 }
 
 .hiddenLeft {
@@ -581,11 +794,11 @@ label{
 .settingsArea{
   border: none;
   box-sizing: border-box; /* to stop padding adding width */
-  border-bottom: solid 2px #474544;
+  border-bottom: solid 2px var(--fg-color-shade2);
   width: 90%;
   margin: auto;
   height: 0;
-  background: #E8E9E1;
+  background: var(--bg-color-shade1);
   clear: both;
   transition: height 0.5s;
   overflow-y: scroll;
@@ -627,7 +840,7 @@ label{
 }
 
 #generateIcn{
-  fill: #474544;
+  fill: var(--fg-color-shade2);
   height: 19px;
   width: 19px;
   transition: 0.5s ease-in-out;

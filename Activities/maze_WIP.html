@@ -1,0 +1,653 @@
+<!-- NOTES -->
+<!-- Two options: for connections – the category just means all the words have something in common (so random order) OR the words create a sequence (e.g. sun -> star -> space etc. or January -> February -> March) -->
+<!-- Options for size – aim for the largest possible path (use all words in category if possible) or manually set number of hexagons (max out at total of all words) -->
+<!--Columns in hex represent different categories (unlimited – add in ability to numerate duplicate columns?)  -->
+<!-- For categories: by default only category 1 is correct, but setting to include any column as a potential category to pick from at random (new column/row select setting item?) -->
+<!-- After coding the path, place the category items first (if multiple categories to pick from, the best to match the size), then add in words from other categories as neighbors to anything on the path, then words from any category (including the correct one) can be placed in the other spaces, since it will never be possible to reach these anyway  -->
+<!-- Nested whiles to create the best maze: create grid, then path (if fails too many times, back to grid), then place the words (if fail too many times, then back to path, if fail too many times, right back to grid, possibly with a change in size) -->
+<!-- Also aim for an optimum size path (or just the longest path made in X number of attempts, without any extra connections), recreate grid if consistently getting bad paths -->
+
+<!-- Little things: -->
+<!-- Could have the hexagons jump up from the bottom when loading (look at how the spinner animation is done and do something like that to add "bounce") -->
+<!-- Have a choice of isomorphic (two-angle) sprites to choose from – Calamar, Phonebox… -->
+<meta charset="UTF-8">
+<html>
+<head>
+    <style>
+        body{
+            background: linear-gradient(5deg, rgb(17, 16, 37) 0%, rgb(38, 38, 101) 35%, #55929e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-content: center;
+            align-items: center;
+            font-family: sans-serif;
+        }
+        .maze {            
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-content: center;
+            align-items: center;
+        }
+
+        .col {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .hexagon {
+            width: 120px;
+            height: 120px;
+            fill: rgb(9,9,121);
+            margin: -10px;
+            transition: transform 1s, fill .3s;
+            color: white;                                 
+        }
+
+        .hexagon:hover {
+            transform: translateY(5px);
+            /* fill: rgb(45, 45, 255); */
+            transition-timing-function: cubic-bezier(0.1, 0.1, 0.1, 3);            
+        }
+
+        .hexagon:active {
+            transform: translateY(10px);
+            /* fill: rgb(0, 0, 218); */
+        }
+
+        .hexagon .inner-hexagon {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            opacity: 0; /* initial state before animation */                                  
+        }
+
+        .hexagon .label{
+            position: absolute;
+            color: inherit;
+            left: 50%;
+            top: 45%;
+            z-index: 99;
+            transform: translate(-50%,-50%) rotateX(30deg);            
+        }
+
+        .hexagon.current {
+            fill: #00d5ff !important;
+            transform: translateY(5px);
+            color: black;
+                /* TO  DO: use variable or slightly modify existing fill (if lightening for example, will need to check not already at most light) */
+        }
+
+        .hexagon.path{
+            fill: #8cecff;
+            color: black;
+        }
+
+
+    </style>
+    <script>
+        var totalHexagons
+        var maze
+        var path
+
+        var gridSize
+        var totalCols
+        var tallestCol
+        var middleCol
+
+        const images = {
+            hexagon: '<svg class="hexagon-image" width="100%" height="100%" viewBox="0 0 300 200" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;"><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M-0,63.124L75,0L225,0L300,63.124L300,103.859L225,166.983L75,166.983L0,103.859L-0,63.124Z" style="fill:inherit;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M300,63.124L300,103.859L225,166.983L225,126.248L300,63.124Z" style="fill:white;fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M75,126.248L75,166.983L0,103.859L0,63.124L75,126.248Z" style="fill:rgb(91,91,91);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><rect x="75" y="126.248" width="150" height="40.735" style="fill:rgb(193,193,193);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M210.231,29.074L210.231,12.43L270.463,63.124L260.575,71.446L210.231,29.074Z" style="fill:rgb(92,92,92);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><rect x="89.769" y="12.43" width="120.463" height="16.644" style="fill:rgb(194,194,194);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M39.425,71.446L29.537,63.124L89.769,12.43L89.769,29.074L39.425,71.446Z" style="fill:white;fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M260.575,71.446L210.231,113.818L89.769,113.818L39.425,71.446L89.769,29.074L210.231,29.074L260.575,71.446Z" style="fill:rgb(215,215,215);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M-0,63.124L75,0L225,0L300,63.124L225,126.248L75,126.248L-0,63.124ZM89.769,113.818L29.537,63.124L89.769,12.43L210.231,12.43L270.463,63.124L210.231,113.818L89.769,113.818Z" style="fill:rgb(235,235,235);fill-opacity:0.5;"/></g></svg>'
+        }
+
+
+
+        function pageLoad() {
+
+            let goodList = []
+            let badList = []
+
+            gameData.forEach(line =>{
+                if(line[0].length > 0){
+                    goodList.push(line[0])
+                }
+                for(let i = 1; i<line.length; i++){
+                    if(line[i].length > 0){
+                        badList.push(line[i])
+                    }
+                }
+                // TO DO, adjust for gameSettings (see above)
+            })
+
+            totalHexagons = Math.pow(goodList.length/2,2) // TO DO: make this more complex and account for gameSettings (for now, just square of double the number of "good" words)
+
+
+            gridSize = Math.pow(Math.ceil(Math.sqrt(totalHexagons)), 2) // round to nearest square number
+            totalCols = calculateColumnsRequired(gridSize)
+            tallestCol = calculateTallestColumn(gridSize)
+            middleCol = Math.floor(totalCols / 2)
+
+
+            maze = new Maze;
+
+            let mazeEl = maze.html()
+
+            // make a bunch of paths from which we can pick the best (10 * gridSize)
+            let paths = []
+            for (let i = 0; i < 10 * gridSize; i++) {
+                paths.push(maze.makePath())
+            }
+
+
+            let goodPaths = []
+            // TO DO: if in sequential mode (there is a list of words in a specific order to follow), we don't need to worry about colliding neighbors, so just make ALL paths "good" paths
+            // might still be worth keeping "preferIsolated" as true, as it prevents the paths being TOO long
+            // also, we might want to select a path of a specific length in this mode, in which case we may need to generate more
+            let acceptableConnections = 2
+            while (goodPaths.length == 0 && acceptableConnections < 5) {
+                goodPaths = paths.filter(path => path.mostConnections == 2) // get just those where no hexagons connect to more than 2 others on a path
+                acceptableConnections++ // in case this fails, increase the number of acceptable connections
+            }
+            // TO DO: if acceptableConnections reaches too high, try making a new maze before going with this outcome (possibly with a smaller grid)
+
+            // choose the longest path of these
+            path = goodPaths[0]
+            for (let i = 0; i < goodPaths.length; i++) {
+                if (goodPaths[i].hexagons.length > path.hexagons.length) {
+                    path = goodPaths[i]
+
+                    // clear path markers
+                    maze.maze.forEach(col => {
+                        col.forEach(hexagon => {
+                            hexagon.path = false
+                        })
+                    })
+
+                    // reapply
+                    path.hexagons.forEach(hexagon => {
+                        hexagon.path = true
+                    })
+                }
+            }
+
+            maze.addLabels(goodList,badList)
+
+            path.hexagons[0].moveCursorHere() // put cursor on first hexagon
+
+            //temporarily measure to sure the path
+            // path.hexagons.forEach(hexagon => {
+            //     hexagon.el.style.fill = 'red'
+            // })
+
+            document.body.appendChild(mazeEl)
+
+
+
+        }
+
+        function Maze() {
+            this.el = null
+
+            this.generate = function () {
+                let grid = []
+                let col = []
+                let holeCount = 0
+                let spacesToDo = gridSize
+                console.log(totalCols)
+
+                for (let i = 0; i < gridSize; i++) {
+                    let holesToLeave = gridSize - totalHexagons - holeCount
+                    if ((grid.length != middleCol || (col.length > 0 && col.length < tallestCol)) && chance(holesToLeave, spacesToDo)) { // random chance based on number of hexagons to place and grid size (except middle col first and last cell)
+                        // add an "empty" hexagon (blank space)
+                        col.push(new Hexagon(-1))
+                        holeCount++
+                    } else {
+                        // add a regular hexagon
+                        col.push(new Hexagon(i, col.length, grid.length))
+                    }
+                    spacesToDo--
+                    let triangleIndex
+                    let hexNum
+                    let up = true
+                    let remainingCols = totalCols - grid.length
+                    console.log('cols remain ' + remainingCols)
+                    //  if(grid.length+1 <= (gridSize/4)){
+                    if (remainingCols > Math.floor(totalCols / 2)) {
+                        // getting bigger
+                        triangleIndex = grid.length + 1
+                        hexNum = i + 1
+                    } else {
+                        // getting smaller again
+                        triangleIndex = remainingCols
+                        hexNum = i - (gridSize - Math.pow((remainingCols), 2)) + 1
+                        up = false
+                    }
+                    // work out "triangle" number sequence by current number of columns
+                    let triangle = (triangleIndex * (triangleIndex + 1)) / 2
+                    console.log(`i ${i}, hex num ${hexNum}, triangle index ${triangleIndex}, triangle ${triangle}`)
+                    if ((up && hexNum >= triangle) | (!up && hexNum >= triangle)) {
+                        // new column
+                        grid.push(col)
+                        col = []
+                    }
+                }
+                return grid
+            }
+
+            this.findNeighborsOf = function (col, row, highlight = false) {
+                let potentialNeighbors = this.maze[col][row].neighborCoordinates()
+                let neighbors = []
+                potentialNeighbors.forEach(neighborCoordinates => {
+                    col = neighborCoordinates[0]
+                    row = neighborCoordinates[1]
+                    if (this.maze[col] && this.maze[col][row] && !this.maze[col][row].empty) {
+                        neighbors.push(this.maze[col][row])
+                    }
+                })
+                if (highlight) {
+                    neighbors.forEach(hexagon => {
+                        hexagon.el.style.fill = 'red'
+                    })
+                }
+                return neighbors
+            }
+
+            this.makePath = function (highlight = false) {
+
+                // clear any old path
+                this.maze.forEach(col => {
+                    col.forEach(hexagon => {
+                        hexagon.path = false
+                        hexagon.el.style.fill = null
+                    })
+                })
+
+
+                let start = this.maze[middleCol][0]
+                let end = this.maze[middleCol][tallestCol - 1]
+                let path = [start]
+                let count = 0
+
+                start.path = true
+                start.el.classList.add('path')
+
+                while (path[path.length - 1].id != end.id && count < gridSize * 100) {
+                    let nextStep = path[path.length - 1].chooseRandomNeighbor(true)
+                    if (nextStep) {
+                        nextStep.path = true
+                        path.push(nextStep)
+                    } else if (path.length == 1) {
+                        // no neighbors found for first item
+                        return null
+                    } else {
+                        path.pop()
+                    }
+                }
+                if (highlight) {
+                    path.forEach(hexagon => {
+                        hexagon.el.style.fill = 'red'
+                    })
+                }
+
+                let mostConnections = 0
+                path.forEach(hexagon => {
+                    let connections = hexagon.numberOfConnections()
+                    if (connections > mostConnections) {
+                        mostConnections = connections
+                    }
+                })
+
+                let Path = {
+                    hexagons: path,
+                    mostConnections: mostConnections
+                }
+
+                return Path
+
+            }
+
+            this.html = function () {
+                let el = newElement('div', { class: 'maze' })
+                this.maze.forEach((col, colIndex) => {
+                    colEl = newElement('div', { class: 'col' })
+                    col.forEach((hexagon, rowIndex) => {
+                        if (!hexagon.empty) {
+                            // hexEl = newElement('div',{class: 'hexagon', id: `hexagon_${hexagon.id}`, style: `z-index: ${hexagon.zIndex}`},`<div class="zpreview">${hexagon.zIndex}</div>`+images.hexagon)
+                            hexEl = newElement('div', {
+                                class: 'hexagon',
+                                id: `hexagon_${hexagon.id}`,
+                                style: `z-index: ${hexagon.zIndex};`,
+                                // onclick: `maze.maze[${colIndex}][${rowIndex}].test()`
+                                // onclick: `maze.findNeighborsOf(${hexagon.colIndex},${hexagon.rowIndex},true)`
+                            }, '<div class="inner-hexagon"><div class="label"></div>'+images.hexagon+'</div>')
+
+                            hexEl.firstChild.animate([
+                                { transform: `translateY(100vh)`, opacity: 0 },
+                                // { transform: `translateY(0vh);`, opacity: 1 },
+                                { transform: `translateY(0)`, opacity: 1 }
+                            ], {
+                                duration: 1000,
+                                direction: 'normal',
+                                easing: 'cubic-bezier(0.440, -0.205, 0.000, 1.230)',
+                                fill: 'forwards',
+                                iterations: 1,
+                                // delay: hexagon.id*50
+                                delay: Math.random() * 1000
+                            });
+
+                        } else {
+                            hexEl = newElement('div', { class: 'hexagon empty' })
+                        }
+                        hexagon.el = hexEl
+                        colEl.appendChild(hexEl)
+                    })
+                    el.appendChild(colEl)
+                })
+                this.el = el
+                return this.el
+            }
+
+            this.addLabels = function (goodList,badList){
+                let goodListBuffer = [...goodList]
+                let badListBuffer = [...badList]
+                goodListBuffer.shuffle()
+                badListBuffer.shuffle()
+                this.maze.forEach(col =>{
+                    col.forEach(hexagon =>{
+                        if(hexagon.path){ // if the path
+                            hexagon.label = goodListBuffer.pop()                            
+                        } else if(hexagon.numberOfConnections() > 0){ // if next to the path
+                            // must be a good word
+                            hexagon.label = badListBuffer.pop()
+                        } else {
+                            // could be either, so we'll pick one at random, proportion to how many of each are left (but slightly weighted to good)
+                            if(weightedCoinFlip(goodListBuffer.length*2, badListBuffer.length)){
+                                hexagon.label = goodListBuffer.pop() 
+                            } else {
+                                hexagon.label = badListBuffer.pop()
+                            }
+                        }
+                        hexagon.el.firstChild.firstChild.innerHTML = hexagon.label
+                        if(goodListBuffer.length == 0){
+                            goodListBuffer = [...goodList]
+                            goodListBuffer.shuffle()
+                        }
+                        if(badListBuffer.length == 0){
+                            badListBuffer = [...badList]
+                            badListBuffer.shuffle()
+                        }
+                    })
+                })
+            }
+
+            // now set up maze
+
+            this.maze = this.generate()
+
+            // find all neighbors
+            for (let i = 0; i < this.maze.length; i++) {
+                for (let j = 0; j < this.maze[i].length; j++) {
+                    this.maze[i][j].neighbors = this.findNeighborsOf(i, j)
+                }
+            }
+
+        }
+
+        function jumpTo(hexagon) {
+            let ok = hexagon.test()
+            if (ok) {
+                hexagon.moveCursorHere()
+            }
+        }
+
+        function Hexagon(id, rowIndex, colIndex) {
+            if (id < 0) {
+                this.empty = true
+            } else {
+                this.id = id
+                this.empty = false
+            }
+
+            this.el = null
+            this.path = false
+            this.rowIndex = rowIndex
+            this.colIndex = colIndex
+            this.neighbors = [] // set up later             
+
+            let verticalOffset;
+
+            if (colIndex < middleCol) {
+                // Left side of the grid
+                // verticalOffset = rowIndex + (middleCol - colIndex);
+                verticalOffset = (middleCol - colIndex) + rowIndex * 3 - colIndex
+
+            } else if (colIndex > middleCol) {
+                // Right side of the grid
+                verticalOffset = (colIndex - middleCol) + rowIndex * 3 - (totalCols - colIndex) + 1
+            } else {
+                // Middle column(s)
+                verticalOffset = rowIndex * 3 - Math.sqrt(gridSize) + 2;
+            }
+
+            // Adding a large constant to zIndex to keep it positive
+            this.zIndex = totalHexagons + verticalOffset;
+
+
+            this.neighborCoordinates = function () {
+                return [
+                    [colIndex, rowIndex + 1],
+                    [colIndex, rowIndex - 1],
+                    [colIndex + 1, rowIndex],
+                    [colIndex + 1, colIndex >= middleCol ? rowIndex - 1 : rowIndex + 1],
+                    [colIndex - 1, rowIndex],
+                    [colIndex - 1, colIndex <= middleCol ? rowIndex - 1 : rowIndex + 1]
+                ]
+            }
+
+            this.numberOfConnections = function () {
+                return this.neighbors.filter(neighbor => neighbor.path).length
+            }
+
+            this.chooseRandomNeighbor = function (preferIsolated = false) {
+                if (this.neighbors.length == 0) {
+                    console.error('No neighbors or neighbors not set up')
+                    return null;
+                }
+                let validNeighbors = this.neighbors.filter(neighbor => !neighbor.path && !neighbor.empty)
+                if (validNeighbors.length > 0) {
+                    let neighbor = validNeighbors[Math.floor(Math.random() * validNeighbors.length)]
+                    let existingConnections = neighbor.neighbors.filter(neighborNeighbor => neighborNeighbor.path).length
+                    let acceptableConnections = 1
+                    let attempts = 1
+                    while (preferIsolated && existingConnections > acceptableConnections && attempts < 36) {
+                        // if the selected neighbor has some conections already, we'll pick another one
+                        neighbor = validNeighbors[Math.floor(Math.random() * validNeighbors.length)]
+                        existingConnections = neighbor.numberOfConnections
+                        attempts++
+                        if (attempts % 6 == 0) { // every 6th attempt
+                            // allow a slightly bigger number of existing connections
+                            acceptableConnections++
+                            console.log(`Must accept ${acceptableConnections} connections`)
+                        }
+                    }
+
+                    return neighbor
+                } else {
+                    return null
+                }
+
+            }
+
+            this.moveCursorHere = function () {
+
+                // to do: move sprite here
+
+
+                if (this.el) {
+                    // remove all previous event listeners
+                    // to do: make a function or a way to go to each hexagon more easily
+                    for (let i = 0; i < maze.maze.length; i++)
+                        maze.maze[i].forEach(hexagon => {
+                            if (hexagon.el) {
+                                hexagon.el.classList.remove('current')
+                                hexagon.el.removeEventListener('click', hexagon.boundJumpTo)
+                            }
+                        })
+                }
+
+                this.el.classList.add('current')            
+
+                // later will put sprite here
+                this.neighbors.forEach(neighbor => {
+                    if (neighbor.el) {
+                        neighbor.boundJumpTo = () => jumpTo(neighbor);
+                        neighbor.el.addEventListener('click', neighbor.boundJumpTo);
+                    }
+                })
+            }
+        
+
+            this.test = function () {
+            if (this.el) {
+                if (this.path) {  // TO DO: also check the word contained just in case it wasn't on the path but was in more than one column (alternatively, it might be more efficient to check for these words earlier and add the .path tag to them? or just flag with a bool their existence before we bother checking now?)
+                    this.el.classList.add('path') // TO DO: change to class
+                    return true
+                } else {
+                    // TO DO: change to class
+                    this.el.style.animate = 'unset'
+                    this.el.style.transition = 'transform 2000ms'
+                    this.el.style.transform = 'translateY(100vw)'
+                    return false
+                }
+            }
+        }
+        }
+            
+
+
+
+        function calculateColumnsRequired(hexCount) {
+            let m = 0;
+            let total = 0;
+
+            while (total < hexCount) {
+                m++;
+                total = (m * (m + 1)) - m; // Calculate 2T(m) - m
+            }
+
+            return (2 * m) - 1;
+        }
+
+        function calculateTallestColumn(gridSize) {
+            return Math.sqrt(gridSize)
+        }
+
+        function chance(numerator, denominator) {
+            if (denominator === 0) {
+                throw new Error("Denominator cannot be zero");
+            }
+            return Math.random() < (numerator / denominator)
+        }
+
+        function isEven(x) {
+            if (x % 2 == 0) {
+                return true
+            } else {
+                return false
+            }
+        }
+
+        function isOdd(x) {
+            if (x % 2 == 0) {
+                return false
+            } else {
+                return true
+            }
+        }
+
+        function weightedCoinFlip(trueWeight,falseWeight){
+            if (trueWeight == 0 && falseWeight == 0){
+                return false
+            }
+            console.log('good weight is '+trueWeight / (trueWeight + falseWeight))
+            return Math.random() <= trueWeight / (trueWeight + falseWeight)
+        }
+
+        function newElement(tag, properties = {}, innerHTML = '') {
+            let el = document.createElement(tag)
+            for (const property in properties) {
+                let propertyName = property.replaceAll(/([A-Z])/g, '-$1').toLowerCase() // change camel case to - seperation
+                el.setAttribute(propertyName, properties[property])
+            }
+            if (typeof innerHTML == 'string') {
+                el.innerHTML = innerHTML
+            } else {
+                el.appendChild(innerHTML)
+            }
+            return el
+        }
+
+        Array.prototype.shuffle = function () {
+        let currentIndex = this.length, randomIndex;
+
+        // While there remain elements to shuffle.
+        while (currentIndex > 0) {
+
+            // Pick a remaining element.
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+
+            // And swap it with the current element.
+            [this[currentIndex], this[randomIndex]] = [
+                this[randomIndex], this[currentIndex]];
+        }
+        return this
+    }
+    </script>
+    <script>
+        // const gameData = [
+        //     ["passer","passe"],
+        //     ["manger","mange"],
+        //     ["finir","finit"],
+        //     ["boire","bu"],
+        //     ["faire","fait"],
+        //     ["danser","dansé"],
+        //     ["rire","ris"],
+        //     ["déclarer","déclare"],
+        //     ["soudre","souds"],
+        //     ["ranger","rangé"],
+        //     ["rendre","rendu"],
+        //     ["aller","erre"]
+        // ]
+        const gameData = [
+            ["2","4"],
+            ["3","6"],
+            ["5","8"],
+            ["7","9"],
+            ["11","12"],
+            ["13","14"],
+            ["17","15"],
+            ["19","16"],
+            ["23","18"],
+            ["29","20"],
+            ["31","21"],
+            ["37","22"],
+            ["","24"],
+            ["","25"],
+            ["","26"],
+            ["","27"],
+            ["","28"],
+            ["","30"]
+        ]
+    </script>
+</head>
+
+<body onload="pageLoad()">
+
+</body>
+
+</html>

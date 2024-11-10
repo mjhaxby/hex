@@ -6,7 +6,7 @@
     "cols":["Cloze",{"title":"Prompt","text":true,"image":true},"Hint","Traps"],
     "description":"Fill in the blanks. There are three ways of creating blanks to fill in. (1) Typing, indicated with [square brackets]. (2) Multiple choice, indicated with <=less than|greater than|where answers are separated with a pipe and marked correct with an equals>. (3) Drag-and-drop using {curly brakcets}. Alternative answers can be added with a pipe (|) on typing and multiple choice questions. A tilde (~) indicates an acceptable answer, which will score the point but not be shown at any time. This is useful for drag-and-drop cloze items, where you may wish to accept a possible answer from another drag-and-drop cloze element, without creating another drag element. Regular Expressions can also be used for typing cloze. See the documentation for more details.",
     "scorm_support":true,
-    "markdown_support":true,
+    "markdown_support":true,    
     "empty_cells_allowed":true,
     "settings":[
       {"name":"color","label":"Color","type":"select","options":["Default Light","Default Dark","Dark mode","Lille","university","B5 4eva","bridge of wood","Black and white","Swedish furniture company","Liberty","Colorful"],"category":"appearance"},
@@ -15,6 +15,7 @@
       {"name":"bank","label":"Drag-and-drop bank","type":"select","options":["Whole activity","Per line"],"optionValues":["activity","line"],"category":"behavior"},
       {"name":"infiniteBank","label":"Items in bank can be reused","type":"checkbox","default":false,"info":"If enabled, each item in the bank is unique, but can be reused.","category":"behavior"},
       {"name":"shuffleMulti","label":"Shuffle multiple choice items","type":"checkbox","default":true,"info":"If enabled, multiple choice dropdown items will be in a random order.","category":"behavior"},
+      {"name":"multiChoiceType","label":"Multiple choice type","type":"select","options":["Drop-down","Vertical radio","Horizontal radio"],"optionValues":["dropdown","vertical","horizontal"]}
       {"name":"lockCorrect","label":"Lock correct answers","type":"checkbox","default":true,"info":"If enabled, learners cannot change an answer once it has been marked correct.","category":"behavior"},
       {"name":"minAttempts","label":"Minimum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to show the “show answers” button after a number of attempts.","category":"behavior"},
       {"name":"maxAttempts","label":"Maximum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to prevent answers after a number of attempts.","category":"behavior"},
@@ -167,10 +168,16 @@
         }
       }
 
-      function answerChanged(clozeEl,lineID,clozeID,resize=false){
+      function answerChanged(clozeEl,lineID,clozeID,resize=false,radio=false){
         if(resize){
             resizeInputToContent(clozeEl)
-        }       
+        }
+        if(radio){
+            let el = document.getElementById(`cloze_${lineID}_${clozeID}`) // get the cloze div containing radio buttons
+            if(clozeEl.checked){ // here clozeEl will be the radio button itself
+                el.value = clozeEl.value // pass value up
+            }
+        }
         let cloze = clozeLines[lineID].clozes[clozeID]
         if (cloze.score > 0){
             cloze.check() // will remove score if necessary
@@ -483,22 +490,23 @@
 
         let index = -1
 
+        data[0] = cleanHTMLInsideCloze(data[0])
+        let regexFound = findRegex(data[0])
+        data[0] = regexFound.data
+        this.regexStore = regexFound.regex
+
         this.id = id
         this.line = data[0].replaceAll(/\[.+?\]|{.+?}|&lt;.+?&gt;/g, function (match) {
             index++;
             return `[${index}]`
         }) // anything between [], {} or <> is replaced with a number
-
         this.prompt = data.length >= 2 ? data[1] : {}
         this.hint = data.length >= 3 ? data[2] : ''
         this.traps = (data.length >= 4 && data[3].length > 0) ? data[3].split(/,|;/) : []
         // this.attempts = 0 (using attempts per cloze instead of per clozeLine)
         this.score = 0 // total score for this line
         this.numDragDropCloze = 0
-
-        let regexFound = findRegex(data[0])
-        data[0] = regexFound.data
-        this.regexStore = regexFound.regex
+    
 
         let clozes = data[0].match(/\[.+?\]|{.+?}|&lt;.+?&gt;/g)
 
@@ -855,7 +863,7 @@
                 if (cloze.type == 'typing') {
                     clozeEls.push(typingCloze(id, index, cloze))
                 } else if (cloze.type == 'multi') {
-                    clozeEls.push(multiCloze(id, index, cloze))
+                    clozeEls.push(multiCloze(id, index, cloze, gameSettings.multiChoiceType))
                 } else if (cloze.type == 'drag') {
                     clozeEls.push(dragSpace(id, index, cloze))
                     if (gameSettings.bank == 'line') {                    
@@ -950,13 +958,24 @@
             return el
         }
 
-        let multiCloze = function (lineId, clozeIndex, cloze) {
-            let el = newElement('select', { id: `cloze_${lineId}_${clozeIndex}`, class: 'cloze-select', onchange: `answerChanged(this,${lineId},${clozeIndex},resize=true)` })
-            el.appendChild(newElement('option'))            
-            cloze.options.forEach(option => {
-                let optionEl = newElement('option', {}, option)
-                el.appendChild(optionEl)
-            })
+        let multiCloze = function (lineId, clozeIndex, cloze,type='dropdown') {
+            let el
+            if(type == 'dropdown'){
+                el = newElement('select', { id: `cloze_${lineId}_${clozeIndex}`, class: 'cloze-select', onchange: `answerChanged(this,${lineId},${clozeIndex},resize=true)` })
+                el.appendChild(newElement('option'))            
+                cloze.options.forEach(option => {
+                    let optionEl = newElement('option', {}, option)
+                    el.appendChild(optionEl)
+                })
+            } else if (type == 'horizontal' || type == 'vertical'){
+                el = newElement('div', {id: `cloze_${lineId}_${clozeIndex}`, class: `cloze-select radio ${type}`})
+                cloze.options.forEach((option,index) =>{
+                    let optionEl = newElement('div',{class: 'radio-line'})
+                    optionEl.appendChild(newElement('input',{id: `cloze_${lineId}_${clozeIndex}_${index}`, type:'radio', name: `cloze_${lineId}_${clozeIndex}`, onchange:`answerChanged(this,${lineId},${clozeIndex},resize=false,radio=true)`, value: option}))
+                    optionEl.appendChild(newElement('label',{for: `cloze_${lineId}_${clozeIndex}_${index}`},option))
+                    el.appendChild(optionEl)
+                })
+            }
             return el
         }
 
@@ -977,18 +996,28 @@
             return el
         }
     }
+
+    function cleanHTMLInsideCloze(text){
+        const result = text.replace(/\[([^\]]*)\]/g, function(match) {
+            return match.replace(/<\/*em>/g, '*');
+        });
+        return result
+    }
     
     function findRegex(string){
             // we don't want any regex to be an "accepted" answer (since we're going to put it in a separate place anyway – so they're all essentially accepted), so first remove any confusing ~
-            string = string.replaceAll(/([\[\|])\~(\/.+\/[\]\|])/g,'$1$2')
+            string = string.replaceAll(/([\[\|])\~(\/.+?\/[\]\|])/g,'$1$2')
             // find all Regex, along with the characters that encloses the answer – either [, ] or |            
-            let unpreppedRegexes = string.match(/[\[\|]\/.+\/[\]\|]/g)
+            let unpreppedRegexes = string.match(/[\[\|]\/.+?\/[\]\|]/g)
             let regexStrings = []
             let regexBank = {}
             // with all the regex we've found
             if(unpreppedRegexes){
                     unpreppedRegexes.forEach(unpreppedRegex =>{
                     let regexString = unpreppedRegex.substring(2,unpreppedRegex.length-2) // remove first two and last two characters
+                    // incase * has been interpretted for markdown, put it back – TO DO: in main hex program, send non-HTML version alongside HTML version for situations like this (possibly only when an activity setting requests it)
+                    regexString = regexString.replaceAll('<em>','*')
+                    regexString = regexString.replaceAll('</em>','*')
                     if(!regexStrings.includes(regexString)){ // we may as well avoid duplicates, but could also allow for a way of establishing variables in the hex editor later
                         regexStrings.push(regexString)
                     }
@@ -1425,7 +1454,7 @@
 
     function addClozeDragToSpace(clozeDrag,space,setSizeOfSpace=false){
         let draggingSize = getCalculatedSizeWithoutPadding(clozeDrag)
-        clozeDrag.style.width = draggingSize.width + 'px'; // fix width temporarily
+        clozeDrag.style.width = (draggingSize.width + 0.5) + 'px'; // fix width temporarily
         clozeDrag.style.height = draggingSize.height + 'px'; // fix height temporarily
 
         (function(element) {
@@ -1437,7 +1466,7 @@
 
         // when restoring progress, the size won't have been set by hovering, so we'll do it here
         if(setSizeOfSpace){
-            space.style.width = clozeDrag.offsetWidth
+            space.style.width = clozeDrag.offsetWidth + 0.5
         }
 
         space.classList.add('filled')
@@ -1481,7 +1510,7 @@
                     // spaceDummy.style.left = spacePosition.x 
                     // spaceDummy.style.top = spacePosition.y 
                     // spaceDummy.style.width = draggingEl.offsetWidth
-                    space.style.width = draggingEl.offsetWidth                    
+                    space.style.width = draggingEl.offsetWidth + 0.5                 
                     space.classList.add('hovered')
                     hoveringSpace = space
                 } else {
@@ -2197,9 +2226,12 @@ function unpinBank(btn){
 
     select{
         width: calc(1ch + 3em);
+        background: url('data:image/svg+xml,<svg width="100%" height="100%" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:square;stroke-miterlimit:1.5;"><g transform="matrix(0.526633,-0.526633,0.526633,0.526633,5.7024,14.107)"><path d="M6.478,2.355L6.478,13.076L17.199,13.076" style="fill:rgb(235,235,235);fill-opacity:0;stroke:black;stroke-width:2.69px;"/></g></svg>') no-repeat right;
         border-top: 0.1em solid var(--cloze-select-fg);
         border-radius: 0 0 0.25em 0.25em;
-
+        -moz-appearance: none; 
+        -webkit-appearance: none; 
+        appearance: none;
     }
 
     input{
@@ -2211,8 +2243,58 @@ function unpinBank(btn){
         text-align: right;
     }
 
-    input:focus{
+    input[type=radio]{
+        position: relative;
+        appearance: none;
+        width: 0.8em;
+        height: 0.8em;
+        min-height: 0.8em; /* to override */
+        border-radius: 100%;
+        border: 0.1em var(--cloze-select-fg) solid;
+        background-color: var(--cloze-select-bg);
+        margin-right: 0.25em;
+    }
 
+    input[type=radio]::after{
+        position: absolute;
+        top: 50%;
+        left: 50%;    
+        content: "";
+        width: 0.25em;
+        height: 0.25em;
+        border-radius: 50%;
+        background-color: var(--cloze-select-fg);
+        transform: translate(-50%,-50%) scale(0%);   
+        opacity: 0;
+        transition: 300ms;     
+    }
+
+    input[type=radio]:checked::after{
+        opacity: 100%;
+        transform: translate(-50%,-50%);
+    }
+
+    input[type=radio]:hover::after{
+        opacity: 50%;        
+        transform: translate(-50%,-50%) scale(90%);
+    }
+
+    input[type=radio]:checked:hover::after{
+        opacity: 100%;        
+        transform: translate(-50%,-50%) scale(100%);
+    }
+
+    input[type=radio]:active::after{
+        opacity: 100%;        
+        transform: translate(-50%,-50%) scale(150%);
+    }
+
+    .correct input[type=radio]:checked{
+        background-color: var(--correct-bg);            
+    }
+
+    .correct input[type=radio]:checked::after{
+        background-color: var(--correct-fg);    
     }
 
 
@@ -2241,6 +2323,27 @@ function unpinBank(btn){
     button:disabled {
         pointer-events: none;
         opacity: 0.8;
+    }
+
+    .radio{
+        display: inline-flex;
+        flex-direction: column;
+        background-color: unset !important;
+        min-height: 1.2em;
+        justify-content: baseline;
+        align-items: center;
+    }
+
+    .radio.horizontal{
+        flex-direction: row;
+    }
+
+    .radio-line{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 1em;        
+        line-height: 1.2em;
     }
 
     .bank, #bankWrapper{

@@ -1080,10 +1080,10 @@ ipcMain.on('getPrebuiltActivities', function (event) {
   fs.readdir(path.resolve(__dirname, 'Activities/'), (err, files) => {
     var activities = []
     files.forEach(file => {
-      if (file.match(/\.html$/)) {
+      if (file.match(/\.html$/) && (debugMode || (!file.match(/.+_WIP.+/) && !file.match(/.+_alpha.+/)))) {
         activities.push(file.replace(/\.html$/, ''))
       }
-    })
+    })    
     prebuiltActivitiesList = activities
     windows.main.webContents.send('loadPrebuiltActivities', activities);
   })

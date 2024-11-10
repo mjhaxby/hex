@@ -10,31 +10,37 @@ There’s no build for Linux distributions yet, but you’re welcome to build it
 <p>You can also enter data and edit it directly within <strong>hex</strong>. The plus/minus buttons (which appear when hovering over a column header or row number) allow you to add and remove columns and rows (also alt+tab to add a column, alt+shift+tab to remove it). The ↔︎ icon lets you swap data between two columns, which is useful when making several activities where the column headers won’t necessarily correspond. Click on a row number or column header to select that row or column. Hold down shift to select multiple sequentially, or ctrl/command to select multiple out of sequence.</p>
 <p>Columns that are greyed out are still editable, but won’t be used for the currently selected activity.</p>
 <p>Some activities have optional columns. When this is the case, the heading will be in parentheses. These columns will not necessarily show automatically, you may need to add them yourselves. Some activities accept an infinite amount of optional columns (e.g. Falling Words).</p>
+<h4><a name="expand-view">Expand view</a></h4>
+<p>Click on ⋮ on a table cell to expand the cell, or ⋮ in the column header to expand all the cells in that column. In an expanded cell, you can add new lines, which will be displayed in activities that support multiline data. When returning to the non-expanded view, new lines will be converted to <code>\n</code>, but this should be converted back to a new line in an activity. You can also type this directly in the non-expanded view to add a new line. This view is also useful for cells containing a lot of data.</p>
+<h4>Add images</h4>
+<p>Some activities support images in one or more column. When images are supported, you can either drag and drop the image to a cell, or expand it (see <a href="#expand-view">the section above</a>) and click the image button. Some activities may accept both text and images. In expanded view, when no text has been entered, the text box is hidden in order to show the image in a larger size.</p>
+<h4>Remove images</h4>
+<p>In the standard view, click on the image you wish to delete. A X button will appear. Click on the button to confirm deletion.</p>
+<p>In expanded mode, hover over the image you wish to delete. A translucent X button will appear. Click on the button once to make it opaque and a second time to confirm deletion.</p>
 <h4>Exporting the table</h4>
 <p>To save your table somewhere else: Tools → Export table as tabbed text / Export table as JSON.</p>
 <h3>Activity settings</h3>
 <p>Open the activity settings drawer to adjust any available settings for the selected activity. As a minimum, each activity should have an “about” section which will explain how the activity works, and an “example” button, which will fill in the table with some sample data. This way, if you’re not sure how an activity works, you can run it straight away with the example data and try it out yourself before putting in your own data.</p>
 <p>Other settings may include, color options, sound controls, difficulty levels and options to custom certain labels in activities (which is useful if you don’t want your activity to be in English). More details in the Activities section.</p>
-<p>It is not (yet!) possible to change the defaults for activity settings. This will be reset every time you re-open the app or when you change activity.</p>
+<p>You can the change the defaults for activity settings by selecting this option in the tools menu. Otherwise, these will be reset every time you re-open the app or when you change activity. If you want to restore the original defaults, choose <strong>Reset current activity settings to factory</strong> in the menu.</p>
 <h3>Run</h3>
 <p>Clicking on <strong>Run</strong> will open the selected activity in a new window, using the data from the table and the activity settings. You can reset any activity with the shortcut Ctrl+R or Cmd+R on a Mac. If you make any changes to the data in the table, you will need to close the activity window and press run again to see these changes in the activity. This means that you can run as many activities as you like with the same or with different sets of data.</p>
 <p>You can also export the activity from the menu while running it.</p>
 <p>See the section <a href="#Errors-on-run-or-export">Errors on run or export</a> for any errors.</p>
 <h3>Export</h3>
 <p>Clicking on <strong>Export</strong> will open a dialog to save an HTML page. This page will open in any modern browser and allow you to run this activity any time. You can also upload this page to a website or add to a Moodle page (see the section <a href="#Adding-to-Moodle">Adding to Moodle</a>.</p>
-<p>The exported file contains everything the activity needs to run, including styles, scripts, fonts and images. This is not typical for an HTML page (normally the best practice is to store components separately. However, this makes it much simpler to manage activities and add them to other websites or LMS (Learning Management System). Very large <strong>hex</strong> activities may take a long time to load and the application has not been tested with datasets of more than about 200 rows.</p>
+<p>The exported file contains everything the activity needs to run, including styles, scripts, fonts and images. This is not typical for an HTML page (normally the best practice is to store components separately). However, this makes it much simpler to manage activities and add them to other websites or LMS (Learning Management System). Very large <strong>hex</strong> activities may take a long time to load and the application has not been tested with datasets of more than about 200 rows.</p>
 <h4>Exporting SCORM</h4>
 <p>You can also export SCORM packages for some activities. You will need to first show the advance export options (<strong>View</strong> → <strong>Advanced export options</strong>). You can then switch from HTML to SCORM. When exporting, you will be able to save a ZIP file (the format used for SCORM packages).</p>
-<p>SCORM packages have a unique identifier to be distinguished by the LMS (Learning Management System, such as Moodle).<br />
-If you want to be able to update your package earlier, you should keep a copy of the automatically generated identifier. This appears in the <strong>id</strong> box and is also shown when exporting. When producing a new version of the same SCORM package, you should paste the identifier in the <strong>id</strong> box. If you export with a new identifier, the LMS will consider this a new package and learner information associated with this package may be lost. You can also use whatever you want as an identifier (“banana” for example would work, though it is recommended to have something a bit more unique). However, you should not reuse the same identifier for two packages on the same course, as the LMS will not be able to distinguish them.</p>
+<p>SCORM packages have a unique identifier to be distinguished by the LMS (Learning Management System, such as Moodle). If you want to be able to update your package later, you should keep a copy of the automatically generated identifier. This appears in the <strong>id</strong> box and is also shown when exporting. When producing a new version of the same SCORM package, you should paste the identifier in the <strong>id</strong> box. If you export with a new identifier, the LMS will consider this a new package and learner information associated with this package may be lost. You can also use whatever you want as an identifier (“banana” for example would work, though it is recommended to have something a bit more unique). However, you should not reuse the same identifier for two packages on the same course, as the LMS will not be able to distinguish them.</p>
 <p>If you’re worried about accidentally generated two identifiers that are the same: don’t. When you export without an identifier or click on the dice button <strong>hex</strong> makes a UUID. Wikipedia has this to say about UUIDs:</p>
 <blockquote>
 <p>Only after generating 1 billion UUIDs every second for the next 100 years, the probability of creating just one duplicate would be about 50%. Or, to put it another way, the probability of one duplicate would be about 50% if every person on earth owned 600 million UUIDs.</p>
 </blockquote>
 <p>The SCORM packages generated by <strong>hex</strong> typically provide a score between 0 and 100 (essentially a percentage) and also try to save progress if a user exits an activity before finishing it. It also saves some interactions so you can get an idea of what a learner actually did in the activity and how long they spent doing it. This makes it much more appropriate for tracking learning. However, please bear in mind that SCORM packages are not appropriate for testing, especially without surveillance. Both <strong>hex</strong> activities and the SCORM API use Javascript, which can be manipulated relatively easily in any browser by opening the Javascript console.</p>
-<p>At the moment, exporting as SCORM is only available for the <strong>Match</strong> and <strong>Blockbusters</strong> activities, the latter still being slightly experimental.</p>
+<p>At the moment, exporting as SCORM is available for the <strong>Angram</strong>, <strong>Blockbusters</strong>, <strong>Cloze</strong>, <strong>Crack the code</strong>, <strong>Four in a row</strong>, <strong>Match</strong> and <strong>Word order</strong> activities.</p>
 <h4><a name="Adding-to-Moodle">Adding to Moodle</a></h4>
-<p>In edit mode, simply drag and drop the exported file onto the Moodle page where you want the activity. For a SCORM package, you will need to select this from the pop up. Alternatively, click the <strong>Add a new activity or resource</strong> button, select either File or SCORM package and then upload the <strong>hex</strong> activity.</p>
+<p>In edit mode, simply drag and drop the exported file onto the Moodle page. For SCORM packages, you will need to select this type in the pop up. Alternatively, click the <strong>Add a new activity or resource</strong> button, select either File or SCORM package and then upload the <strong>hex</strong> activity.</p>
 <p>You may want to adjust the Appearance settings after upload. I would recommend changing <strong>Display</strong> to <strong>New window</strong> for most activities, but you may want to do <strong>Embed</strong> or <strong>In frame</strong> for some smaller activities to make it easier for students to navigate around your page.</p>
 <h3><a name="Errors-on-run-or-export">Errors on run or export</a></h3>
 <h4>[Activity] requires X row(s) and you only have Y row(s)</h4>
@@ -60,7 +66,7 @@ If you want to be able to update your package earlier, you should keep a copy of
 <h4>Backs to the board</h4>
 <p>This activity is for use in class, probably with the whole group. The class is split into two teams. A team leader is elected from each. They stand at the front, either side of the teacher with their backs to the boards. The teacher will probably want to face the board or else sit on a swivel chair so they can quickly look round. A list of words will be shown on the board and the two teams must explain (in the target language only!) the words to their own team leader <em>simultaneously</em>. This is not a game where the two teams take it in turns, so it can get a little noisy. When the team leader knows a word, they say in quietly to the teacher, who will tick it off from their side. When a team has found all the words, they win. The team leader can then be changed.</p>
 <p>Of course, there is a risk that the team leader will hear a clue intended for the other team. However, in reality, this is rarely an issue, as they are usually focused on their own team.</p>
-<p>In someone <em>does</em> try to cheat (saying the word in their own language, telling the team leader the word, the team leader looking at the board…), there is a penalty button. This will add another word from the list.</p>
+<p>In someone <em>does</em> try to cheat (saying the word in their own language, telling the team leader the word, the team leader looking at the board…), there is a penalty button. This will add another word from the list, which only the offending team needs to get in order to win.</p>
 <p>Some variations are possible. For example, miming instead of explaining words, the whole class explaining to both leaders (who are in competition), one explainer for each team (change after each word)…</p>
 <h5>Activity settings</h5>
 <ul>
@@ -110,7 +116,50 @@ If you want to be able to update your package earlier, you should keep a copy of
 <ul>
 <li>Jobs.</li>
 <li>Fruit (in French and English).</li>
+<li></li>
 </ul>
+<h4>Climb</h4>
+<p>The user is a sprite, flying upwards. As they fly, they will past questions, the learner must find the answer before they disappear in order to gain energy and keep moving. When the sprite runs out of energy, the game is over, except in <strong>Very easy</strong> mode where there is no energy bar. Both typing and multiple choice modes.</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Color</strong>. There are a number of color themes to choose from.</li>
+<li><strong>Theme</strong>. Sets a number of other settings to a preset in order to create the overall style of the game. Select custom to change the individual elements.</li>
+<li><strong>Background</strong>. Background image. Can accept imported images, which are recommended to be SVG files for the best appearance and performance. The file should also be able to repeat vertically.</li>
+<li><strong>Overlay (vertical)</strong>. A foreground element that moves in a gradual diagonal across the screen. Can accept imported images, which should be mostly transparent and able to repeat both horizontally and vertically.</li>
+<li><strong>Character</strong> The image used for the sprite. Can accept imported images.</li>
+<li><strong>Character (accelerating)</strong> The image used for the sprite just after a correct answer is given. Choose <strong>no change</strong> to use the main image in this instance. Can accept imported images.</li>
+<li><strong>Character (game over)</strong> The image used for the sprite just before a game over. Choose <strong>no change</strong> to use the main image in this instance. Can accept imported images.</li>
+<li><strong>Shuffle</strong>. When disabled, questions will drop in the order givoii9en.</li>
+<li><strong>Sounds</strong>. Sound effects can be disabled.</li>
+<li><strong>Mode</strong>. Typing or multiple-choice. In typing mode, learners can give as many guesses as they can before the word reaches the bottom or the top of the pile. In multiple-choice mode, they only have one guess, after which the question will immediately drop to the bottom.</li>
+<li><strong>In multiple choice mode, maintain the same options every time a question reappears</strong>. When enabled, this will always show the same possible answers in the same order for each falling word. Wrong answers will be selected according to their similarity with the correct answer. The range of answers may not be the same from game-to-game. Always enabled if there four or fewer possible answers.</li>
+<li><strong>Difficulty</strong>. Choose between Very easy, Easy, Medium, Hard, Ultra and Impossible. This varies the speed at which questions fall and the relief time between each question.</li>
+<li><strong>Required similarity to accept answer (%)</strong>. Typing mode only. Difference between submitted answer and all possible correct answers. If the words are sufficiently similar, the answer will be accepted, but with a difference message and sound.</li>
+<li><strong>Loop</strong>. Forever, Missed words first, Missed words only, Off. In order for the player to be able to complete the game, select <strong>Missed words only</strong> or <strong>Off</strong>.</li>
+<li><strong>Guess button</strong>. Customise the wording.</li>
+<li><strong>Correct answer message</strong>. Customise the wording.</li>
+<li><strong>Acceptable answer message</strong>. Customise the wording.</li>
+<li><strong>Incorrect answer message</strong>. Customise the wording.</li>
+<li><strong>Start instruction</strong>. Customise the wording.</li>
+<li><strong>Winning message</strong>. Customise the wording.</li>
+<li><strong>Losing message</strong>. Customise the wording.</li>
+<li><strong>Abandon game confirmation</strong>. Customise the wording.</li>
+<li><strong>Reset button</strong>. Customise the wording.</li>
+<li><strong>Show answers instruction</strong>. Customise the wording.
+The following settings are repeated five times to allow for up to five different decoration elements.</li>
+<li><strong>Falling decoration <em>n</em></strong>. Image for decoration. Can accept imported images.</li>
+<li><strong>Min size (<em>n</em>)</strong>. Minimum size of decoration, 1-100. A random size will be chosen each time the decoration appears between the minimum and maximum. For a consistent size, set these to the same number.</li>
+<li><strong>Max size (<em>n</em>)</strong>. Maximum size of decoration, 1-100.</li>
+<li><strong>Min depth (<em>n</em>)</strong>. Minimum depth of decoration, -100-100. A random depth will be chosen each time the decoration appears between the minimum and maximum. For a consistent size, set these to the same number. The number 0 represents the same depth as the sprite. Higher numbers will have a greater depth effect applied - a smaller size and blurring, as well as a slower fall speed. Minus numbers will appear larger and in front of the sprite, as well as in front of the falling questions.</li>
+<li><strong>Max depth (<em>n</em>)</strong>. Maximum depth of decoration, -100-100.</li>
+<li><strong>Speed (<em>n</em>)</strong>. Speed at which the decoration falls. Set to 0, decorations will fall at the same speed as questions, not taking into account depth. 0-100.</li>
+<li><strong>Rotation variation (<em>n</em>)</strong>. Decorations will be rotated between 0 and this degree randomly. 0-360.</li>
+<li><strong>Hue variation (<em>n</em>)</strong>. Decorations will be recolored randomly by between 0 and this percent compared to their original color.</li>
+<li><strong>Spin (<em>n</em>)</strong>. Spin animation béhaviorismes.</li>
+<li><strong>Drift (<em>n</em>)</strong>. Horizontal movement of the decoration.</li>
+<li><strong>Flip (<em>n</em>)</strong>. When enabled, the decoration has a 50:50 change of being flipped, according to the setting.</li>
+</ul>
+<p>Note that further animations can be introduced to sprites and decorations by using GIFs or animated SVGs, as is the case with a number of the stock elements.</p>
 <h4>Crack the code</h4>
 <p>Letters in the answer are replaced with a random emoji. To find the answers, the letter each emoji represents must be supplied. Optionally, a clue can be given (this could be the definition or a translation of the word). This works best with short lists of words, since a long list will reveal all the answers before reaching the end.</p>
 <h5>Activity settings</h5>
@@ -127,8 +176,74 @@ If you want to be able to update your package earlier, you should keep a copy of
 <ul>
 <li>Fruit.</li>
 </ul>
+<h4>Cloze</h4>
+<p>Create a cloze (fill in the blanks) exercise which can be answered either by typing, by multiple choice dropdown or with drag-and-drop elements.</p>
+<p>Each line of the table represents a sub-exercise in the activity and so each line can contain multiple cloze elements, which are all typed in the first column. For a type-in cloze, enclose the words to type in with [square brackets]. For multiple choice, enclose all the possibilities in less than (&lt;) and greater than (&gt;) signs and use a pipe (|) to separate answers, with the correct answer indicated using the equals sign (=). For example: <code>&lt;=Correct answer|Wrong answers|Another wrong answer&gt;</code>. Finally, a drag-and-drop cloze can be created using {curly brackets}. By default, the answers are contained in a shared bank for the entire activity.</p>
+<p>For type-in and drag-and-drop cloze, ~ can be used to indicate another acceptable answer. For type-in cloze, this means the answer will not be revealed as a correct answer, but will be accepted nonetheless. For drag-and-drop cloze, this means the answer will be accepted, but a drag-and-drop element will not be created, therefore it will only be possible to add this answer if another element has it as a possible option. In this way, it’s possible to make two drag-and-drop cloze items where the answers are exchangeable. For example, in <code>Bananas are [tasty|yellow] and [~tasty|~yellow]</code>, the drag-and-drop elements are created for the first cloze, but can both be placed into the second cloze, without creating a duplicate element. Another way to achieve a similar result is to enable the infinite bank option, though this adds a layer of difficulty for the learner.</p>
+<p>The optional second column is for prompts, which will appear above each line. The optional third column is for hints, which are shown by default, but can be hidden until a condition is met in the activity settings. Trap answers for drag-and-drop cloze can be added in the fourth column, each separated with a comma or a semi-colon. This activity supports markdown formatting.</p>
+<p>Blank lines can be added to create a space between sub-exercises.</p>
+<table>
+<thead>
+<tr>
+<th>Symbols</th>
+<th>Usage</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[…]</td>
+<td>Typing cloze</td>
+<td><code>You must type an [answer] into the space.</code></td>
+</tr>
+<tr>
+<td>&lt;…&gt;</td>
+<td>Multiple-choice cloze</td>
+<td><code>Choose the &lt;=correct|wrong&gt; answer.</code></td>
+</tr>
+<tr>
+<td>{…}</td>
+<td>Drag-and-drop cloze</td>
+<td><code>Drag an answer into this {space}.</code></td>
+</tr>
+<tr>
+<td>|</td>
+<td>Separate possible answers.</td>
+<td><code>This [text|typing] box accepts multiple answers. You can also {drag|place} two different answers in this box.</code></td>
+</tr>
+<tr>
+<td>=</td>
+<td>Indicate correct answer for multiple-choice</td>
+<td><code>Choose an [=answer|banana]</code></td>
+</tr>
+<tr>
+<td>~</td>
+<td>Indicates hidden answer (typing and drag-and-drop only)</td>
+<td><code>Here is the [answer|~response]. It will accept two, but only one will be revealed if the correct answer is not found.</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Note for advanced users:</strong> For type-in clozes, it’s possible to use Regular Expressions to accept a multitude of possible answers without typing in every possible combination. To do this, enclose the Regular Expression in two forward slashes (/). It’s recommended to do this as a second possible answer, with the first being a “model answer”, otherwise if a learner presses the <em>reveal answers</em> button, they will only see a blank box. For example <code>[Model answer|/.+model answer.+/]</code> will accept both “Model answer” and any answer that contains those two words. As another example, <code>[Banana(s)|/[bB]ananas?/]</code> will accept “banana”, “Banana”, “bananas” and “Bananas”, as well as the first answer “Banana(s)”.</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Color</strong>. There are a number of color themes to choose from.</li>
+<li><strong>Font</strong>. You can change the typeface here.</li>
+<li><strong>Font size (%)</strong>. 1-500.</li>
+<li><strong>Drag-and-drop bank</strong>. Whole activity or per line. Per line should only be used when each line contains more than one drag-and-drop cloze, or at least one trap if there is only one.</li>
+<li><strong>Items in bank can be reused</strong>. When enabled, any duplicate items are hidden in the word bank. Each item in the word bank can be used multiple times. This can make activities where some words are repeated more difficult, as the learner won’t know how many of each item they will need.</li>
+<li><strong>Lock correct answers</strong>. This prevents learners from changing an answer if it has already been marked as correct using the check button.</li>
+<li><strong>Minimum attempts</strong>. If set to 0, this has no effect. If set higher than 0, a ‘Show answers’ button will appear after the minimum number of attempts has been reached. This can also be set as the threshold for showing hints.</li>
+<li><strong>Maximum attempts</strong> If set to 0, this has no effect. If set higher than 0, users will not be able to answer after they have reached this number of attempts.</li>
+<li><strong>Check sentences</strong>. Learners can check all items at once, or per line.</li>
+<li><strong>Score calculation</strong>. Either each cloze is worth one point or each line (containing at least one cloze) is worth one point.</li>
+<li><strong>Hints shown</strong>. Options to show hints when a condition is met.</li>
+<li><strong>Attempts text</strong>. Customise the label for the number of attempts.</li>
+<li><strong>Show answers text</strong>. Customise the label for show answers button</li>
+<li><strong>Score text</strong>. Customise the label that appears before the score.</li>
+<li><strong>Completion % (scorm only)</strong>. The percentage of correct answers for the activity to be recorded as completed in the LMS. Has no effect when using the activity in <strong>run</strong> mode or when exported as HTML.</li>
+</ul>
 <h4>Crossword</h4>
-<p>Create a crossword puzzle from the answers and clues. In most cases, not all will be provided, a better puzzles are usually generated by supplying a longer list of possible answers and clues. Every time the activity is loaded, a new puzzle will be generated. However, you can reuse the same puzzle again by clicking on the button in the top-right corner and copying the game code into the activity settings. This will force the activity to create the same puzzle every time.</p>
+<p>Create a crossword puzzle from the answers and clues. In most cases, not all words will be used, a better puzzles are usually generated by supplying a longer list of possible answers and clues. Every time the activity is loaded, a new puzzle will be generated. However, you can reuse the same puzzle again by clicking on the button in the top-right corner and copying the game code into the activity settings. This will force the activity to create the same puzzle every time. The code for generating new crosswords is not especially fast.</p>
 <h5>Activity settings</h5>
 <ul>
 <li><strong>Color</strong>. There are a number of color themes to choose from.</li>
@@ -155,6 +270,7 @@ If you want to be able to update your package earlier, you should keep a copy of
 <h5>Examples</h5>
 <ul>
 <li>A single-question win-or-lose game.</li>
+<li>The Intern</li>
 </ul>
 <h4>Drill</h4>
 <p>An activity for individual use to start learning vocabulary. In default mode, each piece of vocabulary passes through the following stages: listen and repeat (back-drilling), read and rewrite (back-drilling), read and rewrite, say the world aloud from memory, rewrite from memory. For each item at each stage, the learner can decide to move on to the next step (so long as they have fulfilled the criteria for completion) or review the item again, in which case they will go back up to two stages. Back-drilling happens automatically for phrases; the final word is presented first, following by the final two words and so on until the whole phrase has been built. For words, back-drilling will be used when the words are split up by the activity creator (by default using <strong>/</strong>). The activity uses the speech synthesis of the device it is run on, therefore the appropriate languages must be installed by the learner for this to work correctly. In the fourth column, you can override how the speech synthesis pronounced a word by writing it in whatever way obligates the speech synthesis to say it correctly. To provide a speech synthesis for individual parts, put this in [square brackets], with the same separators as in the Word/Phrase column.</p>
@@ -167,6 +283,46 @@ If you want to be able to update your package earlier, you should keep a copy of
 <ul>
 <li>Debate language (French to English).</li>
 <li>Basic English words.</li>
+</ul>
+<h4>Escape game</h4>
+<p>Create a map for an escape game. This template can either be used for a self-contained activity, or the central part of a multi-activity lesson. Each section on the map contains a question. When the learner inputs the correct section, it is unlocked. When either all the sections are unlocked or when specific sections are locked, the learner win the game. The table for this activity has many columns, most of which are optional. The <strong>section</strong> column accepts text or an image which will be shown on the grid that forms the map, in the order listed (from left to right, top to bottom). The <strong>question</strong> column takes text which will be shown when clicking on the section and the <strong>answer</strong> column  takes the text that the learner must enter in order to complete this section. The optional <strong>req. similarity %</strong> column allows you to customize how precise the learners need to be when typing in their answer (e.g. a similarity of 90 would mean that a ten-word answer would be accepted if just one letter was incorrect). The optional <strong>req. indices</strong> column allows you to specify the index (number shown on the left-hand side of the table) of as many other sections as you wish, which must be completed before this section appears. The optional <strong>completion message</strong> allows you to provide text which will appear in a pop-up message box when completing this section (if blank, no message box will appear). The <strong>unlocked section</strong> column accepts text and images and will be shown in place of whatever is specified in the first column, after the section has been completed. If left blank, the section will remain the same on the map (though there are some effects that can be applied to all completed sections, which can be enabled in the activity settings.) The <strong>hint</strong> column allows you to provide a secondary question to help the learners, which will appear by default after the first attempt, but this can be customised in the activity settings. Finally, all subsequent columns take alternative answers, which will be accepted as the main answer with the same degree of required similarity (if this is provided). This activity includes three examples with pre-configured settings. These could also be used as templates for your own escape game activity.</p>
+<h5>Activity settings</h5>
+<ul>
+<li><strong>Theme</strong>. Pre-fills several other settings to create a coherent theme for a number of presets.</li>
+<li><strong>Background</strong>. Background color or image for the map. Accepts imported images. It is recommended to use SVG if possible and a resolution of 1280x720.</li>
+<li><strong>Color scheme</strong>. Color scheme for user interface.</li>
+<li><strong>Font</strong>. Choice of font face.</li>
+<li><strong>Question box</strong>. Different styles for the question box pop up.</li>
+<li><strong>Load animation</strong>. How elements will appear when opening the map and moving between different sections.</li>
+<li><strong>Hover animation</strong>. Animation for when hovering the mouse over a section.</li>
+<li><strong>Completed section</strong>. How the section will look when the answer has been given. This can be further customised in the optional <em>Unlocked section</em> column in the main grid.</li>
+<li><strong>Width of grid compared to background (%)</strong>. In order to allow for a margin around the edge, this indicates how wide the grid that contains all the sections should be.</li>
+<li>
+<ul>
+<li><strong>Width of grid compared to background (%)</strong>. To alter the height of the grid.</li>
+</ul>
+</li>
+<li><strong>Tint sections with foreground color</strong>. There are two methods of tinting available which can be used to create a more consistent look across the different sections, even if the images used employ different color schemes.</li>
+<li><strong>Number of columns</strong>. How many columns to use in the grid layout of the map. The number of rows is calculated automatically.</li>
+<li><strong>Case sensitive</strong>. If disabled, learners will need to input the answer with the same upper and lower case letters as it is given.</li>
+<li><strong>Default required similarity to accept answer</strong>. If less than 100%, slightly different answers can be accepted. This can be customised per section using the optional columns in the main table.</li>
+<li><strong>Show hint</strong>. When the learners will see any hints (given in an optional column of the main table).</li>
+<li><strong>Unlock all sections to win</strong>. Winning message will be shown only after all sections with questions have been answered.</li>
+<li><strong>Index of section to win</strong>. Learners can win by answering just one question. By filling in the required indices in the optional column for this section, you can ensure that learners have answered some other questions before being able to win.</li>
+<li><strong>Instruction per question</strong>. Customise the wording of the input box for the question box pop-up. In this option, use the wildcards to represent numbers and to form plurals. <strong>%w</strong> stands for the number of words, <strong>%c</strong> stands for the number of characters. <strong>%s[]</strong> is used to signal a plural ending, by default %s[s]. The character(s) in brackets will be shown when the last number in the string is above one. For example, the default “Enter %w word%s[s] (%c character%s[s]).“ will be rendered something like “Enter 1 word (10 characters).” for a single word answer of 10 characters.</li>
+<li><strong>Message box button label</strong>. Customise the wording for this button.</li>
+<li><strong>Question box button label</strong>. Customise the wording for this button.</li>
+<li><strong>Correct answer message</strong>. Customise the wording for when the correct answer is given.</li>
+<li><strong>Acceptable answer message</strong>. Customise the wording for when the answer is accepted due to the <em>required similarity</em> parameter.</li>
+<li><strong>Incorrect answer message</strong>. Customise the wording for when the incorrect answer is given.</li>
+<li><strong>Starting message</strong>. Unless left blank, a message box will appear when opening the map with this text.</li>
+<li><strong>Winning message</strong>. Unless left blank, a message box will appear when completing all sections on the map with this text.</li>
+</ul>
+<h5>Examples</h5>
+<ul>
+<li>Computer-terminal themed Escape Game with questions on the hex application itself.</li>
+<li>Deserted island themed Escape Game with questions about languages from around the world.</li>
+<li>Ancient map themed Escape Game with questions about history.</li>
 </ul>
 <h4>Falling words</h4>
 <p>Questions fall from the top of the screen, the learner must find the answer before they reach the bottom or collides with another question. When the pile of questions reaches the top, the game is over. Both typing and multiple choice modes. Alternative answers can be provided in columns 3 onwards. At the end of the game, learners can click on the fallen questions to see the answer at the bottom of the screen.</p>
@@ -243,7 +399,7 @@ If you want to be able to update your package earlier, you should keep a copy of
 <li>Greetings (formal to informal)</li>
 </ul>
 <h4>Match</h4>
-<p>Match a prompt to an answer by dragging and dropping. It is possible to have a prompt with no answer or an answer with no prompt (i.e. a trap) by leaving one column blank. Twelve prompts or fewer will be shown in a list, whereas longer lists will be displayed in-line for more compact viewing. You can force a list by changing to side-by-side mode.</p>
+<p>Match a prompt to an answer by dragging and dropping. It is possible to have a prompt with no answer or an answer with no prompt (i.e. a trap) by leaving one column blank. Twelve prompts or fewer will be shown in a list, whereas longer lists will be displayed in-line for more compact viewing. You can force a list by changing to side-by-side mode. The prompt can also be an image.</p>
 <h5>Activity settings</h5>
 <ul>
 <li><strong>Color</strong>. There are a number of color themes to choose from.</li>
@@ -271,6 +427,8 @@ If you want to be able to update your package earlier, you should keep a copy of
 <ul>
 <li>British demonyms.</li>
 <li>Emoji.</li>
+<li>Sea creatures.</li>
+<li>Describing graphs.</li>
 </ul>
 <h4>Treasure hunt</h4>
 <p>Each question is displayed individually. To progress to the next question, the learner must type in the answer. The number of words and characters to type in is shown (if an alternative answer is provided, this is given as a range).</p>
@@ -290,6 +448,14 @@ If you want to be able to update your package earlier, you should keep a copy of
 <ul>
 <li>Find three pieces of fruit.</li>
 </ul>
+<h4>Word order</h4>
+<p>The words provided in the <strong>sentence</strong> column will be shown in a random order and the learner will need to organise these to recreate the sentence. There are three optional columns: <strong>prompt</strong> shows some text before the sentence, <strong>clue</strong> appears after (and can be hidden until a condition is met by configuring this in the activity settings), and <strong>traps</strong> adds extra words which should be left out of the sentence.</p>
+<p><strong>Activity settings</strong>
+<strong>Color</strong>. There are a number of color themes available.
+<strong>Clues shown</strong>. When to reveal any clues.
+<strong>Punctuation behavior</strong>. Whether to remove punctuation and restore it when the answer is revealed, keep it attached to the words, or separate it as another element to put in order.
+<strong>Hide sentence initial upper case</strong>. Changes the first letter of a sentence to lower case.
+<strong>Preserve case</strong>.</p>
 <h4>Custom activities</h4>
 <p>See the section on making activities.</p>
 <h2>Custom activity templates</h2>

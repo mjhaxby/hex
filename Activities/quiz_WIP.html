@@ -1,0 +1,445 @@
+<!--*HEX SETTINGS START*
+  {
+    "cols_min":2,
+    "cols_max":2,
+    "rows_min":22,
+    "cols":["Prompt","Answer"],
+    "scorm_support":true,
+    "description": "Two teams race to connect their two sides by winning hexagons. The first team to start goes horizontally (they have further to go), the second team goes vertically. The letters on the board are a the initials of the answer.",
+    "settings":[
+    {"name":"color","label":"Color","type":"select","options":["Swedish furniture company","Black and white","Magnet","Rexby","Blorange"],"category":"look and feel"},
+    {"name":"mainFont","label":"Font","type":"font_family","style":"sans-serif","var":"main-font","category":"look and feel"},
+    {"name":"clueFont","label":"Clue font","type":"font_family","style":"monospace","var":"mono-font","category":"look and feel"},
+    {"name":"soundsEnabled","label":"Sounds","type":"checkbox","default":true,"category":"look and feel"},
+    {"name":"mode","label":"Mode","type":"select","options":["Faith","Typing"],"info":"In faith mode, learners answer outloud the question, then click to reveal the answer and select whether they knew it or not. In typing mode, they must type the answer.","category":"behaviour","dependents":[
+            {"name":"requiredSimilarity","enable":"Typing"}
+        ]},
+    {"name":"requiredSimilarity","label":"Required similarity to accept answer (%)","type":"number","default":90,"min":1,"max":100,"info":"Only for typing mode.","category":"behaviour"},
+    {"name":"showClues","label":"Show clues","type":"checkbox","default":true,"info":"The clues are the initials of the answer.","category":"gameplay"},
+    {"name":"wrongAnsBehav","label":"Wrong answer behaviour","type":"select","options":["Pass to next team","Any team can answer","Question returns to board","Question discarded"],"category":"gameplay"},
+    {"name":"teamBuilder","label":"Show team builder","type":"checkbox","default":false,"info":"Always enabled for SCORM packages.","category":"look and feel"},
+    {"name":"text_newGame", "label":"New game button","type":"text","default":"New game","category":"language"},
+    {"name":"text_startGame", "label":"Start game button", "type":"text","default":"Start game","category":"language"},
+    {"name":"text_showAnswer", "label":"Show answer button","type":"text","default":"Show answer","category":"language"},
+    {"name":"text_correct", "label":"Correct button","type":"text","default":"Correct","category":"language"},
+    {"name":"text_wrong", "label":"Wrong button","type":"text","default":"Wrong","category":"language"}    
+    ]
+  }
+  *HEX SETTINGS END*-->
+<html>
+
+<head>
+  <style>
+    #questionBoard {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      align-content: center;
+      width: 90vw;
+      height: 90vh;
+    }
+
+    .question-card-wrapper {
+      width: 10vw;
+      height: 10vw;
+      margin: 1vw;
+      position: relative;
+      transition: transform 800ms;
+    }
+
+    .centred {
+      position: absolute;
+      transform: translate(-50%, -50%);      
+      left: 50%;
+      top: 50%;
+      z-index: 9999;
+    }
+
+    .inner-card{
+      transform-style: preserve-3d;
+      width: 100%;
+      height: 100%;
+      transition: transform 800ms;
+    }
+
+    .face-down {
+      transform: rotate3d(0, 1, 0, 180deg); /* Flips the card */
+    }
+
+    .face-up {
+      transform: rotate3d(1, -1, 0, 0deg); /* No rotation */
+    }
+
+    .question-card {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 1px solid black;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      justify-items: center;
+      background-color: white;
+      transform-style: preserve-3d;
+      backface-visibility: hidden; /* Hide the back face when not visible */
+      overflow: visible;
+      transition: transform 800ms;
+    }
+
+    .front {
+      transform: rotate3d(0, 1, 0, 0deg) translate(-50%, -50%) scale(100%); /* Front face is not rotated */
+      width: 400%;
+      height: 400%;
+    }
+
+    .face-down .front{
+      transform: rotate3d(0, 1, 0, 0deg) translate(-50%, -50%) scale(25%); /* Front face is not rotated */
+    }
+
+    .back{
+      transform: rotate3d(0, 1, 0, 180deg); /* Back face is rotated 180 degrees */
+    }
+
+
+    /* .face-down .back,
+    .face-up .front {
+      opacity: 1;
+    }
+
+    .face-down .front,
+    .face-up .back {
+      opacity: 0;
+    } */
+
+    .noanimation {
+      transition: all 0s !important;
+    }
+  </style>
+  <script>
+    var questions = []
+    var teams = []
+    var numQuestionCards
+
+    var animationMoveHolder = {}
+
+
+    function Team(id, name, players = []) {
+      this.id = id
+      this.name = name
+      this.players = players
+      this.score = 0
+      this.money = 0
+    }
+
+    function QuizQuestion(id, data) {
+      this.id = id
+      this.question = data[0]
+      this.answers = []
+      for (let i = 1; i < data.length; i++) {
+        this.answers.push(data[i])
+      }
+      this.answered = false
+      this.clue = getInitials(this.answers[0])
+      this.num = null // number according to order the question card is shown by (as opposed to its id)
+      this.el
+      this.backEl = null // HTML element
+      this.frontEl
+
+      this.makeHTML = function (num) {
+        let back = this.makeCardBack(num)
+        let front = this.makeCardFront(num)
+        let inner = newElement('div', {class: 'inner-card face-down', id: 'innerCard_'+id})
+        this.el = newElement('div', { class: 'question-card-wrapper', id: 'questionCardWrapper_' + id })
+        inner.appendChildren([front, back])
+        this.el.appendChild(inner)
+        return this.el
+      }
+
+      this.makeCardBack = function (num) {
+        this.backEl = newElement('div', { class: 'question-card back', id: 'questionBack_' + this.id, onclick: `questions[${this.id}].showQuestion()` }, gameSettings.showClues ? this.clue : num)
+        this.num = num
+        return this.backEl
+      }
+
+      this.makeCardFront = function (num) {
+        this.frontEl = newElement('div', { class: 'question-card front', id: 'questionFront_' + this.id,onclick: `questions[${this.id}].hideQuestion()` })
+        let clue = newElement('div', { class: 'question-card-header' }, gameSettings.showClues ? this.clue : num)
+        let questionText = newElement('div', { class: 'question-text' }, this.question)
+        let answerArea = makeAnswerArea(this.id) // TO DO: put the answer box here OR multiple choice buttons OR show answer button according to mode
+        this.frontEl.appendChildren([clue, questionText, answerArea])        
+        return this.frontEl
+      }
+
+      let makeAnswerArea = function(id) {
+            var answerArea = newElement('div',{class: 'answer-area'})
+            if (gameSettings.mode.toLowerCase() == 'typing') {
+                let answerInput = newElement('input',{id: 'answerInput',onkeydown: 'inputKeyPress(event,this)'})
+                let OKbtn = newElement('button',{class: 'ok-button',onclick: `checkAnswer(${id})`},icons.ok)                                                // 
+                answerArea.appendChildren(answerInput,OKbtn)
+            } else {
+                let showAnswerBtn = newElement('button',{class:'show-answer-button',onclick: },gameSettings.text_showAnswer)                
+                showAnswerBtn.setAttribute('onclick', `showAnswer(${id})`)
+                answerArea.appendChild(showAnswerBtn)
+            }
+        }
+
+      this.showQuestion = function () {
+        let allCards = Array.from(document.querySelectorAll('.question-card-wrapper'))
+        let inner = this.el.firstChild
+        let wrapper = this.el
+        allCards.forEach(card =>{
+          animateMoveElementPrepare(card)   // the wrappers     
+        })
+        wrapper.classList.add('centred')  
+        setTimeout(function(){
+          allCards.forEach(card =>{
+            animateMoveElementToNewPosition(card,false)   // the wrappers     
+            // animateMoveElementToNewPosition(wrapper)    
+          })
+          inner.classList.remove('face-down')
+          inner.classList.add('face-up')
+        },10)
+ 
+        
+      }
+
+      // merge with the above function? they're pretty similar
+      this.hideQuestion = function (){
+        let allCards = Array.from(document.querySelectorAll('.question-card-wrapper'))
+        let inner = this.el.firstChild
+        let wrapper = this.el
+        allCards.forEach(card =>{
+          animateMoveElementPrepare(card)   // the wrappers     
+        })
+        wrapper.classList.remove('centred')  
+        setTimeout(function(){
+          allCards.forEach(card =>{
+            animateMoveElementToNewPosition(card,(card.id == wrapper.id))   // keep on top for the one being hidden            
+          })
+          inner.classList.add('face-down')
+          inner.classList.remove('face-up')
+        },10)
+      }
+    }
+
+    function pageLoad() {
+      let questionBoard = document.getElementById('questionBoard')
+
+      gameData.forEach((line, index) => {
+        questions.push(new QuizQuestion(index, line))
+      })
+
+      // will actually need to do team builder first
+      //questions.shuffle() // TO DO: don't do this, but pick out random twelve into a new array
+      for (let i = 0; i < 12; i++) { // change to user-specified num questions (in team builder) 
+        questionBoard.appendChild(questions[i].makeHTML(i + 1))
+      }
+    }
+
+    function getInitials(s) {
+      // anything that is written in brackets we will just discard
+      var withoutBrackets = s.replace(/\(.+\)/g, "");
+      // if any of the words in the string have puncutation in front of them, we don't want that (most likely brackets, but we'll cover all just in case)
+      var punctuationless = withoutBrackets.replace(/[.,\/#!$%\^&\*;:{}=\-_`~]/g, " "); // put in a space (seperate out hyphenated words)
+      var finalString = punctuationless.replace(/\s{2,}/g, " ");
+      if (finalString == '' || /^\s+$/.test(finalString)) { // just in case there is nothing left! (or nothing but whitespace)
+        return ('?'); // give them something to work with
+      };
+      var words = finalString.split(' ');
+      var initials = '';
+      for (i = 0; i < words.length; i++) {
+        initials = initials + words[i].charAt(0);
+      };
+      return initials.toUpperCase()
+
+    }
+
+    function elementPosition(element) {
+      let rect = element.getBoundingClientRect()
+      return { x: rect.x + window.scrollX, y: rect.y + window.scrollY }
+    }
+
+    function getCalculatedSizeWithoutPadding(element) {
+      var cs = getComputedStyle(element);
+
+      var paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      var paddingY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+
+      var borderX = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+      var borderY = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+
+      // Element width and height minus padding and border
+      elementWidth = element.offsetWidth - paddingX - borderX;
+      elementHeight = element.offsetHeight - paddingY - borderY;
+      var output = new Object();
+      output = { width: elementWidth, height: elementHeight }
+      return output
+    }
+
+    function animateMoveElementPrepare(el, opacity = false) {
+      animationMoveHolder[el.id] = elementPosition(el)
+      if (opacity) {
+        el.style.display = 'inline-block'
+      }
+      // console.log(animationMoveHolder[el.id])
+    }
+
+    function animateMoveElementToNewPosition(element, aboveAll = true) { 
+      // get original transforms
+      // const currentTransform = window.getComputedStyle(element).transform.replace(/translate\([\d,%A-z]\)/,'')
+      // Calculate the differences
+      let originalPosition = animationMoveHolder[element.id]
+      if (originalPosition) {
+        let newPosition = elementPosition(element)
+        let deltaX = originalPosition.x - newPosition.x; // Δx = x2 - x1
+        let deltaY = originalPosition.y - newPosition.y; // Δy = y2 - y1            
+
+        // Apply the transform to an element
+        element.classList.add('noanimation')        
+        element.style.transform = `translate(${deltaX}px, ${deltaY}px)`;        
+
+        if (aboveAll) {
+          element.style.zIndex = '999'
+        }
+        element.offsetWidth // recalculate positions
+        // remove transform (and opacity) to element after short delay        
+        setTimeout(function () {
+          element.classList.remove('noanimation')
+          element.style.transform = null
+          setTimeout(function () {
+            //cancel any temporary changes
+            element.style.zIndex = null
+            element.style.display = null
+            element.style.transform = null
+            element.style.pointerEvents = null
+            delete animationMoveHolder[element.id]
+          }, 800)
+        }, 50)
+      }
+    }
+
+    function newElement(tag, properties = {}, innerHTML = '') {
+      let el = document.createElement(tag)
+      for (const property in properties) {
+        let propertyName = property.replaceAll(/([A-Z])/g, '-$1').toLowerCase() // change camel case to - seperation
+        el.setAttribute(propertyName, properties[property])
+      }
+      if (typeof innerHTML == 'string') {
+        el.innerHTML = innerHTML
+      } else {
+        el.appendChild(innerHTML)
+      }
+      return el
+    }
+
+    function isElement(obj) { // from https://stackoverflow.com/questions/384286/how-do-you-check-if-a-javascript-object-is-a-dom-object
+      try {
+        //Using W3 DOM2 (works for FF, Opera and Chrome)
+        return obj instanceof HTMLElement;
+      }
+      catch (e) {
+        //Browsers not supporting W3 DOM2 don't have HTMLElement and
+        //an exception is thrown and we end up here. Testing some
+        //properties that all elements have (works on IE7)
+        return (typeof obj === "object") &&
+          (obj.nodeType === 1) && (typeof obj.style === "object") &&
+          (typeof obj.ownerDocument === "object");
+      }
+    }
+
+    // TO DO: check… guessing a bit here
+    Element.prototype.appendChildren = function (children = []) {
+      try {
+        if (!Array.isArray(children)) {
+          throw 'Must be array of DOM elements (not array)'
+        }
+        children.forEach((child, index) => {
+          if (isElement(child)) {
+            this.appendChild(child)
+          } else {
+            throw `Must be array of DOM elements (index ${index} is not DOM)`
+          }
+        })
+        return this
+      } catch (err) {
+        console.error(err)
+        return this
+      }
+    }
+
+    Array.prototype.shuffle = function () {
+      let currentIndex = this.length, randomIndex;
+
+      // While there remain elements to shuffle.
+      while (currentIndex > 0) {
+
+        // Pick a remaining element.
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+
+        // And swap it with the current element.
+        [this[currentIndex], this[randomIndex]] = [
+          this[randomIndex], this[currentIndex]];
+      }
+      return this
+    }
+  </script>
+  <script>
+    const gameData = [["Albania", "Tirana"],
+    ["Andorra", "Andorra la Vella"],
+    ["Austria", "Vienna"],
+    ["Belarus", "Minsk"],
+    ["Belgium", "Brussels"],
+    ["Bosnia and Herzegovina", "Sarajevo"],
+    ["Bulgaria", "Sofia"],
+    ["Croatia", "Zagreb"],
+    ["Czechia", "Prague"],
+    ["Denmark", "Copenhagen"],
+    ["Estonia", "Tallinn"],
+    ["Finland", "Helsinki"],
+    ["France", "Paris"],
+    ["Germany", "Berlin"],
+    ["Greece", "Athens"],
+    ["Hungary", "Budapest"],
+    ["Iceland", "Reykjavik"],
+    ["Ireland", "Dublin"],
+    ["Italy", "Rome"],
+    ["Latvia", "Riga"],
+    ["Liechtenstein", "Vaduz"],
+    ["Lithuania", "Vilnius"],
+    ["Luxembourg", "Luxembourg"],
+    ["Malta", "Valletta"],
+    ["Moldova", "Chisinau"],
+    ["Monaco", "Monaco"],
+    ["Montenegro", "Podgorica"],
+    ["Netherlands", "Amsterdam"],
+    ["North Macedonia", "Skopje"],
+    ["Norway", "Oslo"],
+    ["Poland", "Warsaw"],
+    ["Portugal", "Lisbon"],
+    ["Romania", "Bucharest"],
+    ["Russia", "Moscow"],
+    ["San Marino", "San Marino"],
+    ["Serbia", "Belgrade"],
+    ["Slovakia", "Bratislava"],
+    ["Slovenia", "Ljubljana"],
+    ["Spain", "Madrid"],
+    ["Sweden", "Stockholm"],
+    ["Switzerland", "Bern"],
+    ["Ukraine", "Kiev"],
+    ["United Kingdom", "London"]]
+    const gameSettings = { showClues: true }
+  </script>
+</head>
+
+<body onload="pageLoad()">
+  <div id="teamBuilder"></div>
+  <div id="questionBoard"></div>
+</body>
+
+</html>
