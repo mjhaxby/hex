@@ -90,7 +90,7 @@ textarea {
   overflow: auto;
 }
 
-input[type='text'], [type='email'], [type='number'], select, textarea {
+input[type='text'], input[type='email'], input[type='number'], input[type='datetime-local'], select, textarea {
   background: none;
   border: none;
   border-bottom: solid 2px var(--fg-color-shade2);
@@ -210,7 +210,7 @@ tr:hover .dataCell.selected{
   background-color: var(--fg-color-shade3);
 }
 
-input[type='text'].invalid{
+input.invalid{
   border-bottom: solid 2px #cc6d3d;
 }
 
@@ -219,7 +219,7 @@ input[type='text'].invalid{
   color: var(--bg-color);
 }
 
-input[type='text'].selected{
+.selected input{
   border-bottom: solid 2px var(--bg-color);
   color: var(--bg-color);
 }

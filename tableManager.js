@@ -131,13 +131,14 @@ function clearTable(){
 
 function clearCell(dataCell){
   dataCell.children[0].value = '' //inputCellText
-  dataCell.children[2].innerHTML = '' //inputCellFile
-  dataCell.children[2].classList.add('hidden')  //inputCellFile
+  dataCell.children[1].value = '' //inputCellDaeTime
+  dataCell.children[3].innerHTML = '' //inputCellFile
+  dataCell.children[3].classList.add('hidden')  //inputCellFile
   dataCell.classList.remove('withPreview')
   // also revert to normal view:
   dataCell.classList.remove('expanded')
   dataCell.children[0].classList.remove('hidden')
-  dataCell.children[1].classList.add('hidden')
+  dataCell.children[2].classList.add('hidden')
 }
 
 function clearUnusedRowsFromEnd(){
@@ -190,10 +191,12 @@ function renumberRow(oldNum,newNum){
     row.children[i].children[0].setAttribute('data-row', newNum)
     if (row.children[i].children.length > 1){
       row.children[i].children[0].id = 'inputCellText_' + newNum + '_' + i
-      row.children[i].children[1].id = 'inputCellExtension_' + newNum + '_' + i
-      row.children[i].children[1].children[0].id = 'inputCellTextMirror_' + newNum + '_' + i
-      row.children[i].children[1].children[1].id = 'inputCellImageSelector_' + newNum + '_' + i
-      row.children[i].children[2].id = 'inputCellFile_' + newNum + '_' + i
+      row.children[i].children[1].id = 'inputCellDateTime_' + newNum + '_' + i
+      row.children[i].children[1].setAttribute('data-row', newNum)
+      row.children[i].children[2].id = 'inputCellExtension_' + newNum + '_' + i
+      row.children[i].children[2].children[0].id = 'inputCellTextMirror_' + newNum + '_' + i
+      row.children[i].children[2].children[1].id = 'inputCellImageSelector_' + newNum + '_' + i
+      row.children[i].children[3].id = 'inputCellFile_' + newNum + '_' + i
 
     }
   }
@@ -205,10 +208,12 @@ function renumberCol(row,oldNum,newNum){
   updateCell.setAttribute('id','dataCell_'+row+'_'+newNum)
   updateCell.children[0].setAttribute('id','inputCellText_'+row+'_'+newNum)
   updateCell.children[0].setAttribute('data-col', newNum)
-  updateCell.children[1].setAttribute('id',`inputCellExtension_${row}_${newNum}`)
-  updateCell.children[1].children[0].setAttribute('id',`inputCellTextMirror_${row}_${newNum}`)
-  updateCell.children[1].children[1].setAttribute('id',`inputCellImageSelector_${row}_${newNum}`)
-  updateCell.children[2].setAttribute('id',`inputCellFile_${row}_${newNum}`)
+  updateCell.children[1].setAttribute('id', `inputCellDateTime_${row}_${newNum}`)
+  updateCell.children[1].setAttribute('data-col', newNum)
+  updateCell.children[2].setAttribute('id',`inputCellExtension_${row}_${newNum}`)
+  updateCell.children[2].children[0].setAttribute('id',`inputCellTextMirror_${row}_${newNum}`)
+  updateCell.children[2].children[1].setAttribute('id',`inputCellImageSelector_${row}_${newNum}`)
+  updateCell.children[3].setAttribute('id',`inputCellFile_${row}_${newNum}`)
   // updateCell.children[0].setAttribute('onkeydown','inputCellTextKey(event, '+row+', '+newNum+')')
   // updateCell.children[0].setAttribute('onpaste','pasteInData(event, '+row+', '+newNum+')')
 }
@@ -351,7 +356,8 @@ function rowControls(row){
 
 function tableData(row, col){
   var result = newElement('td',{id: 'dataCell_'+row+'_'+col, class: 'dataCell', dataCellRow: row, dataCellCol: col, ondrop:"dropHandler(this, event)", ondragover: 'dragOverHandler(this, event)', ondragleave: 'dragLeaveHandler(this, event)'})
-  result.appendChild(inputCellText(row, col))
+  result.appendChild(inputCellText(row, col))    
+  result.appendChild(inputCellDateTime(row, col))
   result.appendChild(inputCellExtension(row,col))
   result.appendChild(inputCellFile(row,col))
   result.appendChild(inputCellMore(row, col))
@@ -370,9 +376,27 @@ function inputCellText(row, col){
     onchange: 'updateHoverAndView(this)',
     onpaste: 'pasteInData(event,parseInt(this.getAttribute(\'data-row\')),parseInt(this.getAttribute(\'data-col\')))'
   })
+  if(!colAcceptsDataType(col,'text')){
+    result.classList.add('hidden')
+  }
   // old version:
   // var result = '<input id="inputCellText_'+row+'_'+col+'" data-row='+row+' data-col='+col+' class="inputCellText" type="text" onkeydown="inputCellTextKey(event, parseInt(this.getAttribute(\'data-row\')), parseInt(this.getAttribute(\'data-col\')))" onchange="updateHoverAndView(this)" onpaste="pasteInData(event,parseInt(this.getAttribute(\'data-row\')), parseInt(this.getAttribute(\'data-col\')))">';
   return result;
+}
+
+function inputCellDateTime(row,col){
+  let result = newElement('input', properties = {
+    id: `inputCellDateTime_${row}_${col}`,
+    dateRow: row,
+    dataCol: col,
+    class: 'inputCellDateTime',
+    type: 'datetime-local',    
+  })
+  if(!colAcceptsDataType(col,'datetime')){
+    result.classList.add('hidden')
+  }
+  return result
+  // TO DO: include timezone? would need to be separate control, could be hidden by default (and just set to user's timezone)
 }
 
 function inputCellFile(row,col){
@@ -414,11 +438,12 @@ function inputCellImageSelector(row,col){
 }
 
 // check data types for all columns, then enable or disable accordingly
-// for now this only does anything for images
+// for now this only does anything for images + datetime
 function checkDataTypeCols(){
   for (let r = 1; r <= numRows; r++){
     for (let c = 1; c <= numCols; c++){
       enableDisableImageElements(r,c)
+      showHideDateTimeElements(r,c)
     }
   }
 }
@@ -434,14 +459,23 @@ function enableDisableImageElements(row,col){
   }
 }
 
+function showHideDateTimeElements(row,col){
+  if (colAcceptsDataType(col,'datetime')){
+    document.getElementById(`inputCellDateTime_${row}_${col}`).classList.remove('hidden')
+  } else {
+    document.getElementById(`inputCellDateTime_${row}_${col}`).classList.add('hidden')
+  }
+}
+
 // check whether column accepts a data type
-function colAcceptsDataType(col,types){
+function colAcceptsDataType(col,types){  
   if(typeof types == 'string'){
     types = [types]
   }
   let result = false
   types.forEach(type =>{
-    if(prefsStore.hasOwnProperty('cols') && prefsStore.cols.length >= col && prefsStore.cols[col-1][type]){
+    if((type == 'text' && (!prefsStore.hasOwnProperty('cols') || (prefsStore.hasOwnProperty('cols') && prefsStore.cols.length < col))) // text is treated specially and assumed accepted
+      || (prefsStore.hasOwnProperty('cols') && prefsStore.cols.length >= col && prefsStore.cols[col-1][type])){ // all others checked against rules
       result = true
     } else {
       result = false
@@ -686,6 +720,7 @@ function handleCopyWithSelection(e){
     for (let i=0; i<selection.row.length; i++){
       for (let col=1; col<=numCols; col++){
         toCopy += document.getElementById('inputCellText_'+selection.row[i]+'_'+col).value + '\t'
+        // TODO: Date Time
       }
       toCopy = toCopy.trim()
       toCopy += '\n'
@@ -744,9 +779,9 @@ function updateAppearanceForSelection(key,value){
         selectArea.classList.add('selected')
         for (let j=1; j<=numRows; j++){
           cell = document.getElementById('dataCell_'+j+'_'+value[i])
-          input = document.getElementById('inputCellText_'+j+'_'+value[i])
+          // input = document.getElementById('inputCellText_'+j+'_'+value[i])
           cell.classList.add('selected')
-          input.classList.add('selected')
+          // input.classList.add('selected')
         }
       }
     } else if (key == 'row') {
@@ -757,9 +792,9 @@ function updateAppearanceForSelection(key,value){
         // header.classList.add('selected')
         for (let j=1; j<=numCols; j++){
           cell = document.getElementById('dataCell_'+value[i]+'_'+j)
-          input = document.getElementById('inputCellText_'+value[i]+'_'+j)
+          // input = document.getElementById('inputCellText_'+value[i]+'_'+j)
           cell.classList.add('selected')
-          input.classList.add('selected')
+          // input.classList.add('selected')
         }
       }
     }
@@ -777,26 +812,26 @@ function updateAppearanceForUnused(){
     currentUnused[i].classList.remove('unused')
   }
   if (prefsStore.hasOwnProperty('cols_max') && numCols > prefsStore.cols_max){
-    var colName
-    var inputCellText
+    let colName
+    let dataCell
     for (let col = prefsStore.cols_max+1; col<=numCols; col++){
       colName = document.getElementById('colName_'+col)
       colName.classList.add('unused')
       for (let row = 1; row <= numRows; row++){
-        inputCellText = document.getElementById('inputCellText_'+row+'_'+col)
-        inputCellText.classList.add('unused')
+        dataCell = document.getElementById('dataCell_'+row+'_'+col)
+        dataCell.classList.add('unused')
       }
     }
   }
   if (prefsStore.hasOwnProperty('rows_max') && numRows > prefsStore.rows_max){
-    var rowNumber
-    var inputBox
+    let rowNumber
+    let dataCell
     for (let row = prefsStore.rows_max+1; row<=numRows; row++){
       rowNumber = document.getElementById('rowNum_'+row)
       rowNumber.classList.add('unused')
       for (let col = 1; col <= numCols; col++){
-        inputCellText = document.getElementById('inputCellText_'+row+'_'+col)
-        inputCellText.classList.add('unused')
+        dataCell = document.getElementById('dataCell_'+row+'_'+col)
+        dataCell.classList.add('unused')
       }
     }
   }
@@ -812,6 +847,14 @@ function swapData(col1, col2) {
     let cell2Hold = cell2.value
     cell1.value = cell2Hold
     cell2.value = cell1Hold
+
+    // swap datetime values
+    let date1 = document.getElementById('inputCellDateTime_' + row + '_' + col1)
+    let date2 = document.getElementById('inputCellDateTime_' + row + '_' + col2)
+    let date1Hold = date1.value
+    let date2Hold = date2.value
+    date1.value = date2Hold
+    date2.value = date1Hold
 
     // swap files
     let file1 = document.getElementById('inputCellFile_' + row + '_' + col1)
@@ -1126,7 +1169,7 @@ function convertArrayToTableData(array, startRow = 1, startCol = 1){
   }
 }
 
-function convertTableDataToArray(startRow = 1, startCol = 1, endRow = numRows, endCol = numCols, santizeHTML=false, includeFiles = true){
+function convertTableDataToArray(startRow = 1, startCol = 1, endRow = numRows, endCol = numCols, santizeHTML=false, includeAllDataTypes = true){
   var rowsArray = []
   var colsArray = []
   for (let row=startRow; row<=endRow; row++){
@@ -1139,8 +1182,9 @@ function convertTableDataToArray(startRow = 1, startCol = 1, endRow = numRows, e
       }
 
       // transform cell from string to object if we're expecting files alongside text
-      if(includeFiles && (colAcceptsDataType(col, ['image'] || colAcceptsDataType(col, ['sound'])))){ // add new file types here if relevant
+      if(includeAllDataTypes && (colAcceptsDataType(col, ['image']) || colAcceptsDataType(col, ['sound']) || colAcceptsDataType(col, ['datetime']))){ // add new file types here if relevant
         cell = {text: cell}
+        
         // add properties for all relevant file types (these will be left null if no file has been added)
         for (const type in prefsStore.cols[col]) {
           if (prefsStore.cols[col][type] && type != 'text' && type != 'title') { // skip text (already added) and title (not necessary)
@@ -1154,6 +1198,10 @@ function convertTableDataToArray(startRow = 1, startCol = 1, endRow = numRows, e
             cell[type] = files[type]
           }
         }        
+        // get any datetimes
+        if (colAcceptsDataType(col, ['datetime'])){
+          cell.datetime = document.getElementById('inputCellDateTime_'+row+'_'+col).value
+        }
       }
 
       colsArray.push(cell)
@@ -1163,7 +1211,7 @@ function convertTableDataToArray(startRow = 1, startCol = 1, endRow = numRows, e
   return rowsArray
 }
 
-function convertTableToTrimmedArray(santizeHTML=false,includeFiles=false){
+function convertTableToTrimmedArray(santizeHTML=false,includeAllDataTypes=false){
   var endRow = numRows
   var endCol = numCols
   var inputArray = []
@@ -1175,7 +1223,7 @@ function convertTableToTrimmedArray(santizeHTML=false,includeFiles=false){
   if (prefsStore.hasOwnProperty('cols_max') && prefsStore.cols_max < numCols){
     endCol = prefsStore.cols_max
   }
-   inputArray = convertTableDataToArray(1,1,endRow,endCol,true,includeFiles)
+   inputArray = convertTableDataToArray(1,1,endRow,endCol,true,includeAllDataTypes)
 
    // get rid of trailing empty rows (don't bother with the first row, so as to not risk passing something empty)
    for (let row = inputArray.length-1; row>0; row--){     
@@ -1201,7 +1249,7 @@ function convertTableDataToBlock(){
   }
   for (let row=1; row<=furthestRow; row++){
     for (let col=1; col<=furthestCol; col++){
-      textBlock += document.getElementById('inputCellText_'+row+'_'+col).value
+      textBlock += document.getElementById('inputCellText_'+row+'_'+col).value // TO DO: datetime (include datetime if shown, don't include text if hidden)
       textBlock += '\t'
     }
     textBlock = textBlock.trim()

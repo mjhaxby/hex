@@ -13,7 +13,12 @@
       ]},
       {"name":"maxCards","label":"Maximum cards at once","type":"number","min":0,"default":0,"info":"Set to 0 for no limit. Set to 1 to simplify controls."},
       {"name":"discardStyle","label":"Discard style","type":"select","options":["Trash","OK (both sides)", "OK (front only)", "OK (back only)", "None"],"info":"Alters the icons and animations. Use trash for when discarding is simply to remove the card from the game. Use OK when discarding signifies that the card has been ‘complete’, which can be set for only one side of the card."},
-      {"name":"autoDeal","label":"Deal cards","type":"checkbox","default":false,"info":"Cards are dealt automatically when discarding."}
+      {"name":"autoDeal","label":"Deal cards","type":"checkbox","default":false,"info":"Cards are dealt automatically when discarding."},
+      {"name":"dealOnLoad","label":"Deal cards on load","type":"select","options":["Off","All","Exactly…"],"dependents":[
+        {"name":"cardsToDeal","enable":"Exactly…"}
+      ]},
+      {"name":"cardsToDeal","label":"Cards to deal on load","type":"number","min":1,"default":1}
+
     ],
     "sample_datas":[
         [["bricklayer","JOBS"],["architect","JOBS"],["chef","JOBS"],["intern","JOBS"],["cook","JOBS"],["pet sitter","JOBS"],["security guard","JOBS"],["paramedic","JOBS"],["undertaker","JOBS"],["baby sitter","JOBS"],["surgeon","JOBS"],["engineer","JOBS"],["fishmonger","JOBS"],["baker","JOBS"],["nurse","JOBS"],["barista","JOBS"],["sales assistant","JOBS"],["plumber","JOBS"],["lawyer","JOBS"],["firefighter","JOBS"]],
@@ -187,6 +192,15 @@
 
             checkBottom()
             enableControls()
+
+            if(mode == 'free' && gameSettings.dealOnLoad != 'Off'){
+                if(gameSettings.dealOnLoad == 'All'){
+                    dealCards(deck.length)
+                } else {
+                    dealCards(gameSettings.cardsToDeal)
+                }
+            }
+
             stats.update()
         }
 

@@ -395,6 +395,7 @@ Match a prompt to an answer by dragging and dropping. It is possible to have a p
 
 ##### Activity settings
 - **Color**. There are a number of color themes to choose from.
+- **Font**. Change font family.
 - **Font size (%)**. Increase or decrease the font size compared to the default.
 - **Default view mode**. Top And Bottom or Side-By-Side. In the default mode, the bank of answers is shown at the top of the screen. In Side-By-Side mode the words are shown on the side and remain there even as the user scrolls down.
 - **Allow user to switch view mode**. When enabled, the learner can choose between Top And Bottom or Side-By-Side.

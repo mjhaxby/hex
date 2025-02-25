@@ -1,6 +1,6 @@
 {
   "name": "hex",
-  "version": "3.4.2-alpha",
+  "version": "3.4.4",
   "description": "Learning activity creator.",
   "main": "main.js",
   "scripts": {
@@ -19,8 +19,8 @@
   "homepage": "https://github.com/mjhaxby/hex",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^28.2.1",
-    "electron-packager": "^17.1.2"
+    "@electron/packager": "^18.3.5",
+    "electron": "^33.0.2"
   },
   "fontend": {
     "config": {
@@ -33,7 +33,6 @@
     "buffer-image-size": "^0.6.4",
     "electron-context-menu": "^3.6.1",
     "electron-default-menu": "^1.0.2",
-    "electron-request": "^1.8.1",
     "image-size": "^1.1.1",
     "octokit": "^3.1.2",
     "showdown": "^2.1.0"

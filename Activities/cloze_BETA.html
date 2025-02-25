@@ -15,7 +15,7 @@
       {"name":"bank","label":"Drag-and-drop bank","type":"select","options":["Whole activity","Per line"],"optionValues":["activity","line"],"category":"behavior"},
       {"name":"infiniteBank","label":"Items in bank can be reused","type":"checkbox","default":false,"info":"If enabled, each item in the bank is unique, but can be reused.","category":"behavior"},
       {"name":"shuffleMulti","label":"Shuffle multiple choice items","type":"checkbox","default":true,"info":"If enabled, multiple choice dropdown items will be in a random order.","category":"behavior"},
-      {"name":"multiChoiceType","label":"Multiple choice type","type":"select","options":["Drop-down","Vertical radio","Horizontal radio"],"optionValues":["dropdown","vertical","horizontal"]}
+      {"name":"multiChoiceType","label":"Multiple choice type","type":"select","options":["Drop-down","Vertical radio","Horizontal radio"],"optionValues":["dropdown","vertical","horizontal"],"category":"behavior"},
       {"name":"lockCorrect","label":"Lock correct answers","type":"checkbox","default":true,"info":"If enabled, learners cannot change an answer once it has been marked correct.","category":"behavior"},
       {"name":"minAttempts","label":"Minimum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to show the “show answers” button after a number of attempts.","category":"behavior"},
       {"name":"maxAttempts","label":"Maximum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to prevent answers after a number of attempts.","category":"behavior"},
@@ -148,27 +148,41 @@
             for (let j = 0; j < progress[i].length; j++){
                 clozeEl = document.getElementById(`cloze_${i}_${j}`)
                 if (clozeEl){
-                    if(clozeEl.classList.contains('cloze-space')){
-                        let currentBank
-                        if (gameSettings.bank == 'activity'){
-                            currentBank = bank
-                        } else if (gameSettings.bank == 'line'){
-                            currentBank = document.getElementById(`lineBank_${i}`)
-                        }
-                        let dragCloze = currentBank.querySelector(`[data-value="${progress[i][j]}"]`)
-                        if (dragCloze){
-                            addClozeDragToSpace(dragCloze,clozeEl,true)
-                        }
-                    } else {
-                        clozeEl.value = progress[i][j]
-                        resizeInputToContent(clozeEl)
-                    }
+                    setClozeElValue(i,j,progress[i][j],clozeEl)
                 }
             }
         }
       }
 
+      function setClozeElValue(clozeID,lineID,value,clozeEl=null){
+        if(!clozeEl){
+            clozeEl = document.getElementById(`cloze_${lineID}_${clozeID}`)
+        }
+        if(clozeEl.classList.contains('cloze-space')){
+            let currentBank
+            if (gameSettings.bank == 'activity'){
+                currentBank = bank
+            } else if (gameSettings.bank == 'line'){
+                currentBank = document.getElementById(`lineBank_${lineID}`)
+            }
+            let dragCloze = currentBank.querySelector(`[data-value="${value}"]`)
+            if (dragCloze){
+                addClozeDragToSpace(dragCloze,clozeEl,true,true)
+            }
+        } else if (clozeEl.classList.contains('radio')) {
+            let radio = clozeEl.querySelector(`[value="${value}"]`)           
+            if(radio){
+                radio.checked = true
+            }
+            answerChanged(radio,clozeID,lineID,false,true)
+        } else {
+            clozeEl.value = value
+            resizeInputToContent(clozeEl)
+        }
+      }
+
       function answerChanged(clozeEl,lineID,clozeID,resize=false,radio=false){
+        // console.log(`Answer for ${clozeEl.id} changed to ${clozeEl.value}`)
         if(resize){
             resizeInputToContent(clozeEl)
         }
@@ -676,7 +690,7 @@
                                             }
                                         }                                    
                                     }
-                                    addClozeDragToSpace(clozeDrag,clozeEl,true)
+                                    addClozeDragToSpace(clozeDrag,clozeEl,true,true)
                                 }
                             } else if (cloze.type == 'typing') {
                                 if(cloze.answers.length > 2){
@@ -694,7 +708,13 @@
                                 }
                                  
                                 resizeInputToContent(clozeEl)
-                            } else {
+                            } else if (cloze.type == 'multi' && gameSettings.multiChoiceType != 'dropdown') {
+                                let radio = clozeEl.querySelector(`[value="${cloze.answers[0]}"]`) // find the radio button with the answer
+                                if(radio){
+                                    radio.checked = true
+                                }
+                                answerChanged(radio,lineID,clozeID,false,true)
+                            } else { // multiple choice (dropdown mode)                            
                                 clozeEl.value = cloze.answers[0]
                                 resizeInputToContent(clozeEl)
                             }
@@ -1452,7 +1472,7 @@
         }
     }
 
-    function addClozeDragToSpace(clozeDrag,space,setSizeOfSpace=false){
+    function addClozeDragToSpace(clozeDrag,space,setSizeOfSpace=false,clone=false){
         let draggingSize = getCalculatedSizeWithoutPadding(clozeDrag)
         clozeDrag.style.width = (draggingSize.width + 0.5) + 'px'; // fix width temporarily
         clozeDrag.style.height = draggingSize.height + 'px'; // fix height temporarily
@@ -1471,10 +1491,17 @@
 
         space.classList.add('filled')
         space.classList.remove('hovered')
-        space.appendChild(clozeDrag)
+        if(clone){
+            let cloneDrag = clozeDrag.cloneNode(true)
+            space.appendChild(cloneDrag)
+            cloneDrag.classList.add('exdragable')
+            cloneDrag.classList.remove('dragable')
+        } else {
+            space.appendChild(clozeDrag)
+            clozeDrag.classList.add('exdragable')
+            clozeDrag.classList.remove('dragable')
+        }
         space.value = clozeDrag.innerHTML // assign value of space to the word
-        clozeDrag.classList.add('exdragable')
-        clozeDrag.classList.remove('dragable')
 
         lineID = space.getAttribute('data-line')
         clozeID = space.getAttribute('data-cloze')
@@ -2289,14 +2316,6 @@ function unpinBank(btn){
         transform: translate(-50%,-50%) scale(150%);
     }
 
-    .correct input[type=radio]:checked{
-        background-color: var(--correct-bg);            
-    }
-
-    .correct input[type=radio]:checked::after{
-        background-color: var(--correct-fg);    
-    }
-
 
     button {
         background-color: var(--button-bg);
@@ -2586,13 +2605,17 @@ function unpinBank(btn){
         opacity: 1;
     }
 
-    .correct, .locked.correct, .locked .correct{
+    .correct, .locked.correct, .locked .correct, .correct input[type=radio]:checked, .locked .correct input[type=radio]:checked{
         background-color: var(--correct-bg);   
         color: var(--correct-fg);
         filter: none !important; /* don't apply the locked filter if they got it correct */
     }
 
-    .locked{
+    .correct input[type=radio]:checked::after, .locked .correct input[type=radio]:checked::after{
+        background-color: var(--correct-fg);    
+    }
+
+    .locked, .locked input[type=radio]:checked{ /* all items, including radio buttons */
         pointer-events: none;
         background-color: var(--correct-bg);
         filter: grayscale(60%);

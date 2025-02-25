@@ -344,13 +344,27 @@ function generateID(){
 
 // Electron stuff:
 
-ipcRenderer.on('loadInput', (event, data) => {
+ipcRenderer.on('loadInput', (event, data, fileStore) => {
   var dataAsArray = []
   if (typeof data == 'object'){
     dataAsArray = data
   } else {
     dataAsArray = returnJSONorArray(data)
   }  
+
+  // if there are files in the input, put these back into the array
+  // note: this approach should work even for version 3.4.1 and earlier where the images were already integrated into the table
+  if(Object.keys(fileStore).length > 0){
+    for(let row = 0; row < data.length; row++){
+      for (let col = 0; col < data.length; col++){        
+        if(typeof data[row][col] == 'object' && data[row][col].hasOwnProperty('image')){
+          data[row][col].image = fileStore.gameData[parseInt(data[row][col].image)]
+        }
+      }
+    }
+  }
+
+
   convertArrayToTableData(dataAsArray)
 })
 

@@ -6,12 +6,14 @@
     "cols":["Clue","Answer"],
     "description":"Solve the crossword. A new crossword is generated every time the activity is run. If you want to use the same crossword each time, run the activity until you have a crossword you like, then get the game code by clicking on the icon in the top-right, and copy and paste that into the settings here in hex.",
     "settings":[
-      {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait"]},
+      {"name":"color","label":"Color","type":"select","options":["Default","Natural green","Bright pink","Serious blue","Warm yellow","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait"]},
       {"name":"gridSize","label":"Grid size","type":"number","min":5,"max":50,"default":20},
       {"name":"showAnswers","label":"Pre-fill answers","type":"checkbox","default":false},
       {"name":"fast","label":"Fast generation","type":"checkbox","default":false,"info":"Generates puzzles more quickly, but usually with fewer words. More appropriate for smaller sets of words."},
       {"name":"gameCode","label":"Game code","type":"text","info":"Run the crossword multiple times (or press Ctrl+R or Cmd+R to reload). When you have a crossword you like, press the button in the top-right corner and copy the code. Pasting that code here will reproduce the exact same crossword puzzle."},
-      {"name":"showGameCodeButton","label":"Show game code button","type":"checkbox","default":true}
+      {"name":"showGameCodeButton","label":"Show game code button","type":"checkbox","default":true},
+      {"name":"mode","label":"Mode","type":"select","options":["Single player","Two player (A)","Two player (B)"],"optionValues":["single","A","B"],"info":"Two player mode requires game code first"},
+      {"name":"numbered","label":"Show numbers","type":"checkbox","default":false}
     ],
     "sample_data": [
     ["qualifications taken by British students, usually with a choice of 3-5 subjects studied for two years and finished aged 18","A-levels"],
@@ -113,6 +115,46 @@
       --fg-color-active: #91918D;
     }
 
+    [data-theme="serious blue"] {
+      --bg-color: #F2F3EB;
+      --fg-color: #000000;
+      --color1: #91a5cd;
+      --color2: #8295bb;
+      --color3: #6f80a1;
+      --correct: rgb(56, 59, 136);
+      --fg-color-active: #3a445a;
+    }
+
+    [data-theme="bright pink"] {
+      --bg-color: #F2F3EB;
+      --fg-color: #000000;
+      --color1: #f4afe4;
+      --color2: #fa8fe1;
+      --color3: #e66bc9;
+      --correct: #e77ab8;
+      --fg-color-active: #502948;
+    }
+
+    [data-theme="natural green"] {
+      --bg-color: #F2F3EB;
+      --fg-color: #000000;
+      --color1: #8fc487;
+      --color2: #88bb80;
+      --color3: #76a16f;
+      --correct: #8fc487;
+      --fg-color-active: #354b32;
+    }
+
+    [data-theme="warm yellow"] {
+      --bg-color: #F2F3EB;
+      --fg-color: #000000;
+      --color1: #ffe169;
+      --color2: #ffd323;
+      --color3: #dfb610;
+      --correct: #fdd94b;
+      --fg-color-active: #564810;
+    }
+
     [data-theme="rose garden"] {
       --bg-color: #ECDCB0;
       --fg-color: #000000;
@@ -150,9 +192,9 @@
     [data-theme="liberty"] {
       --bg-color: #485696;
       --fg-color: #E7E7E7;
-      --color1: #F24C00;
-      --color2: #FBDBB1;
-      --color3: #FC7A1E;
+      --color3: #F24C00;
+      --color2: #f6ca90;
+      --color1: #FC7A1E;
       --on-color1: #485696;
       --on-color2: #485696;
       --on-color3: #485696;
@@ -175,7 +217,7 @@
       --bg-color: #F2F3EB;
       --fg-color: #0058db;
       --color1: #0058db;
-      --color2: #db0007;
+      --color2: #c77d7f;
       --color3: #db0007;
       --on-color1: #FFFFFF;
       --on-color2: #FFFFFF;
@@ -185,21 +227,18 @@
 
     [data-theme="rexby"] {
       --bg-color: #F2F3EB;
-      --fg-color: #bd69f5;
-      --color1: #8aff9b;
-      --color2: #bd69f5;
-      --color3: #50DF65;
-      --color1: #8aff9b;
-      --color2: #bd69f5;
-      --color3: #50DF65;
-      --fg-color-active: #62B56E;
+      --fg-color: #8d4eb7;
+      --color1: #b3ebbc;
+      --color3: #8d4eb7;
+      --color2: #60e073;
+      --fg-color-active: #249135;
     }
 
     [data-theme="blorange"] {
       --bg-color: #F2F3EB;
       --fg-color: #D6A21F;
-      --color1: #edc664;
-      --color2: #64bded;
+      --color1: #f2d896;
+      --color2: #b4e1fa;
       --color3: #64bded;
       --fg-color-active: #4480A0;
     }
@@ -637,6 +676,49 @@
       opacity: 0.5;
     }
 
+        /* START OF NUMBERS ON SLOTS */
+    /* Initialize the counter */
+    body {
+        counter-reset: word-index;
+    }
+
+    .start-of-word::after{
+      display: none;
+    }
+
+    .numbered .start-of-word{      
+      position: relative;
+    }
+
+    .numbered .start-of-word::after{
+      display: block;
+    }
+
+    /* Increment the counter for elements that are both .horizontal and .vertical first */
+    .horizontal.start-of-word.vertical {
+        counter-increment: word-index;
+    }
+
+    /* Increment the counter for remaining .horizontal or .vertical elements */
+    .horizontal.start-of-word:not(.vertical),
+    .vertical.start-of-word:not(.horizontal) {
+        counter-increment: word-index;
+    }
+
+    /* Add the counter content */
+    .start-of-word::after {
+        content: counter(word-index);
+        position: absolute;
+        top: 0;
+        left: 0;
+        color: var(--fg-color);
+        padding: 0.1vh 0.2vh;
+        font-size: 1vh; 
+    }
+
+    /* END OF NUMBERS ON SLOTS */
+    
+
     #loading1{
       animation: 500ms 0ms  infinite loading;
     }
@@ -768,6 +850,12 @@
       gridEl = document.getElementById('grid')
       gridEl.style.height = (gridSize + 2) * 4 + 'vh'
       gridEl.style.width = (gridSize + 2) * 4 + 'vh'
+
+      //show numbers if set or if in two-player mode
+      if(gameSettings.numbered || gameSettings.mode != 'single'){
+        document.body.classList.add('numbered')
+      }
+
       //turn gameData array into word+index object array
       let ref = 0
       gameData.forEach(function (value, i) {
@@ -794,7 +882,7 @@
 
       createCrossWordPuzzle(gameSettings.gameCode)
       if (gameSettings.showGameCodeButton) {
-        let bestGridAsString = JSON.stringify(bestGrid)
+        let bestGridAsString = JSON.stringify(bestGrid.compact)
         // newGameCode = btoa(bestGridAsString)
         newGameCode = btoa(unescape(encodeURIComponent(bestGridAsString)))
         document.getElementById('code').value = newGameCode
@@ -816,6 +904,8 @@
         whenCrosswordReady()
       }, 200)
     }
+
+    
 
   }
 
@@ -1060,7 +1150,9 @@
           el.classList.add('selectedWord')
         }, i * 75);
       });
-      document.getElementById('clueBox').style.display = 'block'
+      if(gameSettings.mode == 'single' || invalidCode){ // only show clue box in single-player game, or if no valid gamecode (in which two-player doesn't work)
+        document.getElementById('clueBox').style.display = 'block'
+      }
       let wordSplit = words[selectedWord].text.split(' ')
       var wordLengths = ''
       for (let i = 0; i < wordSplit.length; i++) {
@@ -1074,6 +1166,32 @@
 
     // select the new slot
     document.getElementById(selectedSlot).classList.add('selectedSlot');
+  }
+
+  let revealAnswer = function (compactIndex) {
+        let word = words[bestGrid.compact[compactIndex].r]
+        let column = bestGrid.compact[compactIndex].l[0]
+        let row = bestGrid.compact[compactIndex].l[1]
+        let vertical = bestGrid.compact[compactIndex].v
+        for(let i = 0; i<word.text.length; i++){
+          let slot
+          if (vertical){
+            slot = document.getElementById((row+i) + "_" + column);            
+          } else {
+            slot = document.getElementById(row + "_" + (column+i));            
+          }
+          slot.innerHTML = word.text[i]
+        }
+      }
+
+  function revealAnswersFor(team){
+    for(let i = 0; i<bestGrid.compact.length; i++){
+      if(team == 'A' && isOdd(i)){
+        revealAnswer(i)
+      } else if (team == 'B' && !isOdd(i)){
+        revealAnswer(i)
+      }
+    }
   }
 
   function checkAllSlots() {
@@ -1125,7 +1243,7 @@
         slots.forEach(slot => { slot.remove() })
         grid.style.height = (parseInt(grid.style.height.replace('vh', '')) - 4) + 'vh'
       } else {
-        console.log('no more rows to remove')
+        // console.log('no more rows to remove')
         i = 0 // stop looking for unused rows once we've found a used one
       }
     }
@@ -1143,7 +1261,7 @@
         grid.style.width = (parseInt(grid.style.width.replace('vh', '')) - 4) + 'vh'
         // console.log('now ' + grid.style.width)
       } else {
-        console.log('no more cols to remove')
+        // console.log('no more cols to remove')
         i = 0 // stop looking for unused rows columns we've found a used one
       }
     }
@@ -1190,6 +1308,14 @@
   function copyToClipboard(textID) {
     document.getElementById(textID).select();
     document.execCommand('copy');
+  }
+
+  function isOdd(x) {
+      if (x % 2 == 0) {
+        return false
+      } else {
+        return true
+      }
   }
 
   // function checkReadyAndStart(){
@@ -1294,6 +1420,28 @@
   // 	}
   // }
 
+  let addExtraSpace = function (bestGrid){
+        bestGrid.grid.push([])
+        bestGrid.gridRef.push([])
+        bestGrid.grid.push([])
+        bestGrid.gridRef.push([])
+        for (let i = 0; i < gridSize + 1; i++) {
+          bestGrid.grid[i].push('_')
+          bestGrid.grid[i].push('_')
+          bestGrid.grid[gridSize].push('_')
+          bestGrid.grid[gridSize + 1].push('_')
+          bestGrid.gridRef[i].push({ horizontal: {}, vertical: {} })
+          bestGrid.gridRef[i].push({ horizontal: {}, vertical: {} })
+          bestGrid.gridRef[gridSize].push({ horizontal: {}, vertical: {} })
+          bestGrid.gridRef[gridSize + 1].push({ horizontal: {}, vertical: {} })
+        }
+        // one more for the corner
+        bestGrid.grid[gridSize + 1].push('_')
+        bestGrid.gridRef[gridSize + 1].push({ horizontal: {}, vertical: {} })
+
+        return bestGrid
+      }
+
   let createCrossWordPuzzle = function (predefinedGridEncoded) {
     // gridSize = gameSettings.gridSize
     let row = 0;
@@ -1352,7 +1500,7 @@
           if (grid.isFilled(row, column)) {
             // console.log('Going to try to update')
             if (grid.update(word)) {
-              pushUsedWords(word.text);
+              pushUsedWords(word.text);              
               // console.log('Yes, placed word')
               return true;
             }
@@ -1418,7 +1566,7 @@
                       // console.log('Going to try to update')
                         if (grid.update(word)) {
                           pushUsedWords(word.text);
-                          console.log('Yes, attached word')
+                          // console.log('Yes, attached word')
                         return true;
                         }
                       }                                                
@@ -1441,7 +1589,7 @@
                           // console.log('Going to try to update')
                           if (grid.update(word)) {
                             pushUsedWords(word.text);
-                            console.log('Yes, attached word')
+                            // console.log('Yes, attached word')
                             return true;
                           }
                       } else {
@@ -1578,23 +1726,7 @@
         }
         console.log('Best grid is number ' + bestGridNum)
         // add extra space to right and bottom edges of grid (just to avoid errors later when reading these)
-        bestGrid.grid.push([])
-        bestGrid.gridRef.push([])
-        bestGrid.grid.push([])
-        bestGrid.gridRef.push([])
-        for (let i = 0; i < gridSize + 1; i++) {
-          bestGrid.grid[i].push('_')
-          bestGrid.grid[i].push('_')
-          bestGrid.grid[gridSize].push('_')
-          bestGrid.grid[gridSize + 1].push('_')
-          bestGrid.gridRef[i].push({ horizontal: {}, vertical: {} })
-          bestGrid.gridRef[i].push({ horizontal: {}, vertical: {} })
-          bestGrid.gridRef[gridSize].push({ horizontal: {}, vertical: {} })
-          bestGrid.gridRef[gridSize + 1].push({ horizontal: {}, vertical: {} })
-        }
-        // one more for the corner
-        bestGrid.grid[gridSize + 1].push('_')
-        bestGrid.gridRef[gridSize + 1].push({ horizontal: {}, vertical: {} })
+        bestGrid = addExtraSpace(bestGrid)
         return bestGrid;
       }
 
@@ -1647,7 +1779,7 @@
             startingRow = getRandomInt(gridSize - startingLength, 1)
           }
           let word = new Word(wordItem.text, startingRow, startingCol, false, wordItem.ref);
-          console.log(`Starting word is ${wordItem.text} at ${startingRow}, ${startingCol}`)
+          // console.log(`Starting word is ${wordItem.text} at ${startingRow}, ${startingCol}`)
           grid.update(word);
           pushUsedWords(word.text);
 
@@ -1655,7 +1787,7 @@
           for (let attempts = 0; attempts < Math.floor(attemptsToFitWords / 100); attempts++) {
             placed = attemptToAttachToWords(grid, longest = true)
             if (placed) {
-              console.log('Managed to place another long word')
+              // console.log('Managed to place another long word')
               // skip to end
               attempts = attemptsToFitWords
             }
@@ -1674,7 +1806,7 @@
             if (!placed) {
               placed = attemptToPlaceWordOnGridRandomly(grid, word);
             } else {
-              console.log('Successfully attached a word')
+              // console.log('Successfully attached a word')
             }
             // console.log('Placed? '+placed)
             if (placed) {
@@ -1709,16 +1841,15 @@
             // triedRotation = true
             // }
             if (continuousFails > continuousFailsThreshold || usedWords.length >= words.length) {
-              console.log('Either break on used words: ' + usedWords.length + '/' + words.length)
-              console.log('Or break on continuous fails: ' + word.text)
-              console.log('Grids made: ' + (gridsMade+1))
-              console.log('Attempts: ' + attempts)
+              // console.log('Either break on used words: ' + usedWords.length + '/' + words.length)
+              // console.log('Or break on continuous fails: ' + word.text)
+              // console.log('Grids made: ' + (gridsMade+1))
+              // console.log('Attempts: ' + attempts)
               break;
             }
             // console.log('Attempts: '+attempts + ' Word: ' + word.text + 'Grids made: ' gridsMade)
           }
 
-          // TO DO: Save used words somewhere
           generatedGrids.push(grid);
           // generatedGridRefs.push( grid.gridRef )
           // if( grid.getIntersections() >= 4 )
@@ -1726,6 +1857,7 @@
           //     console.log('More than 4 intersections, break')
           //     break;
           // }
+          grid.usedWords = usedWords // TO DO: transform into refernece system?
           usedWords = [];
         }
       }
@@ -1740,11 +1872,16 @@
                 slot.setAttribute('data-word-down', bestGrid.gridRef[row][column].vertical.word.ref) // TODO: an a unique identifier to Word instead so we can look it up in the original array
                 slot.setAttribute('data-index-down', bestGrid.gridRef[row][column].vertical.index)
                 slot.setAttribute('data-down', true)
+                slot.classList.add('vertical')
               }
               if (bestGrid.gridRef[row][column].horizontal.word) {
                 slot.setAttribute('data-word-across', bestGrid.gridRef[row][column].horizontal.word.ref) // TODO: an a unique identifier to Word instead so we can look it up in the original array
                 slot.setAttribute('data-index-across', bestGrid.gridRef[row][column].horizontal.index)
                 slot.setAttribute('data-across', true)
+                slot.classList.add('horizontal')
+              }
+              if (bestGrid.gridRef[row][column].horizontal.index == 0 || bestGrid.gridRef[row][column].vertical.index == 0){
+                slot.classList.add('start-of-word')
               }
               slot.setAttribute('onclick', 'selectSlot(this)')
               if (gameSettings.showAnswers) {
@@ -1914,13 +2051,53 @@
         let predefinedGridAsString = decodeURIComponent(escape(window.atob(predefinedGridEncoded)))
         try {
           let predefinedGridData = JSON.parse(predefinedGridAsString)
-          bestGrid = new CrosswordPuzzle(predefinedGridData.grid, predefinedGridData.gridRef);
+          if (predefinedGridData.hasOwnProperty(grid)){ // backwards compatibility with long version of game code
+            bestGrid = new CrosswordPuzzle(predefinedGridData.grid, predefinedGridData.gridRef);
+          } else { // new version of game code (slightly shorter)
+            let grid = decompactGrid(predefinedGridData)
+            bestGrid = new CrosswordPuzzle(grid.grid, grid.gridRef);
+            bestGrid.compact = predefinedGridData
+          }
         } catch (e) {
           invalidCode = true;
           document.getElementById('loadingMessage').innerHTML = 'INVALID CODE<br>' + e
         }
       }
       displayCrosswordPuzzle(bestGrid);
+
+      if(gameSettings.mode != 'single' && predefinedGridEncoded != '' && !invalidCode){
+        revealAnswersFor(gameSettings.mode)
+      }
+    }
+
+    function decompactGrid(data){
+
+      let grid = Array.from(Array(gridSize), () => new Array(gridSize))
+      let gridRef = Array.from(Array(gridSize), () => new Array(gridSize))
+
+      for (let row = 0; row < gridSize; row++) {
+            for (let column = 0; column < gridSize; column++) {
+              grid[row][column] = '_';
+              gridRef[row][column] = { horizontal: {}, vertical: {} };
+            }
+          }
+
+      data.forEach(compactWord =>{
+        let word = {text: words[compactWord.r].text, column: compactWord.l[0], row: compactWord.l[1], vertical: compactWord.v, ref: compactWord.r}
+        for (let i = 0; i<word.text.length; i++){
+          if(word.vertical){
+            grid[word.row+i][word.column] = word.text[i]
+            gridRef[word.row+i][word.column].vertical = {index: i, word: word}
+          } else {
+            grid[word.row][word.column+i] = word.text[i]
+            gridRef[word.row][word.column+i].horizontal = {index: i, word: word}
+          }
+        }
+      })
+
+      let bestGrid = addExtraSpace({grid: grid, gridRef: gridRef})
+      return bestGrid
+
     }
 
     function getUnusedWords() {
@@ -1981,6 +2158,8 @@
       function CrosswordPuzzle(grid = [], gridRef = []) // can be made from existing grid and gridref
       {
         const emptyCell = '_';
+        let compactGrid = []
+
         if (grid.length == 0) { // if grid is empty, create it
           grid = Array.from(Array(gridSize), () => new Array(gridSize))
           gridRef = Array.from(Array(gridSize), () => new Array(gridSize))
@@ -1996,6 +2175,7 @@
           let updated = false;
           if (canBePlaced(word)) {
             addWord(word);
+            compactGrid.push({r: word.ref, l: [word.column, word.row], v: word.vertical})
             updated = true;
           }
 
@@ -2182,6 +2362,7 @@
             }
             grid[row][column] = word.text.substring(letterIndex, letterIndex + 1);
           }
+          
         }
 
         let fitsOnGrid = function (word) {
@@ -2200,11 +2381,13 @@
         return {
           "grid": grid,
           "gridRef": gridRef,
+          "compact": compactGrid,
           "update": update,
           "canBePlaced": canBePlaced,
           "isFilled": isFilled,
           "isLetter": isLetter,
-          "getIntersections": getIntersections
+          "getIntersections": getIntersections,
+          "decompactGrid": decompactGrid
         };
       }
 

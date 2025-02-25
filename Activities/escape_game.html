@@ -60,8 +60,8 @@
 *HEX SETTINGS END*-->
 
 <html>
-
 <head>
+  <meta charset="UTF-8">
   <title>Escape Game</title>
 
   <script id="tintShader" type="x-shader/x-fragment">
@@ -382,9 +382,9 @@
 
         setTimeout(function(){
         dialog.classList.add('hidden')
-        dialog.style = null
-        document.body.style.pointerEvents = 'none'
+        dialog.style = null        
         if(showSections){
+          document.body.style.pointerEvents = 'none'
           showMainScreen()
         }
       },delay)  
@@ -503,7 +503,7 @@
   }
 
   function countWords(str) {
-    return str.split(/s/).length;
+    return str.split(/\s/).length;
   }
     
     function showHint(){
@@ -607,8 +607,13 @@
             }
           }
           if(checkForWin()){
-            showDialogBox('messageBox',gameSettings.winningMessage,false)   
-            closeDialogBox('questionBox',false)         
+            if(gameSettings.winningMessage != ''){
+              showDialogBox('messageBox',gameSettings.winningMessage,false)   
+              closeDialogBox('questionBox',false)          
+            } else {
+              closeDialogBox('questionBox',true)                        
+            }            
+            // to do: winning animations
           } else {
             if (cell.completionMessage != ''){
             showDialogBox('messageBox',cell.completionMessage)

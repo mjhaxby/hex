@@ -206,7 +206,7 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
                         newSelect.appendChild(newOption)
                         // if no other default is specified, select ShareTech if available, if not select ShareTech-Mono if available
                         if (!settings[i].hasOwnProperty('default') && (font.name == 'ShareTech'
-                        || (settings[i].style != 'sans-serif' | (typeof settings[i].style == 'object' && !settings[i].style.includes('sans-serif'))) && font.name == 'ShareTech-Mono')){
+                        || ((settings[i].hasOwnProperty('style') && settings[i].style != 'sans-serif') | (typeof settings[i].style == 'object' && !settings[i].style.includes('sans-serif'))) && font.name == 'ShareTech-Mono')){
                             selectIndex = numFontsAdded
                         }
                         numFontsAdded++

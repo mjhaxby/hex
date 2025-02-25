@@ -1,3 +1,20 @@
+<!--*HEX SETTINGS START*
+  {
+    "cols_min":2,
+    "cols_max":2,
+    "rows_min":6,
+    "empty_cells_allowed":true,
+    "cols":["Category 1","Category 2"],
+    "scorm_support":false,
+    "description": "Find the right way across the map",
+    "settings":[
+    {"name":"mainFont","label":"Font","type":"font_family","style":"sans-serif","var":"main-font"},
+    {"name":"allowHoles","label":"Allows holes","type":"checkbox","default":false},
+    {"name":"soundsEnabled","label":"Sounds","type":"checkbox","default":true}
+    ]
+  }
+  *HEX SETTINGS END*-->
+
 <!-- NOTES -->
 <!-- Two options: for connections – the category just means all the words have something in common (so random order) OR the words create a sequence (e.g. sun -> star -> space etc. or January -> February -> March) -->
 <!-- Options for size – aim for the largest possible path (use all words in category if possible) or manually set number of hexagons (max out at total of all words) -->
@@ -21,7 +38,7 @@
             justify-content: center;
             align-content: center;
             align-items: center;
-            font-family: sans-serif;
+            font-family: var(--main-font), sans-serif;
         }
         .maze {            
             display: flex;
@@ -74,6 +91,15 @@
             top: 45%;
             z-index: 99;
             transform: translate(-50%,-50%) rotateX(30deg);            
+            transition: transform 500ms, text-shadow 500ms, font-size 500ms;
+        }
+
+        .hexagon.current .label{
+            transform: translate(-50%,-90px) rotateX(30deg); 
+            z-index: 999;
+            font-weight: bold;
+            font-size: 1.5em;
+            text-shadow: 0px 0px 10px white, 0px 0px 20px white;
         }
 
         .hexagon.current {
@@ -88,6 +114,16 @@
             color: black;
         }
 
+        #sprite{
+            position: absolute;
+            height: 100px;
+            width: 100px;
+            z-index: 998;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-75%);
+        }
+
 
     </style>
     <script>
@@ -99,6 +135,8 @@
         var totalCols
         var tallestCol
         var middleCol
+
+        var sprite
 
         const images = {
             hexagon: '<svg class="hexagon-image" width="100%" height="100%" viewBox="0 0 300 200" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;"><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M-0,63.124L75,0L225,0L300,63.124L300,103.859L225,166.983L75,166.983L0,103.859L-0,63.124Z" style="fill:inherit;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M300,63.124L300,103.859L225,166.983L225,126.248L300,63.124Z" style="fill:white;fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M75,126.248L75,166.983L0,103.859L0,63.124L75,126.248Z" style="fill:rgb(91,91,91);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><rect x="75" y="126.248" width="150" height="40.735" style="fill:rgb(193,193,193);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M210.231,29.074L210.231,12.43L270.463,63.124L260.575,71.446L210.231,29.074Z" style="fill:rgb(92,92,92);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><rect x="89.769" y="12.43" width="120.463" height="16.644" style="fill:rgb(194,194,194);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M39.425,71.446L29.537,63.124L89.769,12.43L89.769,29.074L39.425,71.446Z" style="fill:white;fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M260.575,71.446L210.231,113.818L89.769,113.818L39.425,71.446L89.769,29.074L210.231,29.074L260.575,71.446Z" style="fill:rgb(215,215,215);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M-0,63.124L75,0L225,0L300,63.124L225,126.248L75,126.248L-0,63.124ZM89.769,113.818L29.537,63.124L89.769,12.43L210.231,12.43L270.463,63.124L210.231,113.818L89.769,113.818Z" style="fill:rgb(235,235,235);fill-opacity:0.5;"/></g></svg>'
@@ -123,10 +161,16 @@
                 // TO DO, adjust for gameSettings (see above)
             })
 
-            totalHexagons = Math.pow(goodList.length/2,2) // TO DO: make this more complex and account for gameSettings (for now, just square of double the number of "good" words)
+            totalHexagons = Math.pow(goodList.length/2,2) // TO DO: make this more complex and account for gameSettings (for now, just square of double the number of "good" words)            
 
 
             gridSize = Math.pow(Math.ceil(Math.sqrt(totalHexagons)), 2) // round to nearest square number
+
+            // if we don't want holes, then we must use the full grid
+            if(!gameSettings.allowHoles){
+                totalHexagons = gridSize
+            }
+
             totalCols = calculateColumnsRequired(gridSize)
             tallestCol = calculateTallestColumn(gridSize)
             middleCol = Math.floor(totalCols / 2)
@@ -176,16 +220,15 @@
 
             maze.addLabels(goodList,badList)
 
+            document.body.appendChild(mazeEl)
+            createSprite()
+
             path.hexagons[0].moveCursorHere() // put cursor on first hexagon
 
             //temporarily measure to sure the path
             // path.hexagons.forEach(hexagon => {
             //     hexagon.el.style.fill = 'red'
-            // })
-
-            document.body.appendChild(mazeEl)
-
-
+            // })                        
 
         }
 
@@ -370,8 +413,10 @@
                             } else {
                                 hexagon.label = badListBuffer.pop()
                             }
-                        }
-                        hexagon.el.firstChild.firstChild.innerHTML = hexagon.label
+                        }       
+                        if(!hexagon.el.classList.contains('empty')){ // shouldn't select empty ones, but just in case
+                            hexagon.el.firstChild.firstChild.innerHTML = hexagon.label
+                        }                 
                         if(goodListBuffer.length == 0){
                             goodListBuffer = [...goodList]
                             goodListBuffer.shuffle()
@@ -484,9 +529,6 @@
 
             this.moveCursorHere = function () {
 
-                // to do: move sprite here
-
-
                 if (this.el) {
                     // remove all previous event listeners
                     // to do: make a function or a way to go to each hexagon more easily
@@ -502,6 +544,8 @@
                 this.el.classList.add('current')            
 
                 // later will put sprite here
+                moveSpriteTo(this.el)
+
                 this.neighbors.forEach(neighbor => {
                     if (neighbor.el) {
                         neighbor.boundJumpTo = () => jumpTo(neighbor);
@@ -526,8 +570,18 @@
             }
         }
         }
-            
+        
+        function createSprite(){
+            sprite = newElement('div',{id: 'sprite'},sprites.squid)
+            document.body.appendChild(sprite)
+        }
 
+        function moveSpriteTo(el){
+            el.appendChild(sprite)
+            // elPos = el.getBoundingClientRect()
+            // sprite.style.left = (elPos.x - (elPos.width/2)) + 'px'
+            // sprite.style.top = (elPos.y - (elPos.height*0.8)) + 'px'
+        }
 
 
         function calculateColumnsRequired(hexCount) {
@@ -608,46 +662,17 @@
         return this
     }
     </script>
-    <script>
-        // const gameData = [
-        //     ["passer","passe"],
-        //     ["manger","mange"],
-        //     ["finir","finit"],
-        //     ["boire","bu"],
-        //     ["faire","fait"],
-        //     ["danser","dansé"],
-        //     ["rire","ris"],
-        //     ["déclarer","déclare"],
-        //     ["soudre","souds"],
-        //     ["ranger","rangé"],
-        //     ["rendre","rendu"],
-        //     ["aller","erre"]
-        // ]
-        const gameData = [
-            ["2","4"],
-            ["3","6"],
-            ["5","8"],
-            ["7","9"],
-            ["11","12"],
-            ["13","14"],
-            ["17","15"],
-            ["19","16"],
-            ["23","18"],
-            ["29","20"],
-            ["31","21"],
-            ["37","22"],
-            ["","24"],
-            ["","25"],
-            ["","26"],
-            ["","27"],
-            ["","28"],
-            ["","30"]
-        ]
-    </script>
+      <script>
+        sprites = {
+          squid: '<svg width="100%" height="100%" viewBox="0 0 600 600" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">  <g transform="matrix(1.10585,0,0,1.10585,-38.7318,-24.1541)">  <g transform="matrix(0.972821,0,0,1,7.87007,0)">  <g transform="matrix(-1.07109,0,0,1,621.376,0)">  <path d="M284.981,376.958L227.946,524.802L217.486,385.508C217.486,385.508 196.061,447.958 180.347,461.736C165.936,474.373 123.206,468.178 123.206,468.178L163.896,446.696L187.431,338.2L299.674,337.959L299.674,376.626L284.981,376.958Z" style="fill:rgb(97,56,0);"/>  <g transform="matrix(1.16144,0,0,1.08598,-50.2676,-23.6018)">  <path d="M301.62,541.46L301.62,274.514L186.932,274.514C186.932,274.514 189.152,391.613 182.89,421.237C179.741,436.134 149.361,452.258 149.361,452.258C149.361,452.258 187.665,449.835 191.782,439.943C198.796,423.092 214.306,364.854 214.306,364.854L239.542,505.43L269.438,364.854L301.62,541.46Z" style="fill:rgb(182,111,5);"/>  </g>  </g>  <g>  <path d="M284.981,376.958L227.946,524.802L217.486,385.508C217.486,385.508 196.061,447.958 180.347,461.736C165.936,474.373 123.206,468.178 123.206,468.178L163.896,446.696L187.431,338.2L299.674,337.959L299.674,376.626L284.981,376.958Z" style="fill:rgb(136,79,0);"/>  <g transform="matrix(1.16144,0,0,1.08598,-50.2676,-23.6018)">  <path d="M301.62,541.46L301.62,274.514L186.932,274.514C186.932,274.514 189.152,391.613 182.89,421.237C179.741,436.134 149.361,452.258 149.361,452.258C149.361,452.258 187.665,449.835 191.782,439.943C198.796,423.092 214.306,364.854 214.306,364.854L239.542,505.43L269.438,364.854L301.62,541.46Z" style="fill:rgb(144,88,4);"/>  </g>  </g>  </g>  <g>  <g transform="matrix(1.55954,0,0,1.03786,-108.58,-24.8059)">  <ellipse cx="195.865" cy="288.402" rx="13.638" ry="28.816" style="fill:rgb(4,7,179);"/>  </g>  <g transform="matrix(1.32331,0,0,1.32331,-60.599,-105.276)">  <path d="M191.427,301.138C190.299,301.69 191.567,304.035 199.365,305.159C199.365,305.159 205.347,299.074 203.718,283.855C202.58,273.223 202.813,290.771 200.087,297.661C198.415,301.888 193.856,299.948 191.427,301.138Z" style="fill:white;fill-opacity:0.25;"/>  </g>  <g transform="matrix(1.32331,0,0,1.32331,-60.599,-113.707)">  <circle cx="191.427" cy="293.371" r="3.144"/>  </g>  </g>  <g transform="matrix(1,0,0,1,52.3352,7.72506)">  <g transform="matrix(1.55954,0,0,1.03786,-108.58,-24.8059)">  <ellipse cx="195.865" cy="288.402" rx="13.638" ry="28.816" style="fill:rgb(4,7,179);"/>  </g>  <g transform="matrix(1.32331,0,0,1.32331,-60.599,-105.276)">  <path d="M191.427,301.138C190.299,301.69 191.567,304.035 199.365,305.159C199.365,305.159 205.347,299.074 203.718,283.855C202.58,273.223 202.813,290.771 200.087,297.661C198.415,301.888 193.856,299.948 191.427,301.138Z" style="fill:white;fill-opacity:0.25;"/>  </g>  <g transform="matrix(1.32331,0,0,1.32331,-60.599,-113.707)">  <circle cx="191.427" cy="293.371" r="3.144"/>  </g>  </g>  <g transform="matrix(0.97886,0,0,1,-2.47221,-47.6718)">  <path d="M307.93,69.655C308.634,69.467 309.376,69.467 310.079,69.655C323.254,73.17 450.669,107.125 450.669,107.125L309.005,152.537L166.673,107.375C166.673,107.375 294.755,73.17 307.93,69.655Z" style="fill:rgb(255,153,0);"/>  </g>  <g transform="matrix(1.00032,0,0,1.01711,-0.0495563,-4.67106)">  <path d="M300,104.629C300,101.079 297.581,97.968 294.096,97.038C272.059,91.159 194.431,70.449 166.205,62.918C163.737,62.26 161.099,62.77 159.068,64.298C157.037,65.825 155.846,68.196 155.846,70.711L155.846,277.957C155.846,286.834 161.894,294.61 170.605,296.934C175.015,298.111 171.513,297.07 177.276,298.608C180.564,299.485 175.619,245.08 194.559,246.119C224.406,247.757 206.214,303.03 205.96,306.366C205.556,311.676 207.872,322.83 217.255,323.391C231.19,324.223 231.172,317.888 232.303,313.264C233.078,310.092 221.425,250.062 251.055,254.064C281.907,258.232 262.632,321.328 265.869,322.192C271.956,323.816 269.598,323.344 274.772,324.725C280.781,326.328 287.207,325.086 292.153,321.366C297.099,317.645 300,311.871 300,305.747C300,252.507 300,132.797 300,104.629Z" style="fill:rgb(228,138,3);"/>  </g>  <path d="M327.301,326.307L324.504,340.903" style="fill:none;"/>  <g transform="matrix(-1.00032,0,0,1.01711,600.095,-4.67106)">  <path d="M300,104.054C300,100.843 297.812,98.03 294.661,97.189C273.168,91.455 192.803,70.014 165.213,62.654C162.982,62.059 160.596,62.52 158.759,63.901C156.923,65.283 155.846,67.427 155.846,69.7C155.846,106.161 155.846,236.724 155.846,279.396C155.846,287.424 161.315,294.456 169.192,296.557C193.839,303.133 246.75,317.249 277.187,325.369C282.621,326.819 288.432,325.696 292.904,322.331C297.377,318.967 300,313.745 300,308.208C300,255.936 300,131.546 300,104.054Z" style="fill:rgb(255,179,65);"/>  </g>  <g transform="matrix(1.12114,0,0,1.12114,-53.635,-36.222)">  <path d="M378.486,118.594C386.367,117.125 411.659,169.143 414.133,185.538C417.078,205.053 418.52,218.251 404.893,222.916C403.112,223.525 401.451,224.018 399.898,224.404C389.564,226.973 383.993,224.853 379.61,221.436C374.569,217.506 369.936,206.751 369.033,195.335C368.13,183.919 370.604,120.063 378.486,118.594Z" style="fill:rgb(214,118,5);"/>  </g>  <path d="M372.161,96.927L372.1,96.704L381.192,90.898C381.733,90.192 382.301,89.764 382.895,89.654C382.992,89.636 383.09,89.625 383.192,89.621L383.195,89.619L383.195,89.621C392.358,89.297 420.118,146.53 422.861,164.707C425.105,179.575 426.57,191.173 422.484,198.72C421.383,200.754 419.879,202.494 417.877,203.924L417.875,203.926C417.042,204.521 416.123,205.063 415.112,205.55L403.546,212.344L403.54,212.321C415.324,206.147 413.713,191.986 410.665,171.792C408.03,154.326 382.297,100.801 372.161,96.927Z" style="fill:rgb(227,134,23);"/>  </g> </svg>'
+        }
+      </script>
+    
 </head>
 
-<body onload="pageLoad()">
-
+<body>
 </body>
+<script src="activityController.js"></script> <!--This space is for either the activityController (when running in electron) or the game data (after export) -->
+
 
 </html>

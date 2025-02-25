@@ -559,6 +559,7 @@
       hyphens: auto;
       text-align: center;
       /* see .card  */
+      scrollbar-width: none;  
     }
 
     .MCbutton:hover {
@@ -1534,36 +1535,39 @@ function animationExists(animationName) {
       adjustFontSizeToFit()
     }
 
-    function adjustFontSizeToFit() {
+      function adjustFontSizeToFit() {
 
-      // These were previously necessary, but now don't seem to be. Leaving them here for now in case they need to be reintroduced.
-      const offsetPercentHeight = 1
-      const offsetPercentWidth = 1
-      var buttons = document.getElementsByClassName('MCbutton');
+        // These were previously necessary, but now don't seem to be. Leaving them here for now in case they need to be reintroduced.
+        const offsetPercentHeight = 1
+        const offsetPercentWidth = 1
+        var buttons = document.getElementsByClassName('MCbutton');
 
-      //reset font size to default
-      for (var i = 0; i < buttons.length; i++) {
-        buttons[i].children[0].style = null
-      }
-
-      for (var i = 0; i < buttons.length; i++) {
-        var button = buttons[i].children[0];
-        var fontSize = parseFloat(window.getComputedStyle(button).fontSize.replace('px', ''))
-        var container = button.parentElement;
-
-        // Reduce the font size until the text fits inside the container
-        while ((button.offsetWidth > (container.clientWidth * offsetPercentWidth) || button.offsetHeight > (container.clientHeight * offsetPercentHeight) || button.scrollWidth > (container.clientWidth * offsetPercentWidth) || button.scrollHeight > (container.clientHeight * offsetPercentHeight)) && fontSize > 12) {
-          // console.log(`${button.innerHTML} button is too big button scroll width ${button.scrollWidth} > container client width ${container.clientWidth*offsetPercentWidth} || button scroll height ${button.scrollHeight} > container client height ${container.clientHeight*offsetPercentHeight}`)              
-          fontSize--;
-          console.log(`Trying ${fontSize} px`)
-          button.style.fontSize = fontSize + 'px';
-          var numLines = button.getClientRects().length
-          button.style.lineHeight = 8 / numLines + 'vh' // height (in vh) of button, divided by the number of lines
-          button.offsetWidth;
+        //reset font size to default
+        for (var i = 0; i < buttons.length; i++) {
+          buttons[i].children[0].style = null
         }
 
+        for (var i = 0; i < buttons.length; i++) {
+          var button = buttons[i].children[0];
+          var fontSize = parseFloat(window.getComputedStyle(button).fontSize.replace('px', ''))
+          var container = button.parentElement;
+
+          // Reduce the font size until the text fits inside the container
+          while ((button.offsetWidth > (container.clientWidth * offsetPercentWidth) || button.offsetHeight > (container.clientHeight * offsetPercentHeight) || button.scrollWidth > (container.clientWidth * offsetPercentWidth) || button.scrollHeight > (container.clientHeight * offsetPercentHeight)) && fontSize > 12) {
+            // console.log(`${button.innerHTML} button is too big button scroll width ${button.scrollWidth} > container client width ${container.clientWidth*offsetPercentWidth} || button scroll height ${button.scrollHeight} > container client height ${container.clientHeight*offsetPercentHeight}`)              
+            fontSize--;
+            console.log(`Trying ${fontSize} px`)
+            button.style.fontSize = fontSize + 'px';
+            var numLines = button.getClientRects().length
+            button.style.lineHeight = 8 / numLines + 'vh' // height (in vh) of button, divided by the number of lines
+            button.offsetWidth;
+          }
+          if (fontSize > 12) { // once the size is set, make overflow visible so the scrollbars won't show
+            button.style.overflow = 'visible'
+          }
+
+        }
       }
-    }
 
     function createMultipleChoiceOptions() {
       var traps

@@ -6,7 +6,6 @@ const crypto = require('crypto'); // for hashing
 const contextMenu = require('electron-context-menu');
 const fs = require('fs')
 const path = require('path')
-const request = require('electron-request')
 const activityEditor = require('./activityEditor.js')
 const tools = require('./tools.js')
 const octokit = require('@octokit/request')
@@ -538,7 +537,7 @@ function dataSelectImportFromPath(filePath, validExtensions, cell){
         dialog.showErrorBox("Error opening file", "The file statistics could not be read.")
         return;
       }
-      if (stats.size > (1024 * 500)) { // for now, limit is 500KB
+      if (stats.size > (1024 * 1024 * 5)) { // for now, limit is 5MB
         console.log("File is too big. " + stats.size + " bytes.");
         dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 500KB or smaller are supported.")
         windows.main.webContents.send('dataCellFileImportResult', cell, false)
@@ -699,7 +698,7 @@ function advancedCheckActivityData(data,exporting=false){
       if(typeof cell != 'string'){
         let properties = Object.getOwnPropertyNames(cell)
         properties.forEach(property => {
-         if(property != 'image' && property != 'text'){      
+         if(property != 'image' && property != 'text' && property != 'datetime'){      
           if(debugMode){console.error(`Advanced change activity data: Invalid property: ${property}`)}
           ok = false
           return false
@@ -712,7 +711,8 @@ function advancedCheckActivityData(data,exporting=false){
         }
         if(cell.hasOwnProperty('image')){    
           if(debugMode){console.log(cell.image)}      
-          if(exporting && typeof cell.image != 'object' || !exporting && typeof cell.image != 'number'){ // TO DO: make exporting use the number system too in order to reduce file sizes
+          // if(exporting && typeof cell.image != 'object' || !exporting && typeof cell.image != 'number'){ // TO DO: make exporting use the number system too in order to reduce file sizes
+          if(typeof cell.image != 'number'){ // TO DO: make exporting use the number system too in order to reduce file sizes
             if(debugMode){console.error(`Advanced change activity data: Image data link corrupt: typeof returns ${typeof cell.image}`)}
             ok = false
             return false
@@ -727,13 +727,19 @@ function advancedCheckActivityData(data,exporting=false){
 function checkFileStore(store){
   let ok = true
   let properties = Object.getOwnPropertyNames(store)
+  if(debugMode){console.log('Checking the following file store properties: ')}
+  if(debugMode){console.log(properties)}
   properties.forEach(property =>{
     if(property != 'gameData'){
       ok = checkImage(store[property])
     } else {
-      for(let i = 1; i<store.gameData.length; i++){      
-        ok = checkImage(store.gameData[i])
+      for(let i = 1; i<store.gameData.length; i++){   
+        if(store.gameData[i].length > 0){          
+          ok = checkImage(store.gameData[i])
+        }
         if(!ok){
+          if(debugMode){console.log('Image error.')}
+          if(debugMode){console.log(store.gameData[i])}
           return false
         }
       }
@@ -824,6 +830,9 @@ function activityTemplateOnlyRequiresStrings(){
       } else if (col.sound) {
         result = false
         return false // leave forEach
+      } else if (col.datetime){
+        result = false
+        return false
       }
     })
   } else {
@@ -842,7 +851,7 @@ function extractFilesFromGameDataToImportFileStore(data){
       let cell = data[row][col]
       if(typeof cell != 'string'){
         for (const file in cell){
-          if (file != 'text'){  // ignore text, we can leave this as it is
+          if (file != 'text' && file != 'datetime'){  // ignore text and datetime, we can leave this as it is
             let existingFile = gameFileAlreadyExists(cell[file]) // returns index of existing file
             if(existingFile){
               cell[file] = existingFile
@@ -884,12 +893,16 @@ function processSaveExport(event,data,purpose='export',path=''){
   }
   let settingErrors = findSettingAnomolies(data.settings)
   let dataOK
+  let fileStoreOK = true
   let stringsOnlyActivity = activityTemplateOnlyRequiresStrings()
   // console.log(`Only requires strings? ${stringsOnlyActivity}`)
   if (stringsOnlyActivity){
     dataOK = isArrayofArrayofStrings(data.input)
+    importFileStore.gameData = [] // empty the file store so we don't unecessarily add a bunch of cached files
   } else {
+    data.input = extractFilesFromGameDataToImportFileStore(data.input)
     dataOK = advancedCheckActivityData(data.input,true)
+    fileStoreOK = checkFileStore(importFileStore)
   }
   let activityOK = verifiyActivityAndSource(data.activity, data.source)
   let typeOK = (data.type == 'html' || data.type == 'scorm')
@@ -897,9 +910,9 @@ function processSaveExport(event,data,purpose='export',path=''){
   // settingErrors = findSettingAnomolies(data.settings)
   if (settingErrors.length == 0 && dataOK && activityOK) {
     if (purpose == 'export'){
-      exportActivity(data.input, data.activity, data.settings, data.source, data.type, data.packageIdentifier)
+      exportActivity(data.input, data.activity, data.settings, importFileStore, data.source, data.type, data.packageIdentifier)
     } else if (purpose == 'save'){
-      saveTable(data,path)
+      saveTable(data,path,importFileStore)
     }
   } else if (settingErrors.length > 0) {
     reportSettingErrors(settingErrors)
@@ -954,7 +967,9 @@ ipcMain.on("runActivity", function (event, data, settings, activity, source) {
   let activityOK = verifiyActivityAndSource(activity, source)
   if (debugMode) {console.log(`Activity ok? ${activityOK}`)}
 
-  if (settingErrors.length == 0 && dataOK && activityOK && fileStoreOK) {      
+  if (settingErrors.length == 0 && dataOK && activityOK && fileStoreOK) {     
+    console.log('about to make activity window') 
+    console.log(importFileStore)
     createActivityWindow(activity, data, settings, source, importFileStore)
   } else if (settingErrors.length > 0) {
     reportSettingErrors(settingErrors)
@@ -962,6 +977,8 @@ ipcMain.on("runActivity", function (event, data, settings, activity, source) {
     dialog.showErrorBox('Invalid data', 'Data in the table is invalid. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
   } else if (!activityOK) {
     dialog.showErrorBox('Error finding activity', 'There was an error with the activity name or activity source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
+  } else if (!fileStoreOK){
+    dialog.showErrorBox('File store error','Some files may be corrupted. If this error keeps appearing, please log a bug with the developer.')
   }
 });
 
@@ -1026,7 +1043,7 @@ ipcMain.on('readActivityPrefs', function (event, activity, source) {
         for (let i = 0; i < prefsStore.cols.length; i++){
           if (typeof prefsStore.cols[i] == 'string'){
 
-            prefsStore.cols[i] = {title: prefsStore.cols[i], text: true, image: false}
+            prefsStore.cols[i] = {title: prefsStore.cols[i], text: true, image: false, datetime: false}
           }
         }
       }
@@ -1080,7 +1097,7 @@ ipcMain.on('getPrebuiltActivities', function (event) {
   fs.readdir(path.resolve(__dirname, 'Activities/'), (err, files) => {
     var activities = []
     files.forEach(file => {
-      if (file.match(/\.html$/) && (debugMode || (!file.match(/.+_WIP.+/) && !file.match(/.+_alpha.+/)))) {
+      if (file.match(/\.html$/) && (debugMode || (!file.match(/.+_WIP.+/i) && !file.match(/.+_alpha.+/)))) {
         activities.push(file.replace(/\.html$/, ''))
       }
     })    
@@ -1306,7 +1323,7 @@ const getReadyToExport = (type) => {
 
 const exportFromActivity = () => {
   activityWindow = activityFocused()
-  exportActivity(activityWindow.data, activityWindow.activityType, activityWindow.settings, activityWindow.source, 'html', '') // TO DO: possible to export scorm from window
+  exportActivity(activityWindow.data, activityWindow.activityType, activityWindow.settings, activityWindow.importedFiles, activityWindow.source, 'html', '') // TO DO: possible to export scorm from window
 }
 
 const findActivityPath = (activity, source) => {
@@ -1321,7 +1338,7 @@ const findActivityPath = (activity, source) => {
   }
 }
 
-const exportActivity = (data, activity, settings, source, type = 'html', packageIdentifier = '') => {
+const exportActivity = (data, activity, settings, files, source, type = 'html', packageIdentifier = '') => {
   var activityTemplate
   var exportData
 
@@ -1342,7 +1359,7 @@ const exportActivity = (data, activity, settings, source, type = 'html', package
       activityEditor.openFonts(settings).then ( fontData => {
         if(debugMode){console.log(fontData)}
         settings.scorm = false // add scorm (false) tag to the  settings
-        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, prefsStore, fontData)
+        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, prefsStore, fontData)
         dialog.showSaveDialog(dialogOptions).then(result => {
           if (result.canceled) {
             if(debugMode){console.log("Cancelled")}
@@ -1406,7 +1423,7 @@ const exportActivity = (data, activity, settings, source, type = 'html', package
   }
 
   // if you are adding in a new way to export scorms, you probably want to do this through the regular exportActivity function (specifying type='scorm')
-  function exportActivityAsScorm(activity, source, data, settings, packageIdentifier) {
+  function exportActivityAsScorm(activity, source, data, settings, files, packageIdentifier) {
     const zip = new AdmZip();
     var dialogOptions = {
       title: 'Export activity as SCORM',
@@ -1425,7 +1442,7 @@ const exportActivity = (data, activity, settings, source, type = 'html', package
       activityEditor.openFonts(settings).then ( fontData => {
         if(debugMode){console.log(fontData)}
         settings.scorm = true // add scorm tag to the  settings
-        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, prefsStore, fontData)
+        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, prefsStore, fontData)
 
         dialog.showSaveDialog(dialogOptions).then(result => {
           if (result.canceled) {
@@ -1493,7 +1510,7 @@ const openTableDialog = () => {
         dialog.showErrorBox("Error opening file", "The file statistics could not be read.")
         return;
       }
-      if (stats.size > (1024 * 1024)) { // slightly arbitarily putting the limit at a megabyte, but this would be a huge table in any case
+      if (stats.size > (1024 * 1024 * 1024)) { // slightly arbitarily putting the limit at 1 gigabyte, but this would be a huge table in any case
         if(debugMode){console.log("File is too big. " + stats.size + " bytes.")};
         dialog.showErrorBox("Error opening file", "This file is too large for hex to read efficiently. Please choose a file less than a megabyte in size or consider making a smaller activity.")
       } else {
@@ -1557,7 +1574,7 @@ const openProfileDialog = () => {
         dialog.showErrorBox("Error opening file", "The file statistics could not be read.")
         return;
       }
-      if (stats.size > (1024 * 1024)) { // slightly arbitarily putting the limit at a megabyte, but this would be a huge table in any case
+      if (stats.size > (1024 * 1024 * 1024)) { // slightly arbitarily putting the limit at a gigabyte, but this would be a huge table in any case
         if(debugMode){console.log("File is too big. " + stats.size + " bytes.")};
         dialog.showErrorBox("Error opening file", "This file is too large for hex to read efficiently. Please choose a file less than a megabyte in size or consider making a smaller activity.")
       } else {
@@ -1676,16 +1693,22 @@ function loadProfileInEditor(){
   }
 }
 
-function openTable(data){
+function openTable(data){  
   try {     
     inputData = JSON.parse(data)
-    windows.main.send('loadInput',inputData.input) // put the data in the table
+    if(inputData.hasOwnProperty('filesData')){
+      importFileStore = inputData.filesData
+      if(debugMode){console.log('Found files.')}
+    } else {
+      if(debugMode){console.log('Data contains no files.')}
+    }
+    windows.main.send('loadInput',inputData.input,importFileStore) // put the data in the table
     prefsWaiting = inputData.settings // remember the settings to load later
     windows.main.send('setActivity',inputData.activity,inputData.source) // select the relevant activity
   }
   catch (error) {
     dialog.showErrorBox("Error opening file","JSON data in file could not be parsed.")
-    console.alert(error)
+    console.error(error)
     return
   }  
 }
@@ -1854,12 +1877,13 @@ function saveProfile(profile,path){
   })
 }
 
-function saveTable(inputData,path){
+function saveTable(inputData,path,fileData){
   
   // add extra info
   inputData.app_version = v
   inputData.platform = process.platform
   inputData.modificationTime = Date.now()
+  inputData.filesData = fileData
 
   let data = JSON.stringify(inputData)
 

@@ -47,7 +47,7 @@ let openFonts = function openFontsPromise(settings){
     })
   }
 
-function addActivityTemplateData(activityTemplate, activityData, activitySettings, prefsStore, fontData){
+function addActivityTemplateData(activityTemplate, activityData, activitySettings, activityFiles, prefsStore, fontData){
 
   let fontSettings = extractFontSettings(activitySettings,websafe=true) // get all font information, including websafe
 
@@ -71,9 +71,10 @@ function addActivityTemplateData(activityTemplate, activityData, activitySetting
 }
   let activityDataAsArray = JSON.stringify(activityData)
   let activitySettingsAsObject = 'gameSettings = ' + JSON.stringify(activitySettings)
+  let activityFilesAsObject = 'gameFiles = ' + JSON.stringify(activityFiles)
   let exportInfo = {version: prefsStore.app_version, creationTime: Date.now(), platform: prefsStore.platform, activity: prefsStore.activity, source: prefsStore.source}
   // outputData = activityTemplate
-  let activityDataIntegration = '<script  charset="utf-8">gameData = ' + activityDataAsArray + '\n' + activitySettingsAsObject + '\ndocument.addEventListener("DOMContentLoaded",pageLoad())</script>'  
+  let activityDataIntegration = '<script  charset="utf-8">gameData = ' + activityDataAsArray + ';\n' + activitySettingsAsObject + ';\n' + activityFilesAsObject + ';\nif(gameFiles.gameData){ for(let row = 0; row < gameData.length; row++){ for (let col = 0; col < gameData.length; col++){ if(typeof gameData[row][col] == \'object\' && gameData[row][col].hasOwnProperty(\'image\')){ gameData[row][col].image = gameFiles.gameData[parseInt(gameData[row][col].image)]; }; }; }; };' + '\ndocument.addEventListener("DOMContentLoaded",pageLoad())</script>'  
 
   if (fontSettings.length > 0){
     // add font information
