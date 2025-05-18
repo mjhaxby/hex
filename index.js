@@ -152,13 +152,13 @@ function setPrefs(prefs, customDefaults={}){
     settingsArea.appendChild(description)
   }
   if (prefs.hasOwnProperty('sample_data')){
-    var example = exampleButton(0,prefs.sample_data.hasOwnProperty('settings'))
+    var example = exampleButton(0,prefs.sample_data.hasOwnProperty('settings'),prefs.sample_data.hasOwnProperty('title') ? prefs.sample_data.title : '')
     settingsArea.appendChild(example)
   } else if (prefs.hasOwnProperty('sample_datas')){
     // var exampleHolder = document.createElement('div')
     // exampleHolder.setAttribute('id','exampleHolder')
     for (let i=1; i<=prefs.sample_datas.length; i++){
-      var example = exampleButton(i,prefs.sample_datas[i-1].hasOwnProperty('settings'))      
+      var example = exampleButton(i,prefs.sample_datas[i-1].hasOwnProperty('settings'),prefs.sample_datas[i-1].hasOwnProperty('title') ? prefs.sample_datas[i-1].title : '')      
       settingsArea.appendChild(example)
       if (i<prefs.sample_datas.length) {settingsArea.append(' ')} // weirdly this is how we get the space between the other buttons, so we're doing the same here to be consistent
     }
@@ -195,20 +195,26 @@ function setPrefs(prefs, customDefaults={}){
   updateAppearanceForUnused()
 }
 
-function exampleButton(number = 0,includesSettings) {
+function exampleButton(number = 0,includesSettings = false, title = '') {
   var exampleText = 'example'
-  var withSettingsText = 'includes sample settings'
+  var withSettingsText = '(includes sample settings)'
   var functionRef = 'showExample(prefsStore.sample_data)'
   var example = document.createElement('button')
 
   if (number > 0) {
       exampleText += (' #' + number)
       functionRef = 'showExample(prefsStore.sample_datas[' + (number - 1) + '])'
-  }
+  } 
 
   example.setAttribute('class', 'exampleBtn')
 
   example.innerHTML = `${exampleText}`
+  if (title != ''){
+    example.appendChild(document.createElement('br'))
+    let titleEl = document.createElement('span')
+    titleEl.innerHTML = `${title}`
+    example.appendChild(titleEl)
+  }
   if (includesSettings){
     example.appendChild(document.createElement('br'))
     let withSettings = document.createElement('small')
@@ -357,15 +363,28 @@ ipcRenderer.on('loadInput', (event, data, fileStore) => {
   if(Object.keys(fileStore).length > 0){
     for(let row = 0; row < data.length; row++){
       for (let col = 0; col < data.length; col++){        
-        if(typeof data[row][col] == 'object' && data[row][col].hasOwnProperty('image')){
-          data[row][col].image = fileStore.gameData[parseInt(data[row][col].image)]
+        if(typeof data[row][col] == 'object'){
+          if(data[row][col].hasOwnProperty('image')){
+            data[row][col].image = fileStore.gameData[parseInt(data[row][col].image)]
+          }
+          // if(data[row][col].hasOwnProperty('datetime')){
+            // don't need to do anything?
+          // }
         }
       }
     }
   }
 
-
-  convertArrayToTableData(dataAsArray)
+  // empty the table
+  if(tableIsEmpty()){
+    convertArrayToTableData(dataAsArray)
+  } else {
+    if (confirm('This will erase all data currently in the table and cannot be undone. Are you sure you want to continue?')){
+      clearTable()
+      convertArrayToTableData(dataAsArray)
+    }
+  }
+  
 })
 
 ipcRenderer.on('getInputForExport', (event) => { // main.js requests the data
@@ -376,11 +395,11 @@ ipcRenderer.on('getInputForSave', (event,path) => { // main.js requests the data
   sendInput('save',path)
 })
 
-function importImage(cell,path=false){
-  if(path){
-    ipcRenderer.send('dataSelectImportFromPath', cell.id, ['image'], path)
+function importImage(cell,file=false,cellOffset=0){
+  if(file){
+    ipcRenderer.send('dataSelectImportFromFile', cell.id, ['image'], file, cellOffset)
   } else {    
-    ipcRenderer.send('dataSelectImport', cell.id, ['image'])
+    ipcRenderer.send('dataSelectImport', cell.id, ['image'],cellOffset)
   }
 }
 
