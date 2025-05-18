@@ -12,10 +12,14 @@ const fonts = [
     {name: 'Kode-Mono', style: 'monospace', src:'fonts/KodeMono.ttf', format: 'ttf', isFont: true},
     {name: 'Lora', style: 'serif', src:'fonts/Lora.ttf', format: 'ttf', isFont: true},
     {name: 'Niconne', style: 'cursive', src:'fonts/Niconne-Regular.ttf', format: 'ttf', isFont: true},
+    {name: 'OpenSans', style: 'sans-serif', src:'fonts/OpenSans-VariableFont.ttf', format: 'ttf', isFont: true},
+    {name: 'OpenDyslexic', style: 'sans-serif', src:'fonts/OpenDyslexicMono-Regular.otf', format: 'otf', isFont: true},
+    {name: 'OpenDyslexic Mono', style: 'monospace', src:'fonts/OpenDyslexicMono-Regular.otf', format: 'ttf', isFont: true},
     {name: 'Playwrite', style: 'cursive', src:'fonts/Playwrite.ttf', format: 'ttf', isFont: true},
     {name: 'ShareTech', style: 'sans-serif', src:'fonts/ShareTech-Regular.ttf', format: 'ttf', isFont: true},
     {name: 'ShareTech-Mono', style: 'monospace', src:'fonts/ShareTechMono-Regular.ttf', fornat: 'ttf', isFont: true},        
     {name: 'Short Stack', style: 'cursive', src:'fonts/ShortStack.ttf', format: 'ttf', isFont: true},
+    {name: 'Space Mono', style: 'monospace', src:'fonts/SpaceMono-Regular.ttf', format: 'ttf', isFont: true},
     {name: 'Tahoma', style: 'sans-serif', src: 'websafe', isFont: true},    
     {name: 'Times New Roman', style: 'serif', src: 'websafe', isFont: true},        
     {name: 'Trebuchet MS', style: 'sans-serif', src: 'websafe', isFont: true},
@@ -203,6 +207,7 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
                         let newOption = document.createElement('option')
                         newOption.value = font.name
                         newOption.innerHTML = font.name
+                        newOption.style.fontFamily = `"${font.name}", "ShareTech", sans-serif`; // might not work on every platform, but the font for the whole select will be added as well
                         newSelect.appendChild(newOption)
                         // if no other default is specified, select ShareTech if available, if not select ShareTech-Mono if available
                         if (!settings[i].hasOwnProperty('default') && (font.name == 'ShareTech'
@@ -212,11 +217,13 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
                         numFontsAdded++
                     }                    
                 })
+                newSelect.setAttribute('onchange','setToSelectedFont(this)')                
                 if (selectIndex > -1){
                     newSelect.selectedIndex = selectIndex
                 } else {
                     newSelect.selectedIndex = 0
                 }
+                setToSelectedFont(newSelect)
             }
             // // add category (if it has one, otherwise set to "general")
             // if (settings[i].hasOwnProperty('category')){
@@ -419,6 +426,13 @@ function checkDependents(value,setting){
                     dependentEl.disabled = false
                 } else {
                     dependentEl.disabled = true
+                }
+            }
+            if (dependent.hasOwnProperty('disable')){
+                if ((Array.isArray(dependent.disable) && dependent.disable.includes(value)) || dependent.disable == value){ // if the setting is set to a value that disables the dependent
+                    dependentEl.disabled = true
+                } else {
+                    dependentEl.disabled = false
                 }
             }
             
@@ -724,6 +738,13 @@ function setSettings(settings, settingControls = prefsStore.settings, showErrors
         if (errorString.length > 0 && showErrors) {
             alert(errorString.trim())
         }
+}
+
+function setToSelectedFont(select){
+    let font = fonts.find(font => font.name == select.value)
+    if(font){
+        select.style.fontFamily = `"${font.name}", "ShareTech", sans-serif`;
+    }
 }
 
 function checkInfoBoxVisibility(infoIcon, settingsArea = document.getElementById('settingsArea')  ){
