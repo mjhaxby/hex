@@ -58,23 +58,25 @@ function addActivityTemplateData(activityTemplate, activityData, activitySetting
     activitySettings = withMarkdown.settings
   }
 
-  for (i = 0; i < activityData.length; i++){
-    for (j = 0; j < activityData[i].length; j++){
-      // escape "
-      if(typeof activityData[i][j] == 'string'){
-        activityData[i][j] = activityData[i][j].replaceAll('"','\\"')
-      } else {
-        activityData[i][j].text = activityData[i][j].text.replaceAll('"','\\"')
-      }
+// I'm not sure why I had the following, since JSON will already escape " characters
+//   for (i = 0; i < activityData.length; i++){
+//     for (j = 0; j < activityData[i].length; j++){
+//       // escape "
+//       if(typeof activityData[i][j] == 'string'){
+//         activityData[i][j] = activityData[i][j].replaceAll(/([^\\])"/g,'$1\\"') // replace all " with \" unless there is already a \ (already escaped)
+//       } else {
+//         activityData[i][j].text = activityData[i][j].text.replaceAll(/([^\\])"/g,'$1\\"') // replace all " with \" unless there is already a \ (already escaped)
+//       }
       
-    }
-}
-  let activityDataAsArray = JSON.stringify(activityData)
+//     }
+// }
+  let activityDataAsArray = 'gameData = ' + JSON.stringify(activityData).replaceAll(/\\\\\\",\\"/g) // some " are double escaped, so we need to remove one of the \s
+  // possibly remove the .replaceAll above… it might not be necessary
   let activitySettingsAsObject = 'gameSettings = ' + JSON.stringify(activitySettings)
   let activityFilesAsObject = 'gameFiles = ' + JSON.stringify(activityFiles)
   let exportInfo = {version: prefsStore.app_version, creationTime: Date.now(), platform: prefsStore.platform, activity: prefsStore.activity, source: prefsStore.source}
   // outputData = activityTemplate
-  let activityDataIntegration = '<script  charset="utf-8">gameData = ' + activityDataAsArray + ';\n' + activitySettingsAsObject + ';\n' + activityFilesAsObject + ';\nif(gameFiles.gameData){ for(let row = 0; row < gameData.length; row++){ for (let col = 0; col < gameData.length; col++){ if(typeof gameData[row][col] == \'object\' && gameData[row][col].hasOwnProperty(\'image\')){ gameData[row][col].image = gameFiles.gameData[parseInt(gameData[row][col].image)]; }; }; }; };' + '\ndocument.addEventListener("DOMContentLoaded",pageLoad())</script>'  
+  let activityDataIntegration = '<script  charset="utf-8">' + activityDataAsArray + ';\n' + activitySettingsAsObject + ';\n' + activityFilesAsObject + ';\nif(gameFiles.gameData){ for(let row = 0; row < gameData.length; row++){ for (let col = 0; col < gameData[row].length; col++){ if(typeof gameData[row][col] == \'object\' && gameData[row][col].hasOwnProperty(\'image\')){ gameData[row][col].image = gameFiles.gameData[parseInt(gameData[row][col].image)]; }; }; }; };' + '\ndocument.addEventListener("DOMContentLoaded",pageLoad())</script>'  
 
   if (fontSettings.length > 0){
     // add font information
@@ -92,9 +94,9 @@ function addActivityTemplateData(activityTemplate, activityData, activitySetting
     activityDataIntegration += '</style>'
   }
 
-  outputData = activityTemplate.replace('<script src="activityController.js"></script>',activityDataIntegration)
-  let regex = /<!--\*HEX SETTINGS START\*([.\s\S]+)\*HEX SETTINGS END\*-->/gm
-  outputData = outputData.replace(regex,`<!--*HEX INFO START*${JSON.stringify(exportInfo)}*HEX INFO END*-->`)
+  outputData = activityTemplate.replace('<script src="activityController.js"></script>','<!--*HEX DATA START*-->\n'+activityDataIntegration+'\n<!--*HEX DATA END*-->')
+  let regex = /<!--\*HEX SETTINGS START\*([.\s\S]+)\*HEX SETTINGS END\*-->/gm // replace hex settings…
+  outputData = outputData.replace(regex,`<!--*HEX INFO START*${JSON.stringify(exportInfo)}*HEX INFO END*-->`) // …with hex info
   return outputData
 }
 
@@ -174,13 +176,38 @@ function applyMarkdown(activityData,activitySettings, settingsInfo){
 }
 
 function convertMarkdownToHTMLWithLineBreaks(string){
+  // TO DO: modify regex if necessary AND OR change how \n are treated
   let converter = new showdown.Converter()  
-  let result = string.replaceAll('\\\\n','\\<span></span>n') // protect \\n (this seems over the top, but it doesn't work another way). We're using <span></span> because any < and > will have already been removed anyway
-      // apply markdown, but remove <p> tags which should never be necessary. Replace \n with <br>
-    result = result.replaceAll('<span></span>','') // remove this just in case anyway
+  let headersOrListsRegex = /^#+|^-/m // probably need to modify this as I think the string is not properly interpretted as multiple lines here (for whatever reason)
+  let result
+  const splitLines = string.split(/(^|[^\\])(\\n)/);
+
+  // console.log(string)
+  // console.log(`${splitLines.length} lines`)
+  // console.log(`${splitLines.length} is > 1? ${splitLines.length > 1}`)
+  // console.log(`test result is ${headersOrListsRegex.test(string)}`)
+  if(headersOrListsRegex.test(string) && splitLines.length > 1){
+    // if we have headers (#) or bullet point lists AND more than one line, we probably want to include <p> tags
+    // also, if we use the other method ("else" below), everything will get lumped under the first heading or list item
+    // so simple convert with no fiddling about    
+    console.log(`exporting regular html (lines ${string.split(/(^|[^\\])(\\n)/).length})`)
+    result = string.replaceAll(/(^|[^\\])(\\n)/g,'$1\n').replaceAll(/(^|[^\\])(\\n)/g,'$1\n') // turn \n back into real \n characters (do it twice to get them all)    
     result = converter.makeHtml(result)
+  } else {
+    console.log('exporting html with no <p>')
+    // best method for single line or multiline without headers (#) or bullet point lists (-)
+    // since we don't want to introduce <p> to simple strings, which clutter the final code and result in unexpected css
+
+    // first protect \\n (this seems over the top, but it doesn't work another way). We're using <span></span> because any < and > will have already been removed, so nothing can break this way
+    result = string.replaceAll('\\\\n','\\<span></span>n') 
+    // apply markdown
+    result = converter.makeHtml(result)
+    result = result.replaceAll('<span></span>','') // remove this just in case (not that it should affect anything)
+    // remove <p> tags and replace \n with <br>
     result = result.replaceAll(/<\/?p>/g,'').replaceAll(/(^|[^\\])(\\n)/g,'$1<br>').replaceAll(/(^|[^\\])(\\n)/g,'$1<br>') // replace \n twice in a row because otherwise some can get orphanned 
-    return result
+  }
+  return result
+  
 }
 
 function extractFontSettings(settings,websafe=false){
