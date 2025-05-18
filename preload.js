@@ -37,7 +37,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'checkProfileChangesThen',
       'hotPotsReady',
       'dataSelectImport',
-      'dataSelectImportFromPath'
+      'dataSelectImportFromFile'
     ];
 
     if (validChannels.includes(channel)) {
