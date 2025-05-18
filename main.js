@@ -477,8 +477,9 @@ function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function dataSelectImport(cell,fileTypes,path=false){
+function dataSelectImport(cell,fileTypes,file=false,cellOffset = 0){
   var validExtensions = []
+   //to do: allow multiple files and increase offset with each file added
 
   var dialogOptions = {
     title: 'Select file',
@@ -502,23 +503,47 @@ function dataSelectImport(cell,fileTypes,path=false){
     }
   })  
 
-  if (path){
-    dataSelectImportFromPath(path, validExtensions, cell)
+  if (file){
+    dataSelectImportFromFile(file, validExtensions, cell, cellOffset)
   } else {
     dialog.showOpenDialog(windows.main, dialogOptions).then(result => {
       if (result.cancelled) {
         console.log("Cancelled")
-        windows.main.webContents.send('dataCellFileImportResult', cell, false)
+        windows.main.webContents.send('dataCellFileImportResult', cell, false, cellOffset)
         return
       }
   
-      dataSelectImportFromPath(result.filePaths[0], validExtensions, cell)
+      dataSelectImportFromPath(result.filePaths[0], validExtensions, cell, cellOffset)
       
     })
   }  
 }
 
-function dataSelectImportFromPath(filePath, validExtensions, cell){
+// function dataSelectImportFromFile(file, validExtensions, cell, cellOffset){
+//   console.log(file)
+//   console.log(file.name)
+
+    
+//   if (!validExtensions.includes(file.ext)) {
+//     if (debugMode) {
+//       console.log("File extension: ." + fileExt)
+//       console.log("Valid extensions: ")
+//       console.log(validExtensions)
+//     }
+//     dialog.showErrorBox("Error opening file", "Invalid file extension.")
+//     return;
+//   }
+//   if (file.size > (1024 * 1024 * 5)) { // for now, limit is 5MB
+//     console.log("File is too big. " + file.size + " bytes.");
+//     dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 500KB or smaller are supported.")
+//     windows.main.webContents.send('dataCellFileImportResult', cell, false)  
+//   } else {
+//     addDataToDataCell(cell,cellOffset,file.data,file.ext,file.size,file.dimensions)
+//   }
+// }
+  
+
+function dataSelectImportFromPath(filePath, validExtensions, cell, cellOffset){
   const fileExt = path.extname(filePath).toLowerCase().slice(1)
     if (!validExtensions.includes(fileExt)) {
       if (debugMode) {
@@ -542,13 +567,13 @@ function dataSelectImportFromPath(filePath, validExtensions, cell){
         dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 500KB or smaller are supported.")
         windows.main.webContents.send('dataCellFileImportResult', cell, false)
       } else {
-        importFileToDataCell(cell,filePath,fileExt,stats)        
+        openFileForDataCell(cell,cellOffset,filePath,fileExt,stats)        
       }
     })
 }
 
 
-function importFileToDataCell(cell,filePath,fileExt,stats){
+function openFileForDataCell(cell,cellOffset,filePath,fileExt,stats){
   fs.readFile(filePath, (err, data) => {
     if (err) {
       if (debugMode) {
@@ -558,18 +583,22 @@ function importFileToDataCell(cell,filePath,fileExt,stats){
       windows.main.webContents.send('dataCellFileImportResult', cell, false)
       return;
     }
+    addDataToDataCell(cell,cellOffset,data.toString('base64'),fileExt,stats.size,sizeOfImage(data))
+    
+  })
+}
 
-    let fileStoreItem = { data: data.toString('base64'), ext: fileExt, fileSize: stats.size, type: determineFileType(fileExt) }
+function addDataToDataCell(cell,cellOffset,dataAsString,fileExt,fileSize,dimensions=null){
+  let fileStoreItem = { data: dataAsString, ext: fileExt, fileSize: fileSize, type: determineFileType(fileExt) }
   
     // for images, record dimensions
-    if (extensions.image.includes(fileExt)){
-      fileStoreItem.dimensions = sizeOfImage(data)
+    if (dimensions){
+      fileStoreItem.dimensions = dimensions
     }
 
     // importFileStore['data_' + cell] = fileStoreItem
 
-    windows.main.webContents.send('dataCellFileImportResult', cell, fileStoreItem)
-  })
+    windows.main.webContents.send('dataCellFileImportResult', cell, fileStoreItem,cellOffset)
 }
 
 function determineFileType(fileExt){
@@ -712,7 +741,7 @@ function advancedCheckActivityData(data,exporting=false){
         if(cell.hasOwnProperty('image')){    
           if(debugMode){console.log(cell.image)}      
           // if(exporting && typeof cell.image != 'object' || !exporting && typeof cell.image != 'number'){ // TO DO: make exporting use the number system too in order to reduce file sizes
-          if(typeof cell.image != 'number'){ // TO DO: make exporting use the number system too in order to reduce file sizes
+          if(cell.image != null && typeof cell.image != 'number'){ // TO DO: make exporting use the number system too in order to reduce file sizes
             if(debugMode){console.error(`Advanced change activity data: Image data link corrupt: typeof returns ${typeof cell.image}`)}
             ok = false
             return false
@@ -733,9 +762,14 @@ function checkFileStore(store){
     if(property != 'gameData'){
       ok = checkImage(store[property])
     } else {
-      for(let i = 1; i<store.gameData.length; i++){   
-        if(store.gameData[i].length > 0){          
+      if(debugMode){console.log(`Game data length is ${store.gameData.length}`)}
+      for(let i = 1; i<store.gameData.length+1; i++){   
+        if(debugMode && store.gameData[i] && typeof store.gameData[i] == 'object'){console.log(`Game data item ${i} has ${Object.keys(store.gameData[i]).length} keys`)}
+        else {console.log(`Game data item ${i} is empty`)}
+        if(store.gameData[i] && typeof store.gameData[i] == 'object' && Object.keys(store.gameData[i]).length > 0){
           ok = checkImage(store.gameData[i])
+        } else if (debugMode){
+          console.log(`Game data item ${i} is empty`)
         }
         if(!ok){
           if(debugMode){console.log('Image error.')}
@@ -851,7 +885,7 @@ function extractFilesFromGameDataToImportFileStore(data){
       let cell = data[row][col]
       if(typeof cell != 'string'){
         for (const file in cell){
-          if (file != 'text' && file != 'datetime'){  // ignore text and datetime, we can leave this as it is
+          if (file != 'text' && file != 'datetime' && cell[file] != null){  // ignore text and datetime, we can leave this as it is
             let existingFile = gameFileAlreadyExists(cell[file]) // returns index of existing file
             if(existingFile){
               cell[file] = existingFile
@@ -1135,9 +1169,15 @@ ipcMain.on('dataSelectImport', function(event,cell, fileTypes){
   dataSelectImport(cell,fileTypes)
 })
 
-ipcMain.on('dataSelectImportFromPath', function(event, cell, fileTypes, path){
-  dataSelectImport(cell,fileTypes, path)
-})
+// no longer used (see below) – locked this out for security reasons too
+// ipcMain.on('dataSelectImportFromPath', function(event, cell, fileTypes, path){
+//   dataSelectImport(cell,fileTypes, path)
+// })
+// nevermind, don't need this either
+// ipcMain.on('dataSelectImportFromFile', function(event, cell, fileTypes, file, cellOffset){
+//   console.log('Received data')
+//   dataSelectImport(cell,fileTypes, file,cellOffset)
+// })
 
 ipcMain.on('customSelectImport', function (event, settingId, fileTypes){
   customSelectImport(settingId, fileTypes)
