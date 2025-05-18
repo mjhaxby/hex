@@ -321,14 +321,18 @@ function establishColName(col){
   var name = col.toString(); // default
   if (prefsStore.hasOwnProperty('cols') && prefsStore.cols[col-1]){
     name = prefsStore.cols[col-1].title;
+    if(col == prefsStore.cols.length-1 && prefsStore.cols.at(-1).title == '===='){ // if we're on the penultimate item and the next item is the copy code '===='      
+        name = name.replaceAll('#', '1') // any instance of # should be the number 1
+      }
     if (name == '====' && col > 1){ // special code to repeat the last column name (col > 1 as a precaution in case someone sets the first to ====)
-      name = prefsStore.cols[prefsStore.cols.length-2].title // use name from one before
+      name = prefsStore.cols[prefsStore.cols.length-2].title.replaceAll('#','2') // use name from one before
     }
     if (prefsStore.hasOwnProperty('cols_min') && col > prefsStore.cols_min){
       name = '(' + name + ')'
     }
   } else if (prefsStore.hasOwnProperty('cols') && prefsStore.cols[prefsStore.cols.length-1].title == '====' && col > 1){ // special code to repeat the last column name (col > 1 as a precaution in case someone sets the first to ====)
-    name = '(' + prefsStore.cols[prefsStore.cols.length-2].title + ')' // use name from one before
+    let copyNumber = col-prefsStore.cols.length+2 // the nth time the copy has been used (including the original)
+    name = '(' + prefsStore.cols[prefsStore.cols.length-2].title.replaceAll('#',copyNumber)  + ')' // use name from one before
   }
   return name
 }
@@ -411,7 +415,7 @@ function inputCellFile(row,col){
 }
 
 function inputCellMore(row, col){
-  return newElement('button',{class: 'inputCellMore', onclick: 'toggleCellExtension(this.parentElement)'},'⋮')
+  return newElement('button',{class: 'inputCellMore', onclick: 'toggleCellExtension(this.parentElement)', tabindex: -1},'⋮')
 }
 
 function inputCellExtension(row,col){
@@ -438,10 +442,10 @@ function inputCellImageSelector(row,col){
 }
 
 // check data types for all columns, then enable or disable accordingly
-// for now this only does anything for images + datetime
 function checkDataTypeCols(){
   for (let r = 1; r <= numRows; r++){
     for (let c = 1; c <= numCols; c++){
+      showHideTextInputElements(r,c)
       enableDisableImageElements(r,c)
       showHideDateTimeElements(r,c)
     }
@@ -467,6 +471,14 @@ function showHideDateTimeElements(row,col){
   }
 }
 
+function showHideTextInputElements(row,col){
+  if (colAcceptsDataType(col,'text')){
+    document.getElementById(`inputCellText_${row}_${col}`).classList.remove('hidden')
+  } else {
+    document.getElementById(`inputCellText_${row}_${col}`).classList.add('hidden')
+  }
+}
+
 // check whether column accepts a data type
 function colAcceptsDataType(col,types){  
   if(typeof types == 'string'){
@@ -474,10 +486,19 @@ function colAcceptsDataType(col,types){
   }
   let result = false
   types.forEach(type =>{
-    if((type == 'text' && (!prefsStore.hasOwnProperty('cols') || (prefsStore.hasOwnProperty('cols') && prefsStore.cols.length < col))) // text is treated specially and assumed accepted
-      || (prefsStore.hasOwnProperty('cols') && prefsStore.cols.length >= col && prefsStore.cols[col-1][type])){ // all others checked against rules
+    if(type == 'text'){ // text is treated specially
+      if(!prefsStore.hasOwnProperty('cols') || prefsStore.cols.length < col || ((prefsStore.hasOwnProperty('cols') && prefsStore.cols.length >= col && !prefsStore.cols[col-1].hasOwnProperty('text'))) ||  // text is assumed accepted… (no columns are specified, or no columns and specified and we're within range)
+      (prefsStore.hasOwnProperty('cols') && prefsStore.cols.length >= col && prefsStore.cols[col-1].hasOwnProperty('text') &&  prefsStore.cols[col-1].text == true)){ //  unless explicitly stated (columns and specified, no specification of text or text is explicitly marked true)      
+        result = true
+        return true
+      } else {
+        result = false
+        return false
+      }
+    } else if (prefsStore.hasOwnProperty('cols') && prefsStore.cols.length >= col && prefsStore.cols[col-1][type]){ // all others checked against rules
       result = true
-    } else {
+      return true
+    } else {      
       result = false
       return false
     }
@@ -494,7 +515,7 @@ function toggleCellExtension(cell,forceOpen=false,updateRowHeaders=true){
     text.classList.add('hidden')
     // prepare mirror:    
     let mirror = extension.querySelector('.inputCellTextMirror')
-    if (text.value == '' && cell.classList.contains('withPreview') && colAcceptsDataType(text.getAttribute('data-col'), 'image')){ // if no text, but there is an image, we won't bother with the mirror
+    if (text.value == '' && cell.classList.contains('withPreview') && (text.getAttribute('data-col'), 'image')){ // if no text, but there is an image, we won't bother with the mirror
       mirror.classList.add('hidden')
     } else {
       mirror.classList.remove('hidden')
@@ -893,6 +914,14 @@ function swapData(col1, col2) {
 
 function addImageToCell(cellID,fileStoreItem){
   let fileHolder = document.getElementById(cellID).querySelector('.inputCellFile')
+  if(fileStoreItem && !fileStoreItem.hasOwnProperty('content') && fileStoreItem.hasOwnProperty('data')){
+    fileStoreItem.content = `data:image/${fileStoreItem.ext};base64, ${fileStoreItem.data}`
+  } else if (fileStoreItem && fileStoreItem.hasOwnProperty('content')){
+    fileStoreItem.data = fileStoreItem.content.split(',')[1] // get just the data in case we need it (notably for svg)
+  } else {
+    console.error('No content or data in fileStoreItem')
+    return
+  }
   if (fileHolder){
     let imagePreview = newElement(fileStoreItem.ext == 'svg' ? 'div' : 'img',{
       class: 'dataImagePreview',
@@ -904,17 +933,17 @@ function addImageToCell(cellID,fileStoreItem){
     if (fileStoreItem.ext == 'svg'){
       // put SVG in, keep a copy in the div
       imagePreview.innerHTML = atob(fileStoreItem.data)
-      imagePreview.setAttribute('data-src',`data:image/${fileStoreItem.ext};base64, ${fileStoreItem.data}`)
+      imagePreview.setAttribute('data-src',fileStoreItem.content)
       // fileHolder.innerHTML = `<div class='dataImagePreview' data-src="data:image/${fileStoreItem.ext};base64, ${fileStoreItem.data}" onclick="showDelete(this.parentElement)">${atob(fileStoreItem.data)}</div>`
       } else {
         // for png etc. just use base64
-        imagePreview.src = `data:image/${fileStoreItem.ext};base64, ${fileStoreItem.data}`
+        imagePreview.src = fileStoreItem.content
         // fileHolder.innerHTML = `<img class='dataImagePreview' src="data:image/${fileStoreItem.ext};base64, ${fileStoreItem.data}"></img>`
       }    
       imagePreview.style.aspectRatio = fileStoreItem.dimensions.width + '/' + fileStoreItem.dimensions.height    
     if (fileStoreItem.hasOwnProperty('dimensions')){
       imagePreview.setAttribute('data-width', fileStoreItem.dimensions.width)
-      imagePreview.setAttribute('data-height', fileStoreItem.dimensions.width) 
+      imagePreview.setAttribute('data-height', fileStoreItem.dimensions.height) 
     }
     
     let deleteBtn = newElement('button', {class: 'fileDeleteBtn hidden', onclick: 'deleteFile(this.parentElement)'},'×')
@@ -929,6 +958,8 @@ function addImageToCell(cellID,fileStoreItem){
     if (inputCellTextMirror && inputCellTextMirror.value == ''){
       inputCellTextMirror.classList.add('hidden')
     }
+  } else {
+    console.error('File holder element missing')
   }
 }
 
@@ -984,9 +1015,34 @@ function dropHandler(cell, e){
     });
   }
 
-  // TO DO: import multiple images
-  if(files[0].type.includes('image')){
-    importImage(cell,files[0].path)
+  if (files.length > 0) {
+    for (let i = 0; i < files.length; i++) {
+      if (files[i].type.includes('image')) {
+        const reader = new FileReader();
+  
+        reader.onload = function () {
+          // Send the file content and metadata to the main process
+          var image = new Image();
+          image.src = reader.result;
+
+          const file = {
+            name: files[i].name,
+            type: files[i].type.split('/')[0], // we don't need the bit after the slash (e.g. image/png -> img)
+            ext: files[i].name.split('.').pop(), // get the extension from the filename
+            fileSize: files[i].size,
+            dimensions: {width: image.width, height: image.height},
+            content: reader.result, // Base64 or text content
+          };
+          // TO DO! There are no validity checks being done here (size and file type) which would normally be done on main.js but we don't need main for this
+          // TO DO! At the moment we're sending all to the same cell, but these needs to be tweaked so it goes i cells below
+          // importImage(cell, file, i); // Pass each file to the importImage function
+          addImageToCell(cell.id, file)
+        };
+  
+        // Read the file as a data URL (Base64 encoded)
+        reader.readAsDataURL(files[i]);
+      }
+    }
   }
 
   dragLeaveHandler(cell, e)
@@ -1125,9 +1181,9 @@ function getFilesFromCell(row, col){
     if (file.type == 'image'){
       file.dimensions = {height: inputFile.getAttribute('data-height'), width: inputFile.getAttribute('data-width')}
       if(file.ext == 'svg'){
-        file.data = inputFile.getAttribute('data-src').replace('data:image/svg;base64, ','')
+        file.data = inputFile.getAttribute('data-src').split(',')[1].trim() // get just the data (everything after comma) and trim to remove any whitespace
       } else {
-        file.data = inputFile.getAttribute('src').replace(`data:image/${file.ext};base64, `,'')
+        file.data = inputFile.getAttribute('src').split(',')[1].trim() // get just the data (everything after comma) and trim to remove any whitespace
       }
     } else {
       console.log('Other file types not yet supported.')
@@ -1154,13 +1210,19 @@ function convertArrayToTableData(array, startRow = 1, startCol = 1){
         addCol(col) // add one
       }
       // put the data in the inputCellText
-      inputCellText = document.getElementById('inputCellText_'+row+'_'+col)
+      let inputCellText = document.getElementById('inputCellText_'+row+'_'+col)
+      
       if(typeof array[row-startRow][col-startCol] == 'string'){
         inputCellText.value = array[row-startRow][col-startCol]
       } else {
         inputCellText.value = array[row-startRow][col-startCol].text
-        if (array[row-startRow][col-startCol].hasOwnProperty('image')){
+        if (array[row-startRow][col-startCol].image && 
+          Object.keys(array[row-startRow][col-startCol].image).length > 0) {
           addImageToCell('dataCell_'+row+'_'+col,array[row-startRow][col-startCol].image) 
+        }
+        if (array[row-startRow][col-startCol].hasOwnProperty('datetime')){
+          let inputCellDateTime = document.getElementById('inputCellDateTime_'+row+'_'+col)
+          inputCellDateTime.value = array[row-startRow][col-startCol].datetime
         }
       }
       
@@ -1185,12 +1247,16 @@ function convertTableDataToArray(startRow = 1, startCol = 1, endRow = numRows, e
       if(includeAllDataTypes && (colAcceptsDataType(col, ['image']) || colAcceptsDataType(col, ['sound']) || colAcceptsDataType(col, ['datetime']))){ // add new file types here if relevant
         cell = {text: cell}
         
+        // I've commented this out because I don't think it's necessary (question is whether to check for existence of property or check for null…), but if things break…
+
         // add properties for all relevant file types (these will be left null if no file has been added)
-        for (const type in prefsStore.cols[col]) {
-          if (prefsStore.cols[col][type] && type != 'text' && type != 'title') { // skip text (already added) and title (not necessary)
-            cell[type] = null;
-          }
-        }
+        // for (const type in prefsStore.cols[col-1]) { // -1 because col is 1-indexed but prefsStore.cols is 0-indexed
+        //   if (prefsStore.cols[col-1][type] && type != 'text' && type != 'title') { // skip text (already added) and title (not necessary)
+        //     cell[type] = null;
+        //   }
+        // }
+
+
         // get files and fill in cell object
         let files = getFilesFromCell(row, col)
         if(files){
@@ -1295,14 +1361,15 @@ function isEmptyRow(row){
   for(let i=1; i<=numCols; i++){
     var inputCellText = document.getElementById('inputCellText_'+row+'_'+i)
     var inputCellFile = document.getElementById('inputCellFile_'+row+'_'+i)
-    if (inputCellText.value != '' || !inputCellFile.classList.contains('hidden')){
+    var inputCellDateTime = document.getElementById('inputCellDateTime_'+row+'_'+i)
+    if (inputCellText.value != '' || !inputCellFile.classList.contains('hidden') || inputCellDateTime.value != ''){
       return false
     }
   }
   return true
 }
 
-function isNotEmptyRow(row,inputArray = convertTableDataToArray()){
+function isNotEmptyRow(row,inputArray = convertTableDataToArray()){ // to do: doesn't check for datetime (but could maybe do this with a modification to convertTableDataToArray)
      for (let col = inputArray[row].length-1; col>=0; col--){
        if ((typeof inputArray[row][col] == 'string' && inputArray[row][col] != '') || (typeof inputArray[row][col] == 'object' && (inputArray[row][col].text != '' || inputArray[row][col].hasOwnProperty('image')))){
          return true
@@ -1315,7 +1382,8 @@ function isEmptyCol(col){
   for(let i=1; i<=numRows; i++){
     var inputCellText = document.getElementById('inputCellText_'+i+'_'+col)
     var inputCellFile = document.getElementById('inputCellFile_'+i+'_'+col)
-    if (inputCellText.value != '' || !inputCellFile.classList.contains('hidden')){
+    var inputCellDateTime = document.getElementById('inputCellDateTime_'+i+'_'+col)
+    if (inputCellText.value != '' || !inputCellFile.classList.contains('hidden') || inputCellDateTime.value != ''){
       return false
     }
   }
@@ -1325,7 +1393,9 @@ function isEmptyCol(col){
 function rowContainsEmptyCell(row){
   for(let i=1; i<=numCols; i++){
     var inputCellText = document.getElementById('inputCellText_'+row+'_'+i)
-    if (inputCellText.value = ''){
+    var inputCellFile = document.getElementById('inputCellFile_'+rowi+'_'+i)
+    var inputCellDateTime = document.getElementById('inputCellDateTime_'+row+'_'+i)
+    if (inputCellText.value == ''  && inputCellFile.classList.contains('hidden') && inputCellDateTime.value == ''){
       return true
     }
   }
@@ -1335,7 +1405,9 @@ function rowContainsEmptyCell(row){
 function colContainsEmptyCell(col){
   for(let i=1; i<=numRows; i++){
     var inputCellText = document.getElementById('inputCellText_'+i+'_'+col)
-    if (inputCellText.value = ''){
+    var inputCellFile = document.getElementById('inputCellFile_'+i+'_'+col)
+    var inputCellDateTime = document.getElementById('inputCellDateTime_'+i+'_'+col)
+    if (inputCellText.value == ''  && inputCellFile.classList.contains('hidden')  && inputCellDateTime.value == ''){
       return true
     }
   }
@@ -1352,6 +1424,12 @@ function tableIsEmpty(){
   var inputCellFiles = document.querySelectorAll('.inputCellFile')
   for(let i=0; i<inputCellFiles.length;i++){
     if (!inputCellFiles[i].classList.contains('hidden')){
+      return false
+    }
+  }
+  var inputCellDateTimes = document.querySelectorAll('.inputCellDateTime')
+  for(let i=0; i<inputCellDateTimes.length;i++){
+    if (inputCellDateTimes[i].value != ''){
       return false
     }
   }
