@@ -5,7 +5,7 @@
     "empty_cells_allowed":true,
     "cols":["Category #","===="],
     "scorm_support":false,
-    "description": "Find the right way across the map",
+    "description": "Jump on the correct tiles to get to the end of the maze. The path is made up of words from a specific category.",
     "settings":[
         {"name":"theme","label":"Theme","type":"select","options":["aqua","volcanic","neon","sky"],"category":"Look and feel"},
         {"name":"pathColor","label":"Path color","type":"select","options":["match theme","theme gradient","red","orange","green","blue","pink","purple","hot to cold","thermal","rainbow"],"category":"Look and feel"},
@@ -32,7 +32,9 @@
         {"name":"playAgainText","label":"Play again text","type":"text","default":"Play again?","category":"Language"}
     ],
     "sample_datas":[
-        {"title":"Regular and irregular verbs","activity": [["be","accept"],["become","arrive"],["begin","ask"],["break","bake"],["bring","call"],["build","clean"],["buy","climb"],["catch","close"],["choose","compare"],["come","cook"],["cost","dance"],["cut","drop"],["do","enjoy"],["draw","fix"],["drink","help"],["drive","invite"],["eat","jump"],["fall","kiss"],["feel","laugh"],["fight","like"],["find","listen"],["fly","live"],["forget","love"],["get","need"],["give","open"],["go","paint"],["grow","play"],["have","pull"],["hear","push"],["hide","rain"],["hold","remember"],["keep","smile"],["know","start"],["leave","talk"],["lend","travel"],["let","turn"],["lose","use"],["make","visit"],["mean","wait"],["meet","walk"],["pay","want"],["put","wash"],["read","watch"],["ride","work"],["ring",""],["run",""],["say",""],["see",""],["sell",""],["send",""],["show",""],["sing",""],["sit",""],["sleep",""],["speak",""],["spend",""],["stand",""],["swim",""],["take",""],["teach",""],["tell",""],["think",""],["throw",""],["understand",""],["wear",""],["win",""],["write",""]]}    
+        {"title":"Regular and irregular verbs","activity": [["be","accept"],["become","arrive"],["begin","ask"],["break","bake"],["bring","call"],["build","clean"],["buy","climb"],["catch","close"],["choose","compare"],["come","cook"],["cost","dance"],["cut","drop"],["do","enjoy"],["draw","fix"],["drink","help"],["drive","invite"],["eat","jump"],["fall","kiss"],["feel","laugh"],["fight","like"],["find","listen"],["fly","live"],["forget","love"],["get","need"],["give","open"],["go","paint"],["grow","play"],["have","pull"],["hear","push"],["hide","rain"],["hold","remember"],["keep","smile"],["know","start"],["leave","talk"],["lend","travel"],["let","turn"],["lose","use"],["make","visit"],["mean","wait"],["meet","walk"],["pay","want"],["put","wash"],["read","watch"],["ride","work"],["ring",""],["run",""],["say",""],["see",""],["sell",""],["send",""],["show",""],["sing",""],["sit",""],["sleep",""],["speak",""],["spend",""],["stand",""],["swim",""],["take",""],["teach",""],["tell",""],["think",""],["throw",""],["understand",""],["wear",""],["win",""],["write",""]]},    
+        {"title":"French nouns, adjectives and verbs","activity":[["départ","mange","grand"],["chute","finir","petit"],["goût","avais","heureux"],["vol","chanter","triste"],["lancement","vont","rapide"],["travail","prendre","lent"],["recherche","serait","ancien"],["avance","allons","jeune"],["baisse","dira","froid"],["pente","jouer","chaud"],["rayon","peux","fort"],["aide","étaient","faible"],["chance","regarder","joli"],["fin","aurons","laid"],["marche","mis","intelligent"],["fuite","faisait","bizarre"],["plainte","viendra","rouge"],["livraison","souffrir","noir"],["grève","lira","vert"],["relance","chute","bleu"],["froid","recherche",""],["chaud","avance",""],["jeune","baisse",""],["","aide",""],["","marche",""],["","fuite",""],["","relance",""]]},
+        {"title":"Pure metals and alloys","activity":[["gold","steel"],["silver","stainless steel"],["copper","bronze"],["iron","brass"],["aluminium","pewter"],["zinc","nichrome"],["lead","duralumin"],["tin","amalgam"],["nickel",""],["titanium",""]]}
     ]
   }
   *HEX SETTINGS END*-->
@@ -249,6 +251,7 @@
             transform: translate(-50%, -50%) rotateX(30deg);
             transition: transform 500ms, text-shadow 500ms, font-size 500ms;
             pointer-events: none;
+            text-align: center;
         }
 
         .hexagon.current .label,
