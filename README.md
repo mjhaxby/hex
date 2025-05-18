@@ -8,7 +8,7 @@ https://github.com/mjhaxby/hex/assets/47946283/f41d81ae-9ae5-403a-ab48-aa40efc49
 So far there are nine activities available: Anagram, Backs to the Board, Blockbusters, Crack the code, Crossword, Decisions, Falling Words, Match and Treasure Hunt. It's also possible to create your own activities.
 
 ## How do I use it?
-The simplest way is to simply copy and paste a list of vocabulary (with translation or definitions) from a Word or Excel document into **hex**. You can press *run* to open the activity, probably for use in the classroom, or you can press *export* to create an HTML file (or SCORM file). You can then put this HTML file on a Learning Management System, like Moodle, so that your students can use them individually. Some activities work best in the classroom, like *Backs to the board*. Others, you’re more likely to use as individual activities, like *Match*, either in a computer lab or at home. 
+The simplest way is to simply copy and paste a list of vocabulary (with translation or definitions) from a Word or Excel document into **hex**. You can press *run* to open the activity, probably for use in the classroom, or you can press *export* to create an HTML file (or SCORM file). You can then put this HTML file on a Learning Management System, like Moodle, so that your students can use them individually. Some activities work best in the classroom, like *Backs to the board*. Others, you’re more likely to use as individual activities, like *Match*, either in a computer lab or at home. Some activities (notably *Decisions* and *Escape Game*) require a little more construction to get up and running. The easiest way to see how any of the activities work is to try the examples which can be found in the settings.
 
 ## How do I get it?
 Find the latest version under **Releases** on the right-hand side.
@@ -27,7 +27,7 @@ Download the latest version on the [releases](https://github.com/mjhaxby/hex/rel
 - Explanations on how to use each activity.
 - SCORM support for all activities.
 - Import data from previously exported activities.
-- New activities: Double Puzzle, Cards, Magnet Board, Sort, Timeout, Codenames, Four-in-a-row, Spinner, Climber, Odd One Out.
+- New activities: Double Puzzle, Quiz, Magnet Board, Codenames, Spinner, Odd One Out…
 
 ## Disclaimer
 I am not a software developer, I am an English teacher. A huge part of this project is copy and pasted code (that I try to remember to give my source for, but often forget in the folly of trying out new things – I will try to add more attributes in future versions) and pure guess work.
