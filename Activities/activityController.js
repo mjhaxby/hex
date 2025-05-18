@@ -16,7 +16,7 @@ ipcRenderer.on('loadActivity', (event, data, settings, importedFiles) => {
   if(gameFiles.gameData){
     console.log('Linking game files to game data')
     for(let row = 0; row < gameData.length; row++){
-      for (let col = 0; col < gameData.length; col++){        
+      for (let col = 0; col < gameData[row].length; col++){        
         if(typeof gameData[row][col] == 'object' && gameData[row][col].hasOwnProperty('image')){
           gameData[row][col].image = gameFiles.gameData[parseInt(gameData[row][col].image)]
         }
