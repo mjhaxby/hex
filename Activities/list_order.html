@@ -20,12 +20,14 @@
       {"name":"fuzziness","label":"Default fuzz (+/-)","type":"number","default":0,"min":0,"info":"Set custom range in second column.","category":"behavior"},
       {"name":"minAttempts","label":"Minimum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to show the “show answers” button after a number of attempts.","category":"behavior"},
       {"name":"maxAttempts","label":"Maximum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to prevent answers after a number of attempts.","category":"behavior"},    
-      {"name":"attemptsText","label":"Attempts text","type":"text","default":"attempts: ","category":"language"}
+      {"name":"attemptsText","label":"Attempts text","type":"text","default":"attempts: ","category":"language"},
+      {"name":"topLabel","label":"Top label","type":"text","default":"","category":"language","info":"Leave blank for no label."},
+      {"name":"bottomLabel","label":"Bottom label","type":"text","default":"","category":"language","info":"Leave blank for no label."}
     ],
     "sample_datas":[
-    [["red"],["orange"],["yellow"],["green"],["blue"],["violet"]],
-    [["Heat fresh water until boiling.","+2"],["Warm teapot or mug.","-1"],["Place tea bag or leaves in container.","-2"],["Fill container with boiling water.",""],["Let tea steep for recommended time.",""],["Take out tea bag or strain leaves.",""],["Customize with milk, sugar, etc.",""],["Relax and enjoy your tea!",""]],
-      [["Good morning, sir,","0-25%"],["Good evening, madam,","0-25%"],["Hello",""],["Hi there",""],["Hey!",""],["You alright?","62.5-100%"],["Wassup?","62.5-100%"],["Yo man!","62.5-100%"]]     
+    {"title":"Rainbow colors","activity":[["red"],["orange"],["yellow"],["green"],["blue"],["violet"]]},
+    {"title":"Making tea","activity":[["Heat fresh water until boiling.","+2"],["Warm teapot or mug.","-1"],["Place tea bag or leaves in container.","-2"],["Fill container with boiling water.",""],["Let tea steep for recommended time.",""],["Take out tea bag or strain leaves.",""],["Customize with milk, sugar, etc.",""],["Relax and enjoy your tea!",""]]},
+    {"title":"Greetings: formal -> informal","activity":[["Good morning, sir,","0-25%"],["Good evening, madam,","0-25%"],["Hello",""],["Hi there",""],["Hey!",""],["You alright?","62.5-100%"],["Wassup?","62.5-100%"],["Yo man!","62.5-100%"]]}     
       ]
   }
 *HEX SETTINGS END*-->
@@ -245,6 +247,10 @@
             button:disabled{
                 opacity: 0.5;
             }
+
+            h1{
+                text-align: center;
+            }
     
             .icon {
                 stroke: var(--button-fg);
@@ -285,6 +291,7 @@
                 position: relative;
                 min-height: 7vh;
                 width: 100%;
+                padding-bottom: 2vh;
             }
     
             .word-container {
@@ -522,6 +529,18 @@
                 //
                 determineFontSize(sortArea)
 
+                if(gameSettings.topLabel != ''){
+                    let topLabel = document.getElementById('topLabel')
+                    topLabel.innerHTML = gameSettings.topLabel
+                    topLabel.classList.remove('hidden')
+                }
+
+                if(gameSettings.bottomLabel != ''){
+                    let bottomLabel = document.getElementById('bottomLabel')
+                    bottomLabel.innerHTML = gameSettings.bottomLabel
+                    bottomLabel.classList.remove('hidden')
+                }
+
                 // Make sort items
                 for (let i=0; i<gameData.length; i++){
                     let sortText = designElement('div',{class:'sort-item-text'},gameData[i][0])
@@ -702,7 +721,8 @@
             if (size < 5){
                 size = 5
             }
-            sortArea.style.fontSize = size + 'vh'
+            sortArea.style.fontSize = size + 'vh'            
+            document.body.style.fontSSize = size/2 + 'vh'
         }
 
         function adjustFontSize(sortItem){
@@ -1126,7 +1146,9 @@
           </script>
     </head>
     <body>
+        <h1 id="topLabel" class="hidden"></h1>
         <div id="sortArea"></div>
+        <h1 id="bottomLabel" class="hidden"></h1>
         <div class="check-wrapper">
         <button id="checkButton" class="check-btn" onclick="check()">
             <svg class="icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;"> <g transform="matrix(1.00921,0,0,1.07529,4.6257,-9.15356)"> <path d="M3.171,72.077C13.238,79.35 21.989,86.754 29.993,94.233C45.493,62.504 63.245,34.81 86.749,15.79" style="fill:none;stroke:inherit;;stroke-width:inherit;"/> </g> </svg>
