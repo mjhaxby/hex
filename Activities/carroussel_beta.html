@@ -8,8 +8,10 @@
     "markdown_support":true,
     "empty_cells_allowed":true,
     "settings":[                
-        {"name":"color","label":"Color","type":"select","options":["Default Light", "Default Dark","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company 1","Swedish furniture company 2","Save the trees","Seaside","Orchid","Café au lait"]},
+        {"name":"color","label":"Color","type":"select","options":["Default Light", "Default Dark","Lille","university","B5 4eva","bridge of wood","Black and white","Dark mode"]},
         {"name":"font","label":"Font","type":"font_family","var":"main-font"},
+        {"name":"fontSize","label":"Font size (%)","type":"number","min":1,"max":500,"default":100},
+        {"name":"autoAdjustFontSize","label":"Automatically adjust font size","type":"checkbox","default":true},
         {"name":"border","label":"Border","type":"select","options":["none","hairline","thick","rounded"]},
         {"name":"logo","label":"Show logo","type":"select-import","options":["None","hex"],"dependents":[
           {"name":"logoLink","disable":"None"}
@@ -42,56 +44,48 @@
   <style>        
           :root {
             --bg-color: #F2F3EB;
-            --bg-color-light: #94948f;
             --fg-color: #bc5d31;
-            --fg-color-trans: rgba(188, 93, 49, 0.5);
+            --front-border: #FFCAB1;
+            --back-border: #bc5d31;
             --back-bg: #FFCAB1;
             --back-fg: #000000;
-            --back-border: #bc5d31;
-            --back-icon: #bc5d31;
             --front-bg: #C1D7AE;
             --front-fg: #000000;
-            --front-icon: #6a9264;
-            --front-border: #6a9264;
-            --ok: #8CC084;
+            --highlight: #8CC084;
+            --header-height: 0px;
+            --vertical-height: 0px;
         }
 
         [data-theme="default dark"] {
             --bg-color: #2E4057;
-            --bg-color-light: #425c7f;
             --fg-color: #F6D8AE;
-            --fg-color-trans: rgba(246, 216, 174, 0.5);
+            --front-border: #425c7f;
+            --back-border: #F6D8AE;
             --back-bg: #2E4057;
             --back-fg: #F6D8AE;
-            --back-border: #F6D8AE;
-            --back-icon: #F6D8AE;
             --front-bg: #F6D8AE;
             --front-fg: #2E4057;
-            --front-icon: #2E4057;
-            --front-border: #425c7f;
-            --ok: #447f42;
+            --highlight: #FFCAB1;
         }
 
         [data-theme="black and white"] {
             --bg-color: #ffffff;
             --bg-color-light: #747474;
             --fg-color: #000000;
-            --fg-color-trans: rgba(0, 0, 0, 0.5);
             --back-bg: #000000;
             --back-fg: #ffffff;
             --back-border: #747474;
-            --back-icon: #747474;
             --front-bg: #ffffff;
             --front-fg: #000000;
-            --front-border: #747474;
-            --front-icon: #747474;
+            --front-border: #747474;            
+            --highlight: #747474;
         }
 
         [data-theme="lille"] {
           --bg-color: #FFFFFF;
           --fg-color: #002D2D;
           --front-border: #5862ed;
-          --back-border: #5862ed;
+          --back-border: #002D2D;
           --back-fg: #FFFFFF;
           --back-bg: #002D2D;          
           --front-fg: #002D2D;
@@ -111,11 +105,60 @@
           --highlight: #FC535C;
         }
 
-    body {
+        [data-theme="dark mode"] {
+          --bg-color: #000000;
+          --fg-color: #FFFFFF;
+          --front-border: #FFFFFF;
+          --back-border: #FFFFFF;
+          --back-bg: #1d1d1d;
+          --back-fg: #FFFFFF;
+          --front-bg: #1d1d1d;
+          --front-fg: #FFFFFF;
+          --highlight: #FFFFFF;
+        }
+
+        [data-theme="b5 4eva"] {
+          --bg-color: #FFFFFF;
+          --fg-color: #fc535c;
+          --front-border: #fc535c;
+          --back-border: #ffd24b;
+          --back-fg: #2D0505;
+          --front-fg: #fc535c;
+          --back-bg: #fc535c;
+          --front-bg: #ffd24b;
+          --highlight: #5862ED;
+        }
+
+        [data-theme="bridge of wood"] {
+          --bg-color: #FFFFFF;
+          --fg-color: #ff6941;
+          --front-border: #ffb4d2;
+          --back-border: #ffb4d2;
+          --back-bg: #ff6941;
+          --back-fg: #FFFFFF;
+          --front-bg: #7abaff;
+          --front-fg: #FFFFFF;
+          --highlight: #ffb4d2;
+        }
+
+        /* [data-header="header"] {
+          --header-height: 20px;
+        }
+
+        [data-footer="footer"] {
+          --footer-height: 20px;
+        } */
+        
+        
+        body {
       font-family: var(--main-font);
       overflow: hidden;
       /* font-size: 0.75em; */
+      background-color: var(--bg-color);
+      color: var(--fg-color);
     }
+
+
 
     a{
       color: var(--highlight);
@@ -139,14 +182,74 @@
       opacity: 50%;
       transition: opacity 300ms, transform 300ms;
       font-family: inherit;
+      color: inherit;
     }
 
-    button:hover {
-      opacity: 100%;
+    .border-rounded button{
+      border-radius: 2vh;
+    }
+
+    button:hover, button:focus {
+      opacity: 100%;      
+    }    
+
+    button:focus{
+      outline: var(--highlight) solid 3px;
     }
 
     code {
       user-select: text;
+    }
+
+        .has-header{
+      --header-height: 20px;
+    }
+
+    .has-footer{
+      --footer-height: 20px;
+    }
+
+    .header{
+      height: var(--header-height);
+      font-size: 0.5em;
+    }    
+
+    .footer{
+      height: var(--footer-height);
+    }
+
+    .header, .footer{
+        font-size: 0.5em;
+        text-align: center;
+        width: 100vw;
+    }
+
+    .logo{
+      position: absolute;
+      bottom: 5;
+      right: 5;
+      width: 50px;
+      z-index: 9999999;
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 99999;
+      transition: filter 300ms, opacity 300ms;
+    }
+
+    .logo img, .logo svg{
+      filter:saturate(0)
+    }
+
+    .logo:hover img, .logo:hover svg{
+      filter:none;
+    }
+
+    .logo-link{
+      pointer-events: all;
+    }
+
+    .logo.logo-link:hover{
+      opacity: 1;
     }
 
     .pick-button {
@@ -161,6 +264,7 @@
       position: fixed;
       top: 0;
       width: 10em;
+      max-width: 7.5vw;
       height: 100vh;
       pointer-events: none;
       /* Allows interaction with elements underneath */
@@ -170,12 +274,12 @@
 
     .fade-left {
       left: 0;
-      background: linear-gradient(to right, white 0%, rgba(255, 255, 255, 0) 100%);
+      background: linear-gradient(to right, var(--bg-color) 0%, rgba(255, 255, 255, 0) 100%);
     }
 
     .fade-right {
       right: 0;
-      background: linear-gradient(to left, white 0%, rgba(255, 255, 255, 0) 100%);
+      background: linear-gradient(to left, var(--bg-color) 0%, rgba(255, 255, 255, 0) 100%);
     }
 
 
@@ -190,6 +294,7 @@
       background: none;
       pointer-events: none;
       z-index: 99999;
+      fill: var(--fg-color);
     }
 
     .splide__arrows button{
@@ -208,6 +313,7 @@
 
     .splide__arrows svg {
       transform: scale(0.5);
+      border: none !important;
     }
 
     .splide__arrow--prev {
@@ -222,6 +328,16 @@
       transform: translateX(5px);
     }
 
+    button.splide__pagination__page{
+      background: var(--fg-color);
+      opacity: 0.5;
+    }
+
+    button.splide__pagination__page.is-active{
+      background: var(--fg-color);
+      opacity: 1;
+    }
+
 
     .display-item {
       text-align: center;
@@ -230,6 +346,7 @@
       height: 75vh;
       transition: transform 800ms ease-in-out, left 800ms ease-in-out, opacity 800ms ease-in-out, width 800s;
       perspective: 800px;
+
       /* border: 2px solid blue;           */
     }
 
@@ -241,12 +358,18 @@
       max-width: 90vw;
     }
 
+    .display-item svg{
+      height: 75vh;
+    }
+
     .display-item .card {
       position: absolute;
       margin-top: 5vh;
       margin-bottom: 5vh;
       /* width: 30vw; */
       transform: translate(-50%);
+      transform-origin: center; /* Add this */
+      transform-style: preserve-3d; /* Add this */
 
       /* border: 1px solid red; */
     }
@@ -287,6 +410,7 @@
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
       transform-style: preserve-3d;
+      transform-origin: center; /* Add this */
     }
 
     .under .card,
@@ -387,7 +511,7 @@
 
     .flip.down.is-active .card {
       /* transform: rotate3d(-1, 1, 0, 180deg); */
-      transform: translate(-50%) rotate3d(-1, 1, 0, 180deg);
+      transform: translate(-50%) rotate3d(-1, 1, 0, 180deg);      
     }
 
     .under.up .back {
@@ -413,7 +537,7 @@
     .front {
       color: var(--front-fg);
       border-color: var(--front-border);
-      z-index: 20
+      z-index: 20;
     }
 
     .back {
@@ -459,7 +583,7 @@
     }
 
     .border-hairline .back img, .border-hairline .back svg, .border-hairline .back.text-only{
-      border-color: var(--back-fg);
+      border-color: var(--back-border);
     }
 
     .hidden{
@@ -490,8 +614,8 @@
       /* position: absolute;             */
       /* padding: 5vh; */
       width: 100vw;
-      height: 100vh;
-    }
+      height: calc(100vh - (var(--header-height) * 1.5) - (var(--footer-height) * 1.5));
+    }    
 
     .splide__track {
       height: 100vh;
@@ -3866,6 +3990,7 @@
     var displayItems = []
     var splide // to make it global
     var displayItemSequence = [] // for shuffling
+    var fontSizeAdjustDelay
 
     function pageLoad() {
       if (gameSettings.category.length > 0){
@@ -3876,6 +4001,23 @@
       updateSettingsFromURL()      
 
       setColorTheme(gameSettings.color)
+
+      establishHeaderAndFooter()
+
+      establishLogo()
+
+      document.body.style.fontSize = gameSettings.fontSize/100 + 'em'
+
+      // can remove this from the part later on?
+      if (gameSettings.border == 'thick') {
+        document.body.classList.add('border')
+      } else if (gameSettings.border == 'hairline'){
+        document.body.classList.add('border')
+        document.body.classList.add('border-hairline')
+      } else if (gameSettings.border == 'rounded'){
+        document.body.classList.add('border')
+        document.body.classList.add('border-rounded')
+      }
 
       document.getElementById('pickButton').innerHTML = gameSettings.pickerText
 
@@ -3896,7 +4038,7 @@
         autoplay: gameSettings.autoAdvance,
         interval: gameSettings.autoAdvanceDelay * 1000,
         pauseOnHover: true,
-        pagination: gameSettings.navigation,
+        pagination: (gameSettings.navigation && !gameSettings.picker),
         slideFocus: gameSettings.navigation,
         flickPower: 50,
         flickMaxPages: 1,
@@ -3974,7 +4116,7 @@
 
           let hasBack = false
 
-          if (item.length > 1 && !amURL && (item[1].text != '' || item[1].hasOwnProperty('image') && item[1].image != null)) {
+          if (gameSettings.backMode != 'disabled' && (item.length > 1 && !amURL && (item[1].text != '' || item[1].hasOwnProperty('image') && item[1].image != null))) {
             let back = newElement('div', { class: 'back face', ariaHidden: true })
             el.hasOwnProperty('double-sided')
             hasBack = true
@@ -4014,8 +4156,12 @@
         document.getElementById("pickButton").classList.remove('hidden')
       }
 
-      // update visibility with a tiny delay to make sure everything has been set first
+      // update visibility with a tiny delay to make sure everything has been set first, also font sizes
       setTimeout(updateVisibility,100)      
+      if(gameSettings.autoAdjustFontSize){
+        setTimeout(adjustFontSizes,100)        
+        window.addEventListener('resize', adjustFontSizesOnResize)
+      }
     }
 
     function updateSettingsFromURL(){
@@ -4068,6 +4214,69 @@
             }
         }
 
+    function establishHeaderAndFooter() {
+      let header = document.getElementById('header')
+      let footer = document.getElementById('footer')
+
+      if (gameSettings.header != '') {
+        header.innerHTML = gameSettings.header
+        header.classList.remove('hidden')
+        document.body.classList.add('has-header')
+      } else {
+        header.classList.add('hidden')
+      }
+
+      if (gameSettings.footer != '') {
+        footer.innerHTML = gameSettings.footer
+        footer.classList.remove('hidden')
+        document.body.classList.add('has-footer')
+      } else {
+        footer.classList.add('hidden')
+      }
+    }
+
+    function establishLogo(){
+      let logo = document.getElementById('logo')
+      if (gameSettings.logo.toLowerCase() != 'none') {
+        logo.innerHTML = gameSettings.logo
+        logo.classList.remove('hidden')
+        if(gameSettings.logo == 'hex'){
+          addImageToEl(logo, icons.logo, 'hex logo')
+        } else {
+          addImageToEl(logo, gameFiles['custom_setting_select-import_logo'], 'logo')
+        }
+        if(gameSettings.logoLink != ''){
+          logo.setAttribute('href', gameSettings.logoLink)
+          logo.classList.add('logo-link')
+        }
+      } else {
+        logo.classList.add('hidden')
+      }
+    }
+
+    function adjustFontSizes(reset = false){
+      let faces = Array.from(document.querySelectorAll('.face.text-only'))
+      faces.forEach(face => {
+        let text = face.querySelector('.text')
+        let fontSize = gameSettings.fontSize/100    
+        if(reset){
+          text.style.fontSize = null
+        }    
+        while(text && (text.offsetWidth > face.offsetWidth || text.offsetHeight > face.offsetHeight) && fontSize >= 0.5){
+          fontSize -= 0.25
+          text.style.fontSize = fontSize + 'em'
+        }
+        console.log(`fontSize: ${fontSize}`)
+      })
+    }    
+
+    function adjustFontSizesOnResize(){
+      if(fontSizeAdjustDelay){
+        clearTimeout(fontSizeAdjustDelay)
+      }
+      fontSizeAdjustDelay = setTimeout(adjustFontSizes, 500, true)
+    }
+
     function sortDisplayItems(){
       
 
@@ -4112,7 +4321,7 @@
         }
 
         // Existing behavior
-        if (gameSettings.naviation && splide.index != index) {
+        if (gameSettings.navigation && splide.index != index) {
             splide.go(index);
         } else if (splide.index == index && displayItems[index].hasBack && gameSettings.backMode != 'autoUnder') {
             flipItem(displayItems[index].el);
@@ -4126,6 +4335,7 @@
           window.open(displayItems[index].href);
         } else {
           element.click()
+          void element.firstElementChild.offsetWidth // trigger reflow
         }
 
       }
@@ -4169,7 +4379,7 @@
             back.setAttribute('aria-hidden', true)
           }
           if(!gameSettings.navigation){
-            item.el.setAttribute('tabindex','-1') // remove focus from the item if not in navigation mode
+            item.el.setAttribute('tabindex',null) // remove focus from the item if not in navigation mode
           }
           if (item.isURL) {
             item.card.removeAttribute('href')
@@ -4184,7 +4394,7 @@
             back.setAttribute('aria-hidden', true)
           }
           if(!gameSettings.navigation){
-            item.el.setAttribute('tabindex','-1') // remove focus from the item if not in navigation mode
+            item.el.setAttribute('tabindex',null) // remove focus from the item if not in navigation mode
           }
           if (item.isURL) {
             item.card.removeAttribute('href')
@@ -4239,7 +4449,7 @@
 
     function updateVisibility(){
       document.querySelectorAll('[aria-hidden="false"] a').forEach(el => el.removeAttribute('tabindex'))
-      document.querySelectorAll('[aria-hidden="true"] a').forEach(el => el.setAttribute('tabindex',-1))
+      document.querySelectorAll('[aria-hidden="true"] a').forEach(el => el.setAttribute('tabindex',-1))      
     }
 
     function pickRandom() {
@@ -4396,15 +4606,28 @@
     }
 
   </script>
+  <script>
+    icons = {
+      logo: {
+        ext: 'svg',
+        data: 'PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEwMjQgMTAyMCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWw6c3BhY2U9InByZXNlcnZlIiB4bWxuczpzZXJpZj0iaHR0cDovL3d3dy5zZXJpZi5jb20vIiBzdHlsZT0iZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjI7Ij4KICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDAuOTkwMTY5LDAsMCwwLjk5MDE2OSwtNTAxLjkzMywtMjUwLjYxMykiPgogICAgICAgIDxlbGxpcHNlIGN4PSI5MTAuMTgzIiBjeT0iNzU0LjU1MiIgcng9IjExMi4yNDciIHJ5PSIxLjAwMyIgc3R5bGU9ImZpbGw6cmdiKDIzNSwyMzUsMjM1KTsiLz4KICAgIDwvZz4KICAgIDxnIHRyYW5zZm9ybT0ibWF0cml4KDEuMDEzNTcsMCwwLDEuMDEzNTcsLTIuMzUwMjMsLTYuOTIwODYpIj4KICAgICAgICA8cGF0aCBkPSJNMy45NjQsNTAzLjYzNkMxLjc1Nyw1MDcuNDc1IDEuNzU3LDUxMi4xOTggMy45NjQsNTE2LjAzN0MzLjk2NCw1MTYuMDM3IDg2LjMyMiw2NTMuNzA0IDE1Ny4yNTQsNzczLjE2N0MyMTEuNDAyLDg2NC4zNjMgMjU4LjgzNCw5NDQuOTQgMjU4LjgzNCw5NDQuOTRDMjU5Ljc2OSw5NDYuNTY1IDI2MS41LDk0Ny41NjcgMjYzLjM3NSw5NDcuNTY3QzI2My4zNzUsOTQ3LjU2NyA0MjMuMjY4LDk0NS45NiA1NjEuNzI1LDk0NS4xNjZDNjY3LjQyNSw5NDQuNTU5IDc2MC42MjUsOTQ0LjQ4NSA3NjAuNjI1LDk0NC40ODVDNzYxLjM5Nyw5NDQuNDg1IDc2Mi4xMDksOTQ0LjA3MyA3NjIuNDk0LDk0My40MDRMMTAxMi4xNCw1MTEuNDk4QzEwMTIuNzMsNTEwLjQ2OSAxMDEyLjczLDUwOS4yMDQgMTAxMi4xNCw1MDguMTc1TDc2NS43MjYsNzQuNDExQzc2NC42NzYsNzIuNTg1IDc2Mi43MzEsNzEuNDYgNzYwLjYyNSw3MS40NkwyNjMuMzc1LDY4LjMyNUMyNjAuMTQ3LDY4LjMyNSAyNTcuMTY1LDcwLjA1MSAyNTUuNTU3LDcyLjg0OUwzLjk2NCw1MDMuNjM2Wk0yOS4wMDEsNTA5LjkxMkwyNjguNjUzLDg2LjMyOEMzMTkuMTg5LDg2LjAxIDcxNi41MDMsODMuNTA1IDc1Ny4yNTMsODMuMjQ4Qzc1Ny4yNTMsODMuMjQ4IDk4OC42MjcsNDgxLjAxMyAxMDA1LjQsNTA5Ljg1MUMxMDA1LjQsNTA5Ljg1MSA3NTkuMzc1LDk0MC4xNzMgNzU5LjM3NSw5NDAuMTczQzc0Ny45ODIsOTQwLjE2MiA2NjAuMjg4LDk0MC4wNTkgNTYxLjcyNSw5MzkuNDkzQzQzNC41NDUsOTM4Ljc2NCAyODkuMjc5LDkzNy4zNDggMjY2LjQ1OSw5MzcuMTIzQzI1OC4yNzcsOTIyLjUzNyAyMTYuNzYsODQ4LjQ4NiAxNzAuNTk2LDc2NS40OThDMTExLjUwMiw2NTkuMjY2IDQ0Ljc2Nyw1MzguNDYzIDI5LjAwMSw1MDkuOTEyTDI5LjAwMSw1MDkuOTEyWiIvPgogICAgPC9nPgogICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMi4yODI0NCwwLDAsMi4yODI0NCwtMTU3Ni44NSwtMTE2Mi44NykiPgogICAgICAgIDx0ZXh0IHg9Ijc1MC41ODVweCIgeT0iODA2LjE5NHB4IiBzdHlsZT0iZm9udC1mYW1pbHk6J1NoYXJlVGVjaC1SZWd1bGFyJywgJ1NoYXJlIFRlY2gnO2ZvbnQtc2l6ZToyNTEuMTkzcHg7Ij5oPHRzcGFuIHg9Ijg2MS4zNjFweCA5NjMuMzQ2cHggIiB5PSI4MDYuMTk0cHggODA2LjE5NHB4ICI+ZXg8L3RzcGFuPjwvdGV4dD4KICAgIDwvZz4KPC9zdmc+Cg==',
+        dimensions: {height: 1024,width: 1020,type: 'svg'},
+        fileSize: 1900
+      }
+    }
+  </script>
 </head>
 
 <body>
+  <a id="logo" class="logo"></a>
   <div class="fade fade-left"></div>
   <div class="fade fade-right"></div>
+  <div id="header" class="header hidden"></div>
   <button id="pickButton" class="pick-button hidden" onclick="pickRandom()">Random</button>
   <section id="displayCase" class="splide">
     <div id="splideTrack" class="splide__track" onmouseenter="hovering=true" onmouseleave="hovering=false"></div>
   </section>
+  <div id="footer" class="footer footer"></div>
 </body>
 
 <script src="activityController.js"></script>
