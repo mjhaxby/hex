@@ -619,6 +619,10 @@ function customSelectImport(settingId,fileTypes){
     filters: []
   } 
 
+  if(fileTypes == null || fileTypes == undefined || fileTypes.length == 0){
+    fileTypes = ['image'] // if no file types are specified, default to image
+  }
+
   fileTypes.forEach(fileType => {
     if (extensions.hasOwnProperty(fileType.toLowerCase())){
       dialogOptions.filters.push({name: capitalizeFirstLetter(fileType), extensions: extensions[fileType.toLowerCase()]})
@@ -685,7 +689,7 @@ function customSelectImport(settingId,fileTypes){
 
           importFileStore['custom_' + settingId] = fileStoreItem
 
-          windows.main.webContents.send('customSelectImportFileResult', settingId, true)
+          windows.main.webContents.send('customSelectImportFileResult', settingId, true, path.basename(result.filePaths[0]))
         })
       }
     })
@@ -783,6 +787,32 @@ function checkFileStore(store){
     }
   })
   return ok
+}
+
+function deleteUnusedFileStoreItems(fileStore, settings) {
+  if (settings == null || settings == undefined || settings.length == 0) {
+    return { ...fileStore }
+  }
+
+  // Create a shallow copy of fileStore to avoid mutating the original
+  const newFileStore = { ...fileStore }
+
+  // Remove unused 'custom_' fileStore items based on current settings
+  Object.keys(newFileStore).forEach(key => {
+    if (key.startsWith('custom_setting_')) {
+      let used = false
+      Object.values(settings).forEach(setting => {
+        if (setting == key) {
+          used = true
+        }
+      })
+      if (!used) {
+        delete newFileStore[key]
+        if(debugMode){console.log(`Deleting ${key} from file store`)}
+      }
+    }
+  });
+  return newFileStore
 }
 
 function checkImage(image){
@@ -924,7 +954,7 @@ function processSaveExport(event,data,purpose='export',path=''){
   if (!validateSender(event.senderFrame)) {
     dialog.showErrorBox('Security error!', 'A renderer sent a signal from a non-local source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
     return null
-  }
+  }  
   let settingErrors = findSettingAnomolies(data.settings)
   let dataOK
   let fileStoreOK = true
@@ -941,12 +971,13 @@ function processSaveExport(event,data,purpose='export',path=''){
   let activityOK = verifiyActivityAndSource(data.activity, data.source)
   let typeOK = (data.type == 'html' || data.type == 'scorm')
   let packageIdOK = (typeof data.packageIdentifier == 'string')
+  let exportFileStore = deleteUnusedFileStoreItems(importFileStore,data.settings)
   // settingErrors = findSettingAnomolies(data.settings)
   if (settingErrors.length == 0 && dataOK && activityOK) {
     if (purpose == 'export'){
-      exportActivity(data.input, data.activity, data.settings, importFileStore, data.source, data.type, data.packageIdentifier)
+      exportActivity(data.input, data.activity, data.settings, exportFileStore, data.source, data.type, data.packageIdentifier)
     } else if (purpose == 'save'){
-      saveTable(data,path,importFileStore)
+      saveTable(data,path,exportFileStore)
     }
   } else if (settingErrors.length > 0) {
     reportSettingErrors(settingErrors)
@@ -983,28 +1014,34 @@ ipcMain.on("runActivity", function (event, data, settings, activity, source) {
     console.log(activity)
     console.log(settings)
   }
-  validateSender(event.senderFrame)
-  let settingErrors = findSettingAnomolies(settings)
+  validateSender(event.senderFrame) // security check
+  let settingErrors = findSettingAnomolies(settings) // security check
+  // let fileStore = deleteUnusedFileStoreItems(importFileStore,settings) // remove any files that are not used in the settings
+  let fileStore = importFileStore // for now, don't delete unused items
+  
   let dataOK
   let fileStoreOK = true
   let stringsOnlyActivity = activityTemplateOnlyRequiresStrings()
+
   if (debugMode) {console.log(`Only requires strings? ${stringsOnlyActivity}`)}
+
   if (stringsOnlyActivity){
     dataOK = isArrayofArrayofStrings(data)
     if (debugMode) {console.log(`Data ok? ${dataOK}`)}
   } else {    
     data = extractFilesFromGameDataToImportFileStore(data)
     dataOK = advancedCheckActivityData(data)
-    fileStoreOK = checkFileStore(importFileStore)
+    fileStoreOK = checkFileStore(fileStore)
     if (debugMode) {console.log(`Data ok? ${dataOK}`)}
   }
-  let activityOK = verifiyActivityAndSource(activity, source)
+
+  let activityOK = verifiyActivityAndSource(activity, source) // security check
   if (debugMode) {console.log(`Activity ok? ${activityOK}`)}
 
   if (settingErrors.length == 0 && dataOK && activityOK && fileStoreOK) {     
-    console.log('about to make activity window') 
-    console.log(importFileStore)
-    createActivityWindow(activity, data, settings, source, importFileStore)
+    if(debugMode){console.log('about to make activity window')}
+    if(debugMode){console.log(fileStore)}
+    createActivityWindow(activity, data, settings, source, fileStore)
   } else if (settingErrors.length > 0) {
     reportSettingErrors(settingErrors)
   } else if (!dataOK) {

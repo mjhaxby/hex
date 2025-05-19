@@ -211,7 +211,7 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
                         newSelect.appendChild(newOption)
                         // if no other default is specified, select ShareTech if available, if not select ShareTech-Mono if available
                         if (!settings[i].hasOwnProperty('default') && (font.name == 'ShareTech'
-                        || ((settings[i].hasOwnProperty('style') && settings[i].style != 'sans-serif') | (typeof settings[i].style == 'object' && !settings[i].style.includes('sans-serif'))) && font.name == 'ShareTech-Mono')){
+                        || ((settings[i].hasOwnProperty('style') && typeof settings[i].style != 'object' && settings[i].style != 'sans-serif') | (typeof settings[i].style == 'object' && !settings[i].style.includes('sans-serif'))) && font.name == 'ShareTech-Mono')){
                             selectIndex = numFontsAdded
                         }
                         numFontsAdded++
@@ -777,15 +777,31 @@ function checkInfoBoxVisibility(infoIcon, settingsArea = document.getElementById
 
   function customSelectImport(settingEl,settingName){
     if (settingEl.selectedIndex == settingEl.children.length - 1){
+
+        // find relavent setting
         let setting = prefsStore.settings.find(setting => setting.name == settingName)
+        
+        // remove any existing custom options
+        let existingCustomOptions = settingEl.querySelectorAll('option[data-custom]')
+        if (existingCustomOptions.length > 0){
+            let customOptions = Array.from(existingCustomOptions)
+            customOptions.forEach(option => {
+                settingEl.removeChild(option)
+            })
+        }
+
+        // call the custom select import function
         ipcRenderer.send('customSelectImport',settingEl.id,setting.fileTypes)
-    }    
+    }
   }
 
-  ipcRenderer.on('customSelectImportFileResult', (event,settingId,success) => {
+  ipcRenderer.on('customSelectImportFileResult', (event,settingId,success,fileName="") => {
     if (success){
         let settingEl = document.getElementById(settingId)
-        settingEl.children[settingEl.selectedIndex].value = 'custom_'+settingId
+        let newOption = newElement('option',{value:'custom_'+settingId,dataCustom: true},fileName)
+        settingEl.insertBefore(newOption,settingEl.children[settingEl.children.length-1])
+        settingEl.selectedIndex = settingEl.children.length - 2
+        // settingEl.children[settingEl.selectedIndex].value = 'custom_'+settingId
         console.log('File was loaded successfully')
     } else {
         document.getElementById(settingId).selectedIndex = 0
