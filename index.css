@@ -212,6 +212,7 @@ input[type="checkbox"]:checked::before {
 select {
   background: url('down.svg') no-repeat right;
   outline: none;
+  appearance: none;
   -moz-appearance: none;
   -webkit-appearance: none;
   padding: 10px;

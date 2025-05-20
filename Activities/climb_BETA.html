@@ -607,7 +607,7 @@
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
-      text-fill-color: transparent;
+      color: transparent;
       background-size: 700% auto;
       animation: textShine 1s linear infinite;
     }
@@ -662,10 +662,6 @@
       opacity: 1;
       transition: opacity 0.5s;
       background: linear-gradient(0deg, var(--power-med) 0%, var(--power-high) 100%);
-    }
-
-    #powerGradientHigh{
-      
     }
 
     #finalScore {
@@ -2821,9 +2817,6 @@ function animationExists(animationName) {
   .odometer.odometer-theme-minimal {
     display: inline-block;
     vertical-align: middle;
-    *vertical-align: auto;
-    *zoom: 1;
-    *display: inline;
     position: relative;
   }
 
@@ -2831,9 +2824,6 @@ function animationExists(animationName) {
   .odometer.odometer-theme-minimal .odometer-digit {
     display: inline-block;
     vertical-align: middle;
-    *vertical-align: auto;
-    *zoom: 1;
-    *display: inline;
     position: relative;
   }
 
@@ -2841,9 +2831,6 @@ function animationExists(animationName) {
   .odometer.odometer-theme-minimal .odometer-digit .odometer-digit-spacer {
     display: inline-block;
     vertical-align: middle;
-    *vertical-align: auto;
-    *zoom: 1;
-    *display: inline;
     visibility: hidden;
   }
 
@@ -2867,12 +2854,14 @@ function animationExists(animationName) {
   .odometer.odometer-auto-theme .odometer-digit .odometer-ribbon-inner,
   .odometer.odometer-theme-minimal .odometer-digit .odometer-ribbon-inner {
     display: block;
+    backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
   }
 
   .odometer.odometer-auto-theme .odometer-digit .odometer-value,
   .odometer.odometer-theme-minimal .odometer-digit .odometer-value {
     display: block;
+    transform: translateZ(0);
     -webkit-transform: translateZ(0);
   }
 
