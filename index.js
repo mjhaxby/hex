@@ -458,6 +458,13 @@ ipcRenderer.on('setActivity', (event, activity, source) => {
       selectIndex = i
       i = selector.options.length // stop looking
     }
+    if (selectIndex == -1 && /_beta/.test(activity)){
+      // if the activity is a beta version, we need to check if there is a non-beta version of the same activity
+      if (selector.options[i].value == activity.replace('_beta','') && selector.options[i].getAttribute('data-source') == source){
+        selectIndex = i
+        i = selector.options.length // stop looking
+      }
+    }
   }
   if (selectIndex == -1){
     window.alert('Activity does not exist.')
