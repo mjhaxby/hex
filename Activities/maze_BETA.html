@@ -553,6 +553,8 @@
                 importSprite('custom_setting_select-import_sprite')
             }
 
+            gameData = removeEmptyDataColumns(gameData)
+
             let goodList = []
             let badList = []
 
@@ -1551,6 +1553,33 @@
 
         function calculateTallestColumn(gridSize) {
             return Math.sqrt(gridSize)
+        }
+
+        function removeEmptyDataColumns(data) {
+            let newData = [] 
+            let emptyColumns = []    
+            // check which columns are empty       
+            for (let col = 0; col < data[0].length; col++){
+                let isEmpty = true
+                for (let row = 0; row < data.length; row++) {
+                    if (data[row][col] != null && data[row][col] != '' && data[row][col] != undefined) {
+                        isEmpty = false                        
+                        break
+                    } 
+                }
+                if (isEmpty) {
+                    emptyColumns.push(col)
+                }
+            }
+            for (let row = 0; row < data.length; row++) {
+                newData.push([])
+                for (let col = 0; col < data[row].length; col++) {
+                    if (!emptyColumns.includes(col)) {
+                        newData[row].push(data[row][col])
+                    }
+                }
+            }
+            return newData
         }
 
         function chance(numerator, denominator) {
