@@ -16,9 +16,13 @@
       {"name":"viewMode","label":"Default view mode","type":"select","options":["Top and bottom","Side-by-side"],"category":"appearance"},
       {"name":"forceCompact","label":"Force compact view","type":"checkbox","default":false,"category":"appearance","info":"When disabled, lists of 12 items or less will be shown vertically even in top and bottom mode."},
       {"name":"allowChangeViewMode","label":"Allow user to switch view mode","type":"checkbox","default":true,"category":"appearance"},
-      {"name":"allowAlphabetize","label":"Allow user to sort dragable cards alphabetically","type":"checkbox","default":true,"category":"behavior"},
+      {"name":"allowAlphabetize","label":"Allow user to sort dragable cards alphabetically","type":"checkbox","default":true,"category":"behavior","info":"If Match detects the answers are given in alphabetical order, it will automatically disable this option."},
       {"name":"allowReshuffle","label":"Allow user to shuffle cards again","type":"checkbox","default":true,"category":"behavior"},
       {"name":"lockCorrectMatches","label":"Lock in place correct answers","type":"checkbox","default":true,"category":"behavior"},      
+      {"name":"checkMode","label":"Check mode","type":"select","options":["Check button","Automatically"],"optionValues":["button","auto"],"category":"behavior","dependents":[
+        {"name":"minAttempts","enable":"button"},
+        {"name":"maxAttempts","enable":"button"}        
+      ]},
       {"name":"minAttempts","label":"Minimum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to show the “show answers” button after a number of attempts.","category":"behavior"},
       {"name":"maxAttempts","label":"Maximum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to prevent answers after a number of attempts.","category":"behavior"},
       {"name":"checkButton","label":"Check button","type":"text","default":"check","category":"language"},
@@ -958,6 +962,11 @@ s
         if (gameSettings.maxAttempts > 0){
           showRemainingAttempts()
         }
+        if(gameSettings.checkMode == 'auto'){
+          document.getElementById('check-btn').style.display = 'none'
+          gameSettings.maxAttempts = 0
+          gameSettings.minAttempts = 0
+        }
       }
 
       function applySettings(){
@@ -1481,8 +1490,9 @@ s
             // dragableCard.style.lineHeight = staticCardHeight + 'px' // to center text vertically
           }
         }
-
-
+        if(gameSettings.checkMode == 'auto'){
+          getFeedback()
+        }
       }
       function detachCards(dragableCard,staticCard,mouse_x,mouse_y){
         cardContainer.appendChild(dragableCard)
@@ -1539,10 +1549,12 @@ s
         feedbackEl = document.getElementById('feedback')
         feedbackEl.innerHTML = matches.correct.length + '/' + totalCount
         scoreAsPercentage = parseInt(Math.round((parseInt(matches.correct.length)/totalCount)*100))
-        feedbackEl.classList.remove('recalculateAnimation')
         feedbackEl.style.visibility = 'visible'
-        void feedbackEl.offsetWidth; // this resets the animation
-        feedbackEl.classList.add('recalculateAnimation')
+        if(gameSettings.checkMode == 'button'){
+          feedbackEl.classList.remove('recalculateAnimation')
+          void feedbackEl.offsetWidth; // this resets the animation
+          feedbackEl.classList.add('recalculateAnimation')
+        }
         attempts++
         if(gameSettings.scorm){postAnswer(scoreAsPercentage)}
         if(gameSettings.minAttempts > 0 || gameSettings.maxAttempts > 0){
