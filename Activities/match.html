@@ -340,8 +340,7 @@
         /* transition: 1s; // not enough to actually animate when adding in a div, what might work is to save where everything is, add in the new div, then temporarily make everything absolute in position and back where it was originally, then transform to the new positions, then remove the absolute positioning */
       }
       .card.image, .card.icon {
-        height: var(--image-size);
-        /* aspect-ratio: 1/1; */
+        height: var(--image-size);               
         background-repeat: no-repeat;
         background-position: center;
         background-size: contain;
@@ -1159,7 +1158,11 @@ s
               newCard.classList.add('image')
             }            
             newCard.setAttribute('data-value',word.image.data)
-            newCard.style.aspectRatio = `${word.image.dimensions.width}/${word.image.dimensions.height}`            
+            if(word.image.dimensions.width > 0 && word.image.dimensions.height > 0){
+              newCard.style.aspectRatio = `${word.image.dimensions.width}/${word.image.dimensions.height}`        
+            } else {
+              newCard.style.aspectRatio = '1/1'
+            }
         }
         // newCard.classList.add('notransition') // will be removed afterwards
         if (dragable){
