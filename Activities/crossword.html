@@ -115,6 +115,7 @@
       --color3: #8CC084;
       --correct: #8CC084;
       --fg-color-active: #91918D;
+      --slot-font-size: 3.5vh;
     }
 
     [data-theme="serious blue"] {
@@ -305,6 +306,11 @@
       --fg-color-active: #80A1C1;
     }
 
+    .large-font{
+      --slot-font-size: 2.5vh;
+      /* for fonts that are bigger than usual, reduce slot font size */
+    }
+
     body {
       font-family: var(--main-font), sans-serif;
       font-size: 4vh;
@@ -481,7 +487,7 @@
       width: 4vh;
       /* 27px */
       height: 4vh;
-      font-size: 3.5vh;
+      font-size: var(--slot-font-size);
       /* 22px */
       text-align: center;
       display: table-cell;
@@ -1336,6 +1342,10 @@
   }
 
   function adjustFontSizes(){
+    if(gameSettings.gridFont.name.toLowerCase().includes('opendyslexic') || gameSettings.gridFont.name.toLowerCase().includes('space')){
+      document.getElementById('grid').classList.add('large-font')
+      return
+    }
     let slots = Array.from(gridEl.querySelectorAll('.slot'))
     slots.forEach(slot =>{
       if(slot.classList.contains('empty') || slot.classList.contains('prefilled')){
@@ -1348,14 +1358,14 @@
         let word = words[parseInt(wordDownRef)]
         let letter = word.text.substr(letterIndex, 1)
         if(wcswidth(letter) > 1){
-          slot.style.fontSize = '2.5vh'
+          slot.classList.add('large-font')
         }
       } else if (wordAcrossRef) { // else if because we've already checked for down and it'll be the same letter
         let letterIndex = parseInt(slot.getAttribute('data-index-across'))
         let word = words[parseInt(wordAcrossRef)]
         let letter = word.text.substr(letterIndex, 1)
         if(wcswidth(letter) > 1){
-          slot.style.fontSize = '2.5vh'
+          slot.classList.add('large-font')
         }
       }
     })
