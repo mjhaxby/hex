@@ -389,6 +389,13 @@
       transform: translate(-50%, -50%);
     }
 
+    /* hide check box for printing */
+    @media print {
+      #checkBox {
+        display: none;
+      }
+    }
+
     #checkBox {
       position: sticky;
       right: 0;
@@ -964,7 +971,7 @@
           el.classList.remove('selectedSlot')
           el.classList.remove('selectedWord')
         })
-      }
+      }composingWillEnd
       document.body.removeEventListener('click', deselectAll)
       document.body.removeEventListener('click', pressKey)
     }
