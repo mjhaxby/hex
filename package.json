@@ -1,6 +1,6 @@
 {
   "name": "hex",
-  "version": "3.4.7",
+  "version": "3.6.0-alpha",
   "description": "Learning activity creator.",
   "main": "main.js",
   "scripts": {
@@ -19,8 +19,9 @@
   "homepage": "https://github.com/mjhaxby/hex",
   "license": "ISC",
   "devDependencies": {
-    "@electron/packager": "^18.3.5",
-    "electron": "^33.0.2"
+    "@electron/packager": "^19.1.0",
+    "electron": "^41.1.1",
+    "electron-builder": "^26.8.1"
   },
   "fontend": {
     "config": {
@@ -34,14 +35,17 @@
     "electron-context-menu": "^3.6.1",
     "electron-default-menu": "^1.0.2",
     "image-size": "^1.1.1",
+    "jsdom": "^26.1.0",
     "octokit": "^3.1.2",
+    "quill": "^2.0.3",
+    "quilljs-markdown": "^1.2.0",
     "showdown": "^2.1.0"
   },
   "build": {
     "appId": "com.mjhaxby.hex",
     "mac": {
       "category": "public.app-category.education",
-      "icon": "buildResources/icon.icns",
+      "icon": "buildResources/icon.icon",
       "target": {
         "target": "default",
         "arch": [
@@ -64,10 +68,12 @@
       ]
     },
     "linux": {
+      "icon": "buildResources/icon.png",
       "desktop": {
-        "StartupNotify": "false",
-        "Encoding": "UTF-8",
-        "MimeType": "x-scheme-handler/deeplink"
+        "entry": {
+          "StartupNotify": false,
+          "MimeType": "x-scheme-handler/deeplink;"
+        }
       },
       "target": [
         "AppImage",
