@@ -1,16 +1,20 @@
 // main.js
 
 // Modules to control application life and create native browser window
-const { app, BrowserWindow, Menu, MenuItem, ipcMain, dialog, shell, clipboard } = require('electron')
+const { app, BrowserWindow, Menu, MenuItem, ipcMain, dialog, shell, clipboard, remote } = require('electron')
 const crypto = require('crypto'); // for hashing
 const contextMenu = require('electron-context-menu');
 const fs = require('fs')
 const path = require('path')
 const activityEditor = require('./activityEditor.js')
+const importer = require('./importer.js')
+const info = require('./info.js')
 const tools = require('./tools.js')
 const octokit = require('@octokit/request')
 const AdmZip = require('adm-zip');
-const sizeOfImage = require("buffer-image-size")
+const sizeOfImage = require("buffer-image-size");
+const { create } = require('domain');
+// const { act } = require('react');
 
 const isMac = process.platform === 'darwin'
 
@@ -18,41 +22,56 @@ const v = app.getVersion().replace(' ', '');
 
 const extensions = {image: ['jpg','jpeg','png','gif','svg','webp'], text: ['txt'], sound: ['mp3', 'wav', 'm4a']} // extensions supported for importing files into data and settings
 
-const debugMode = !app.isPackaged || app.getVersion().includes('alpha');
+const debugMode = info.debugMode
 
 var config
-var prefsStore // for checking security later
-var currentActivity
-var currentSource
-var openTablePath = ''
-var importFileStore = {}
-var prefsWaiting = {exists: false}
-var profileStore = { name: '', activities: [] }
+
+
+// possibly not these? some might need to be moved!
 var openProfilePath = ''
 var lastSavedProfile = { name: '', activities: [] }
 var profileActionWaiting = ''
-var activitySettingControlsStore = {}
 var prebuiltActivitiesList
 var userActivitiesList
+var activitySettingControlsStore = {}
 
-// to check for new versions
-// async function checkForUpdate(){
-//     const v = app.getVersion().replace(' ', '');
-//     const url = 'https://api.github.com/repos/mjhaxby/hex/releases/latest';
-//     const defaultOptions = {
-//       method: 'GET',
-//       headers: {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:59.0)'},
-//       body: null,
-//       followRedirect: true,
-//       maxRedirectCount: 20,
-//       timeout: 0,
-//       size: 0,
-//     };
-//     const response = await request(url, defaultOptions);
-//     const text = await response.text();
-//     // var latestV = JSON.parse(text).tag_name.replace('v', '');
-//     console.log(text)
-// }
+  // Check if we opened a file with our app
+const checkForFileOpen = () => {
+
+        // fs is used to open a file stream.
+        const _fs = require('fs');
+
+        // Get an array of all arguments. First argument is the path to our app.
+        const args = remote.process.argv;
+        let data = null;
+
+        // No need to try opening if no arguments were passed
+        if (args.length > 1) {
+            // Surround in try / catch in case file is invalid.
+            try {
+                data = _fs.readFileSync(args[1]);
+                data = data.toString();
+            } catch (e) {
+                console.log(e.message);
+                return null;
+            }
+        }
+
+        // Return file contents if successful.
+        return {data: data, path: args[1]};
+    }
+
+app.on ('open-file', (event, path) => {
+  event.preventDefault();
+  fs.readFile(path, 'utf8', (err, data) => {
+    if (err) {
+      console.error(err);
+      return;
+    }
+    handleTableFileOpen(data, path);
+  });
+});
+
 
 async function checkForUpdate() {  
   const appName = app.getName() // during dev, this will return electron instead of hex
@@ -93,10 +112,13 @@ contextMenu({
 })
 
 windows = {}
-// mainW
+// main (= last active editor)
+// editors
+// activities
 // profileEditor
 // documentation
 
+windows['editors'] = []
 windows['activities'] = [] // stores activity windows and later their data
 // var blockBustersWindow
 
@@ -107,18 +129,58 @@ config = { ...defaultConfig }
 // var dataHolder // for holding data to send to apps (TO DELETE)
 // var activityType // for remembering activity type (TO DELETE)
 
+const editorWindowPrototype = {
+    window: null,
+    currentActivity: null,
+    currentSource: null,
+    openTablePath: '',
+    importFileStore: {},
+    dataWaiting: null,    
+    prefsWaiting: null,
+    profileStore: { name: '', activities: [] },
+    virgin: true
+}
+
 const activityWindowPrototype = {
   activityType: null,
   window: null,
   windowId: null,
   data: null,
   settings: null,
-  importedFiles: null
+  importedFiles: null,
 }
 
-const createMainWindow = () => {
-  // Create the browser window.
-  windows['main'] = new BrowserWindow({
+// TO DEPRECIATE
+// const createMainWindow = () => {
+//   // Create the browser window.
+//   windows['main'] = new BrowserWindow({
+//     title: "Hex",
+//     width: 1280,
+//     height: 720,
+//     webPreferences: {
+//       preload: path.join(__dirname, 'preload.js'),
+//       nodeIntegration: false,
+//       contextIsolation: true,
+//       devTools: debugMode,
+//       sandbox: app.isPackaged,
+//       contentSecurityPolicy: "default-src 'self' data:;" // only own data
+//     }
+//   })
+//   process.env.MAIN_WINDOW_ID = windows.main.id;
+
+//   // and load the index.html of the app.
+//   windows.main.loadFile('index.html')
+
+//   // Open the DevTools.
+//   // windows.main.window.webContents.openDevTools()
+
+//   windows.main.on('focus', updateMenuState)
+//   windows.main.on('blur', updateMenuState)
+// }
+
+const createEditorWindow = () => {
+    // Create the browser window.
+  const newEditorWindow = new BrowserWindow({
     title: "Hex",
     width: 1280,
     height: 720,
@@ -131,13 +193,56 @@ const createMainWindow = () => {
       contentSecurityPolicy: "default-src 'self' data:;" // only own data
     }
   })
-  process.env.MAIN_WINDOW_ID = windows.main.id;
+
+  const newWindow = Object.create(editorWindowPrototype)
+  newWindow.window = newEditorWindow
+
+  windows['editors'].push(newWindow)
+
+  windows.main = newWindow
+
+  process.env.MAIN_WINDOW_ID = newEditorWindow.id;
 
   // and load the index.html of the app.
-  windows.main.loadFile('index.html')
+  newEditorWindow.loadFile('index.html')
 
   // Open the DevTools.
-  // windows.main.webContents.openDevTools()
+  newEditorWindow.webContents.openDevTools()
+
+  newEditorWindow.on('focus', focusEditorWindow) // update main window when an editor is focused, and update print menu state
+  newEditorWindow.on('blur', updateMenuState) // disable print when not focused
+
+  newEditorWindow.on('close', (e) => {
+    if (!windows.main.virgin) {
+      const choice = dialog.showMessageBoxSync(newEditorWindow, {
+        type: 'question',
+        buttons: ['Yes', 'No'],
+        title: 'Confirm',
+        message: 'Are you sure you want to close this window? Any unsaved changes will be lost.'
+      }); 
+      if (choice === 1) {
+        e.preventDefault();
+      }
+    }
+  })
+
+  // when it's closed, remove it from the array
+  newEditorWindow.on('closed', () => {
+    windows['editors'].splice(windows['editors'].findIndex(w => w.window === newEditorWindow), 1);
+    windows.main = windows['editors'][windows['editors'].length - 1] || null // set main to the last focused editor, or null if there are no editors left
+    if (windows.main){
+      windows.main.window.focus() // focus the new main window
+    }
+  });
+
+
+  if(config){
+    // send config to the new window
+    newEditorWindow.send('configStore', config)
+  }
+
+
+  return newWindow
 }
 
 const createActivityWindow = (activityType, data, settings, source, importedFiles) => {
@@ -179,6 +284,8 @@ const createActivityWindow = (activityType, data, settings, source, importedFile
   let thisWin = newWindow
   newWindow.window.once('ready-to-show', () => {
     thisWin.window.show()
+    // for debugging:
+    // thisWin.window.webContents.openDevTools()
   })
 
   newWindow.windowId = newWindow.window.id
@@ -192,6 +299,10 @@ const createActivityWindow = (activityType, data, settings, source, importedFile
   newWindow.window.on('closed', _ => {
     windows.activities.splice(windows.activities.findIndex(window => window.windowId === newWindow.windowId), 1);
   })
+
+  // enable print
+  newWindow.window.on('focus', updateMenuState)
+  newWindow.window.on('blur', updateMenuState)
 
 }
 
@@ -219,7 +330,7 @@ const createProfileWindow = () => {
   })
 
   // Open the DevTools.
-  // windows.main.webContents.openDevTools()
+  // windows.main.window.webContents.openDevTools()
 }
 
 const createDocumentationWindow = () => {
@@ -246,7 +357,36 @@ const createDocumentationWindow = () => {
   })
 
   // Open the DevTools.
-  // windows.main.webContents.openDevTools()
+  // windows.main.window.webContents.openDevTools()
+}
+
+function focusEditorWindow(){
+  const focusedWindow = BrowserWindow.getFocusedWindow()
+  if (focusedWindow) {
+    const focusedWindowObject = windows.editors.find(({ window }) => window.id === focusedWindow.id)
+    if (focusedWindowObject) {
+      windows.main = focusedWindowObject
+    }
+  }
+  updateMenuState()
+}
+
+// update menu state: print, reload and force reload should only be possible in activity windows. reload is allowed in debug mode to make testing easier 
+function updateMenuState() {
+  const printMenuItem = Menu.getApplicationMenu().getMenuItemById('printMenuItem')
+  const reloadMenuItem = Menu.getApplicationMenu().getMenuItemById('reloadMenuItem')
+  const forceReloadMenuItem = Menu.getApplicationMenu().getMenuItemById('forceReloadMenuItem')
+  const focusedWindow = BrowserWindow.getFocusedWindow()
+  
+  if (printMenuItem && !debugMode) {
+    printMenuItem.enabled = focusedWindow && windows.activities.find(({ windowId }) => windowId === focusedWindow.id)
+  }
+  if (reloadMenuItem && !debugMode) {
+    reloadMenuItem.enabled = focusedWindow && windows.activities.find(({ windowId }) => windowId === focusedWindow.id)
+  }
+  if (forceReloadMenuItem) {
+    forceReloadMenuItem.enabled = focusedWindow && windows.activities.find(({ windowId }) => windowId === focusedWindow.id)
+  }
 }
 
 // when the activity page is ready, send the data to load
@@ -271,17 +411,22 @@ app.whenReady().then(() => {
     app.dock.setMenu(dockMenu)
   }
   app.setAboutPanelOptions(aboutOptions)
-  createMainWindow();
+
+  // createMainWindow();
+
   getConfig()
     .then((currentConfig) => {
       config = currentConfig
       if (config.showAdvancedExport) {
         applicationMenu.getMenuItemById('showAdvancedExport').checked = true
-        // windows.main.webContents.send('showAdvancedExport')
+        // windows.main.window.webContents.send('showAdvancedExport')
         if(debugMode){console.log('marking menu item as true')}
       }
-      windows.main.webContents.send('configStore', config)
-      // if we're debugging, add the dev tools
+
+      createEditorWindow();
+      // windows.main.window.webContents.send('configStore', config) // should happen inside above function
+
+      // if we're debugging, add the dev
       if (debugMode) {
         let menuItem = applicationMenu.getMenuItemById('tools')
         menuItem.submenu.append(new MenuItem({ role: 'toggleDevTools' }))
@@ -292,7 +437,18 @@ app.whenReady().then(() => {
       console.error(error)
       Menu.setApplicationMenu(applicationMenu) // set menu anyway 
     });
-  checkForUpdate();
+
+  const fileOpened = checkForFileOpen() // check if we opened a file with our app, and if so, open it
+
+  if (fileOpened) {
+    windows.main.window.webContents.once('did-finish-load', () => {
+      handleTableFileOpen(fileOpened.data, fileOpened.path)
+    })
+  }
+
+  setTimeout(() => {
+    checkForUpdate();
+  }, 2000) // check for updates after a delay, to give the app a chance to load first and not cause any slowdowns or freezes on startup
 })
 
 
@@ -300,7 +456,10 @@ app.whenReady().then(() => {
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
+
+  // if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
+
+  if (BrowserWindow.getAllWindows().length === 0) createEditorWindow()
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -371,7 +530,7 @@ function setDefaultActivitySettings(settings){
     config.activities = {};
   }
 
-  const activityKey = currentSource + '_' + currentActivity;
+  const activityKey = windows.main.currentSource + '_' + windows.main.currentActivity;
 
   if (!config.activities[activityKey]) {
     config.activities[activityKey] = {};
@@ -383,7 +542,7 @@ function setDefaultActivitySettings(settings){
 
 ipcMain.on('profileEditorReady', function (event) {
   console.log('Sending profile to profile editor')
-  console.log(profileStore)
+  console.log(windows.main.profileStore)
 
   loadProfileInEditor()
 })
@@ -393,21 +552,21 @@ function resetCurrentActivitySettingDefaults(){
     config.activities = {};
 }
 
-const activityKey = currentSource + '_' + currentActivity;
+const activityKey = windows.main.currentSource + '_' + windows.main.currentActivity;
 
 if (!config.activities[activityKey]) {
     config.activities[activityKey] = {};
 }
 
   delete config.activities[activityKey].default_settings;
-  windows.main.webContents.send('setPrefs', prefsStore)
+  windows.main.window.webContents.send('setPrefs', windows.main.prefsStore)
   saveConfigFile()
 }
 
 function findSettingAnomolies(settings) {
 
   // first check that we're supposed to have some settings. We'll report this straight away if we do but we're not supposed to, in order to not have a bunch of uncaught errors.
-  if (!prefsStore.hasOwnProperty('settings')) {
+  if (!windows.main.prefsStore.hasOwnProperty('settings')) {
     if (Object.keys(settings).length == 0) {
       return [];
     } else {
@@ -415,8 +574,8 @@ function findSettingAnomolies(settings) {
     }
   }
 
-  var actualNumSettings = Object.keys(settings).length
-  var expectedNumSettings = prefsStore.settings.length
+  var actualNumSettings = settings.hasOwnProperty('activityName') ? Object.keys(settings).length - 1 : Object.keys(settings).length // we don't want to count activityName, since it's not a real setting that's defined in the activity template, but rather just a way to pass the activity name to the profile editor
+  var expectedNumSettings = windows.main.prefsStore.settings.length
 
   var currentSetting
   var currentSettingVarType
@@ -427,7 +586,7 @@ function findSettingAnomolies(settings) {
     errors.push({ error: 'number', expectedNum: expectedNumSettings, actualNum: actualNumSettings })
   }
 
-  prefsStore.settings.forEach(setting => {
+  windows.main.prefsStore.settings.forEach(setting => {
     currentSetting = settings[setting.name]
     currentSettingVarType = typeof currentSetting
 
@@ -477,7 +636,8 @@ function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function dataSelectImport(cell,fileTypes,file=false,cellOffset = 0){
+// function dataSelectImport(cell,fileTypes,file=false,cellOffset = 0){
+function dataSelectImport(cell,fileTypes,cellOffset = 0){
   var validExtensions = []
    //to do: allow multiple files and increase offset with each file added
 
@@ -503,22 +663,23 @@ function dataSelectImport(cell,fileTypes,file=false,cellOffset = 0){
     }
   })  
 
-  if (file){
-    dataSelectImportFromFile(file, validExtensions, cell, cellOffset)
-  } else {
-    dialog.showOpenDialog(windows.main, dialogOptions).then(result => {
+  // if (file){
+  //   dataSelectImportFromFile(file, validExtensions, cell, cellOffset)
+  // } else {
+    dialog.showOpenDialog(windows.main.window, dialogOptions).then(result => {
       if (result.cancelled) {
         console.log("Cancelled")
-        windows.main.webContents.send('dataCellFileImportResult', cell, false, cellOffset)
+        windows.main.window.webContents.send('dataCellFileImportResult', cell, false, cellOffset)
         return
       }
   
       dataSelectImportFromPath(result.filePaths[0], validExtensions, cell, cellOffset)
       
     })
-  }  
+  // }  
 }
 
+// No longer using this for simplicity and for better security.
 // function dataSelectImportFromFile(file, validExtensions, cell, cellOffset){
 //   console.log(file)
 //   console.log(file.name)
@@ -536,7 +697,7 @@ function dataSelectImport(cell,fileTypes,file=false,cellOffset = 0){
 //   if (file.size > (1024 * 1024 * 5)) { // for now, limit is 5MB
 //     console.log("File is too big. " + file.size + " bytes.");
 //     dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 500KB or smaller are supported.")
-//     windows.main.webContents.send('dataCellFileImportResult', cell, false)  
+//     windows.main.window.webContents.send('dataCellFileImportResult', cell, false)  
 //   } else {
 //     addDataToDataCell(cell,cellOffset,file.data,file.ext,file.size,file.dimensions)
 //   }
@@ -565,7 +726,7 @@ function dataSelectImportFromPath(filePath, validExtensions, cell, cellOffset){
       if (stats.size > (1024 * 1024 * 5)) { // for now, limit is 5MB
         console.log("File is too big. " + stats.size + " bytes.");
         dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 500KB or smaller are supported.")
-        windows.main.webContents.send('dataCellFileImportResult', cell, false)
+        windows.main.window.webContents.send('dataCellFileImportResult', cell, false)
       } else {
         openFileForDataCell(cell,cellOffset,filePath,fileExt,stats)        
       }
@@ -580,7 +741,7 @@ function openFileForDataCell(cell,cellOffset,filePath,fileExt,stats){
         console.log("An error ocurred reading the file:" + err.message);
       }
       dialog.showErrorBox("Error opening file", "The file could not be read.")
-      windows.main.webContents.send('dataCellFileImportResult', cell, false)
+      windows.main.window.webContents.send('dataCellFileImportResult', cell, false)
       return;
     }
     addDataToDataCell(cell,cellOffset,data.toString('base64'),fileExt,stats.size,sizeOfImage(data))
@@ -598,7 +759,7 @@ function addDataToDataCell(cell,cellOffset,dataAsString,fileExt,fileSize,dimensi
 
     // importFileStore['data_' + cell] = fileStoreItem
 
-    windows.main.webContents.send('dataCellFileImportResult', cell, fileStoreItem,cellOffset)
+    windows.main.window.webContents.send('dataCellFileImportResult', cell, fileStoreItem,cellOffset)
 }
 
 function determineFileType(fileExt){
@@ -641,9 +802,9 @@ function customSelectImport(settingId,fileTypes){
   // }
   // TO DO: Add others?
 
-  dialog.showOpenDialog(windows.main, dialogOptions).then(result => {
+  dialog.showOpenDialog(windows.main.window, dialogOptions).then(result => {
     if (result.cancelled) {      
-      windows.main.webContents.send('customSelectImportFileResult', settingId, false)
+      windows.main.window.webContents.send('customSelectImportFileResult', settingId, false)
       return
     }
     const fileExt = path.extname(result.filePaths[0]).toLowerCase().slice(1)
@@ -669,7 +830,7 @@ function customSelectImport(settingId,fileTypes){
           console.log("File is too big. " + stats.size + " bytes.");
         }
         dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 100KB or smaller are supported.")
-        windows.main.webContents.send('customSelectImportFileResult', settingId, false)
+        windows.main.window.webContents.send('customSelectImportFileResult', settingId, false)
       } else {
         fs.readFile(result.filePaths[0], (err, data) => {
           if (err) {
@@ -677,19 +838,19 @@ function customSelectImport(settingId,fileTypes){
               console.log("An error ocurred reading the file:" + err.message);
             }
             dialog.showErrorBox("Error opening file", "The file could not be read.")
-            windows.main.webContents.send('customSelectImportFileResult', settingId, false)
+            windows.main.window.webContents.send('customSelectImportFileResult', settingId, false)
             return;
           }
 
-          let fileStoreItem = { data: data.toString('base64'), ext: fileExt, fileSize: stats.size }
+          let fileStoreItem = { data: data.toString('base64'), ext: fileExt, fileSize: stats.size, name: path.basename(result.filePaths[0]) }
         
           if (extensions.image.includes(fileExt)){
             fileStoreItem.dimensions = sizeOfImage(data)
           }
 
-          importFileStore['custom_' + settingId] = fileStoreItem
+          windows.main.importFileStore['custom_' + settingId] = fileStoreItem
 
-          windows.main.webContents.send('customSelectImportFileResult', settingId, true, path.basename(result.filePaths[0]))
+          windows.main.window.webContents.send('customSelectImportFileResult', settingId, true, fileStoreItem.name)
         })
       }
     })
@@ -886,8 +1047,8 @@ function readActivitySettings(activity, source) {
 
 function activityTemplateOnlyRequiresStrings(){
   let result = true
-  if(prefsStore.hasOwnProperty('cols')){
-    prefsStore.cols.forEach(col => {
+  if(windows.main.prefsStore.hasOwnProperty('cols')){
+    windows.main.prefsStore.cols.forEach(col => {
       if (col.image){
         result = false
         return false // leave forEach
@@ -905,8 +1066,12 @@ function activityTemplateOnlyRequiresStrings(){
   return result
 }
 
+// while setting files are stored in the windows.main.importFileStore during edit, game data files are stored in the gameData array
+// this function extracts the files from the game data and adds them to the windows.main.importFileStore.gameData array
+// it also replaces the file references in the game data with the index of the file in the windows.main.importFileStore.gameData array
+// this way we can avoid storing the same file multiple times in the windows.main.importFileStore for gameData anyway
 function extractFilesFromGameDataToImportFileStore(data){
-  importFileStore.gameData = [0] // add an empty first array so that we can use existingFile as both a bool and an integer (otherwise existingFile while count as false if 0)
+  windows.main.importFileStore.gameData = [0] // add an empty first array so that we can use existingFile as both a bool and an integer (otherwise existingFile while count as false if 0)
   if (debugMode) {
     console.log(data)
   }
@@ -920,8 +1085,8 @@ function extractFilesFromGameDataToImportFileStore(data){
             if(existingFile){
               cell[file] = existingFile
             } else {
-              importFileStore.gameData.push(cell[file])
-              cell[file] = importFileStore.gameData.length-1
+              windows.main.importFileStore.gameData.push(cell[file])
+              cell[file] = windows.main.importFileStore.gameData.length-1
             }
           }
         }
@@ -932,9 +1097,9 @@ function extractFilesFromGameDataToImportFileStore(data){
 }
 
 function gameFileAlreadyExists(fileStoreItem){
-  if (importFileStore.gameData){
-    for (let i = 1; i < importFileStore.gameData.length; i++){
-      let existingFile = importFileStore.gameData[i]
+  if (windows.main.importFileStore.gameData){
+    for (let i = 1; i < windows.main.importFileStore.gameData.length; i++){
+      let existingFile = windows.main.importFileStore.gameData[i]
       // check first the size as this might be quicker than checking the data - most of the time, if these are different, it's not the same file
       // if (debugMode) {
       //   console.log(fileStoreItem.fileSize)
@@ -951,6 +1116,7 @@ function gameFileAlreadyExists(fileStoreItem){
 }
 
 function processSaveExport(event,data,purpose='export',path=''){
+  if(debugMode) console.log(`Processing ${purpose} to path ${path}.`)
   if (!validateSender(event.senderFrame)) {
     dialog.showErrorBox('Security error!', 'A renderer sent a signal from a non-local source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
     return null
@@ -962,22 +1128,37 @@ function processSaveExport(event,data,purpose='export',path=''){
   // console.log(`Only requires strings? ${stringsOnlyActivity}`)
   if (stringsOnlyActivity){
     dataOK = isArrayofArrayofStrings(data.input)
-    importFileStore.gameData = [] // empty the file store so we don't unecessarily add a bunch of cached files
+    windows.main.importFileStore.gameData = [] // empty the file store so we don't unecessarily add a bunch of cached files
   } else {
     data.input = extractFilesFromGameDataToImportFileStore(data.input)
     dataOK = advancedCheckActivityData(data.input,true)
-    fileStoreOK = checkFileStore(importFileStore)
+    fileStoreOK = checkFileStore(windows.main.importFileStore)
   }
   let activityOK = verifiyActivityAndSource(data.activity, data.source)
   let typeOK = (data.type == 'html' || data.type == 'scorm')
   let packageIdOK = (typeof data.packageIdentifier == 'string')
-  let exportFileStore = deleteUnusedFileStoreItems(importFileStore,data.settings)
+  let exportFileStore = deleteUnusedFileStoreItems(windows.main.importFileStore,data.settings)
   // settingErrors = findSettingAnomolies(data.settings)
   if (settingErrors.length == 0 && dataOK && activityOK) {
     if (purpose == 'export'){
       exportActivity(data.input, data.activity, data.settings, exportFileStore, data.source, data.type, data.packageIdentifier)
     } else if (purpose == 'save'){
       saveTable(data,path,exportFileStore)
+
+      // after saving, remember the file path
+      let browserWindow = event.sender.getOwnerBrowserWindow()
+      let editorWindow = windows.editors.find(window => window.window.id === browserWindow.id)  
+
+      if (debugMode) {
+        console.log('Source window:')
+        console.log(browserWindow)
+        console.log('Editor window:')
+        console.log(editorWindow)        
+      }
+
+      if (editorWindow) {
+        editorWindow.openTablePath = path        
+      }
     }
   } else if (settingErrors.length > 0) {
     reportSettingErrors(settingErrors)
@@ -1004,9 +1185,9 @@ ipcMain.on("runActivity", function (event, data, settings, activity, source) {
   }
   // console.log(event)
   // console.log(data)
-  if(prefsStore.hasOwnProperty('markdown_support') && prefsStore.markdown_support){
+  if(windows.main.prefsStore.hasOwnProperty('markdown_support') && windows.main.prefsStore.markdown_support){
     // TO DO: && if enabled by user
-    withMarkdown = activityEditor.applyMarkdown(data, settings, prefsStore.settings)    
+    withMarkdown = activityEditor.applyMarkdown(data, settings, windows.main.prefsStore.settings,false)    
     data.input = withMarkdown.data
     settings = withMarkdown.settings
   }
@@ -1016,8 +1197,8 @@ ipcMain.on("runActivity", function (event, data, settings, activity, source) {
   }
   validateSender(event.senderFrame) // security check
   let settingErrors = findSettingAnomolies(settings) // security check
-  // let fileStore = deleteUnusedFileStoreItems(importFileStore,settings) // remove any files that are not used in the settings
-  let fileStore = importFileStore // for now, don't delete unused items
+  // let fileStore = deleteUnusedFileStoreItems(windows.main.importFileStore,settings) // remove any files that are not used in the settings
+  let fileStore = windows.main.importFileStore // for now, don't delete unused items
   
   let dataOK
   let fileStoreOK = true
@@ -1077,17 +1258,20 @@ ipcMain.on('readActivityPrefs', function (event, activity, source) {
     dialog.showErrorBox('Security error!', 'A renderer sent a signal from a non-local source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
     return null
   }
-  activityOK = verifiyActivityAndSource(activity, source)
+  const activityOK = verifiyActivityAndSource(activity, source)
+
+  let browserWindow = event.sender.getOwnerBrowserWindow()
+  let window = windows.editors.find(window => window.window.id === browserWindow.id)
 
   // save to refer to these later
-  currentActivity = activity
-  currentSource = source
+  window.currentActivity = activity
+  window.currentSource = source
 
   if (activityOK) {
     let activityPath = findActivityPath(activity, source)
     let customDefaults = {}
     activityEditor.openActivityTemplate(activityPath).then(activityTemplate => {
-      prefsStore = readPreferences(activityTemplate)
+      window.prefsStore = readPreferences(activityTemplate)
       if (config.activities && config.activities[source+'_'+activity] && config.activities[source+'_'+activity].default_settings){
         customDefaults = config.activities[source+'_'+activity].default_settings
         if (debugMode) {
@@ -1096,51 +1280,91 @@ ipcMain.on('readActivityPrefs', function (event, activity, source) {
       }
 
       // get some more information for when exporting later
-      prefsStore.app_version = v;
-      prefsStore.platform = process.platform
-      prefsStore.source = source
-      prefsStore.activity = activity
+      window.prefsStore.app_version = v;
+      window.prefsStore.platform = process.platform
+      window.prefsStore.source = source
+      window.prefsStore.activity = activity
       if (debugMode) {
-        console.log(prefsStore)
+        console.log(window.prefsStore)
       }
 
       //transform templates into full settings
-      if(prefsStore.hasOwnProperty('settings')){
-        prefsStore.settings = unrollTemplates(prefsStore.settings)
+      if(window.prefsStore.hasOwnProperty('settings')){
+        window.prefsStore.settings = unrollTemplates(window.prefsStore.settings)
       }
 
       // standardise cols to an object (rather than just a string with the col title)
-      if (prefsStore.hasOwnProperty('cols')){
-        for (let i = 0; i < prefsStore.cols.length; i++){
-          if (typeof prefsStore.cols[i] == 'string'){
+      if (window.prefsStore.hasOwnProperty('cols')){
+        for (let i = 0; i < window.prefsStore.cols.length; i++){
+          if (typeof window.prefsStore.cols[i] == 'string'){
 
-            prefsStore.cols[i] = {title: prefsStore.cols[i], text: true, image: false, datetime: false}
+            window.prefsStore.cols[i] = {title: window.prefsStore.cols[i], text: true, image: false, datetime: false}
           }
         }
       }
 
-      if (!prefsWaiting.hasOwnProperty('exists')){
-        windows.main.webContents.send('setPrefs', prefsStore, prefsWaiting);
+      if(debugMode){console.log('Prefs waiting is:', window.prefsWaiting)}
+
+      if (window.prefsWaiting){
+        // if prefsWaiting has some data, it's because a file was opened and now seen to set the prefs
+        window.window.webContents.send('setPrefs', window.prefsStore, window.prefsWaiting);
+        if(debugMode){console.log('Prefs sent from prefsWaiting:', window.prefsWaiting)}
         // reset prefsWaiting now that they've been set
-        prefsWaiting = {exists: false}
+        window.prefsWaiting = null
+        // send any custom files in store so the name is shown in the UI
+        sendCustomSettingFilesInStore(windows.main.importFileStore)
       } else {
-        windows.main.webContents.send('setPrefs', prefsStore, customDefaults);
-      }      
+        window.window.webContents.send('setPrefs', window.prefsStore, customDefaults);
+        window.importFileStore = {} // purge imported file store ready for new files for use in custom settings (these are likely to be images or sounds)
+      }
 
       // if the activity is in the profile, get the latest version of that and apply it
-      activityProfile = profileStore.activities.find(actProf => actProf.activity === activity && actProf.source === source)
+      let activityProfile = window.profileStore.activities.find(actProf => actProf.activity === activity && actProf.source === source)
       if (activityProfile && windows.profileEditor){ // if the window is open, we'll assume that has the latest version of the profile
         windows.profileEditor.webContents.send('updateAndApplyActivityProfile',activity,source)
       } else if (activityProfile) { // if it's not, the latest version is already here
-        windows.main.webContents.send('applyActivitySettings',activityProfile.settings)
+        windows.main.window.webContents.send('applyActivitySettings',activityProfile.settings)
       }
 
-      importFileStore = {} // purge imported file store ready for new files for use in custom settings (these are likely to be images or sounds)
     })
   } else {
     dialog.showErrorBox('Error reading activity preferences', 'There was an error with the activity name or activity source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
   }
 })
+
+ipcMain.on('editorWindowReady', function(event){
+  if (!validateSender(event.senderFrame)) {
+    dialog.showErrorBox('Security error!', 'A renderer sent a signal from a non-local source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
+    return null
+  }
+  if (debugMode) {
+    console.log('Editor window is ready. Sender ID is ' + event.sender.id)
+  }  
+  let browserWindow = event.sender.getOwnerBrowserWindow()
+  let window = windows.editors.find(window => window.window.id === browserWindow.id)
+  console.log(window)
+  if(window && window.dataWaiting){    
+    if(typeof window.dataWaiting == 'string'){
+      openTable(window.dataWaiting, window)
+      window.dataWaiting = null
+    } else {
+      importTable(window.dataWaiting, window)
+      window.dataWaiting = null
+    }
+  }
+})
+
+ipcMain.on('getActivity', function(event){
+  if (!validateSender(event.senderFrame)) {
+    dialog.showErrorBox('Security error!', 'A renderer sent a signal from a non-local source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
+    return nulls
+  }
+  let browserWindow = event.sender.getOwnerBrowserWindow()
+  let window = windows.editors.find(window => window.window.id === browserWindow.id)
+  event.reply('setActivity', window.currentActivity, window.currentSource)
+})
+  
+
 
 // this is for just getting the activity settings (used by the profile editor)
 // Maybe don't need this?
@@ -1173,7 +1397,8 @@ ipcMain.on('getPrebuiltActivities', function (event) {
       }
     })    
     prebuiltActivitiesList = activities
-    windows.main.webContents.send('loadPrebuiltActivities', activities);
+    console.log(event)
+    event.reply('loadPrebuiltActivities', activities);
   })
 })
 
@@ -1192,7 +1417,7 @@ ipcMain.on('getUserActivities', function (event) {
           }
         })
         userActivitiesList = activities
-        windows.main.webContents.send('loadUserActivities', activities);
+        event.reply('loadUserActivities', activities);
       }
     });
   };
@@ -1202,8 +1427,8 @@ ipcMain.on('setActivitySettingsDefaults', function (event, settings) {
   setDefaultActivitySettings(settings)
 })
 
-ipcMain.on('dataSelectImport', function(event,cell, fileTypes){
-  dataSelectImport(cell,fileTypes)
+ipcMain.on('dataSelectImport', function(event,cell, fileTypes,cellOffset){
+  dataSelectImport(cell,fileTypes,cellOffset)
 })
 
 // no longer used (see below) – locked this out for security reasons too
@@ -1221,14 +1446,14 @@ ipcMain.on('customSelectImport', function (event, settingId, fileTypes){
 })
 
 ipcMain.on('settingsToProfile', function (event, activity, source, settings) {
-  activityProfile = profileStore.activities.find(profile => profile.activity === activity && profile.source === source)
+  let activityProfile = windows.main.profileStore.activities.find(profile => profile.activity === activity && profile.source === source)
   if (activityProfile) {
     activityProfile.settings = settings
   } else {
-    profileStore.activities.push({ activity: activity, source: source, settings: settings })
+    windows.main.profileStore.activities.push({ activity: activity, source: source, settings: settings })
   }
   if (debugMode) {
-    console.log(profileStore)
+    console.log(windows.main.profileStore)
   }
   if (windows.profileEditor){
     readActivitySettings(activity, source).then(settingControls => {
@@ -1244,27 +1469,34 @@ ipcMain.on('updateProfile', function (event, profile){
       console.log(activityProfile.settings)
     })
   }
-  profileStore = profile
+  windows.main.profileStore = profile
 })
 
 ipcMain.on('saveProfile', function(event, profile, path){
-  profileStore = profile
+  windows.main.profileStore = profile
   saveProfile(profile,path)
 })
 
 ipcMain.on('applyActivityProfile', function(event, activity, source){
-  let activityProfile = profileStore.activities.find(profile => profile.activity === activity && profile.source === source)
-  windows.main.webContents.send('applyActivitySettings',activityProfile.settings)
+  let activityProfile = windows.main.profileStore.activities.find(profile => profile.activity === activity && profile.source === source)
+  windows.main.window.webContents.send('applyActivitySettings',activityProfile.settings)
 })
 
 ipcMain.on('checkProfileChangesThen', function(event, profile, action){
-  profileStore = profile
+  windows.main.profileStore = profile
   checkProfileChangesThen(action)
 })
 
 
 ipcMain.on("requestConfig", function (event) {
-  windows.main.webContents.send('configStore', config)
+  windows.main.window.webContents.send('configStore', config)
+})
+
+ipcMain.on("tableModified", function (event){
+  if (debugMode) {
+    console.log('Table modified')
+  }
+  windows.main.virgin = false
 })
 
 
@@ -1293,7 +1525,7 @@ const importTableDialog = () => {
     ]
   }
 
-  dialog.showOpenDialog(windows.main, dialogOptions).then(result => {
+  dialog.showOpenDialog(windows.main.window, dialogOptions).then(result => {
     if (result.cancelled) {
       return
     }
@@ -1333,7 +1565,7 @@ const importTableDialog = () => {
           const isJson = regexJson.test(data.trim())
           const isTabbed = regexTab.test(data.trim())
           if (isJson || isTabbed) {
-            windows.main.webContents.send('loadInput', data);
+            windows.main.window.webContents.send('loadInput', data);        
           } else {
             if(debugMode){console.log("Analysed as JSON: " + isJson)}
             if(debugMode){console.log("Tabs detected: " + isTabbed)}
@@ -1347,6 +1579,83 @@ const importTableDialog = () => {
   });
 };
 
+const importActivityDialog = () => {
+  var dialogOptions = {
+    title: 'Select activity HTML file',
+    properties: ['openFile'],
+    filters: [{
+      name: 'HTML file',
+      extensions: ['html']
+    }]
+  }
+
+  dialog.showOpenDialog(windows.main.window, dialogOptions).then(result => {
+    if (result.canceled) {
+      return
+    }
+    if (debugMode) {
+      console.log(result)
+    }
+    const fileExt = path.extname(result.filePaths[0])
+    if (fileExt.toLowerCase() != '.html') {
+      if (debugMode) {
+        console.log("File extension: " + fileExt)
+      }
+      dialog.showErrorBox("Error opening file", "Invalid file extension. Please select a .html file.")
+      return;
+    }
+    fs.readFile(result.filePaths[0], 'utf-8', (err, data) => {
+      if (err) {
+        if (debugMode) {
+          console.log("An error ocurred reading the file:" + err.message);
+        }
+        dialog.showErrorBox("Error opening file", "The file could not be read.")
+        return;
+      } 
+      const newEditorWindow = createEditorWindow()
+      newEditorWindow.window.webContents.on('did-finish-load', () => {
+
+        importActivity(data, newEditorWindow) // this will put the activity data in the table and set the activity settings, but it won't select the activity as the current one (as this is just for previewing the activity, not editing it);
+      })
+    });
+  });
+}
+
+const importActivity = (data, editorWindow) => {
+  let importedData = importer.importExportedActivity(data) 
+  if (importedData == null) {
+    dialog.showErrorBox('Error importing activity', 'The activity could not be imported. Only HTML activities exported from hex can be imported. If this is a hex activity, the file may have been corrupted. Please submit a bug report on https://github.com/mjhaxby/hex/issues and include a copy of the file you are trying to import.')
+    return
+  }
+  editorWindow.importFileStore = importedData.gameFiles ? importedData.gameFiles : {} // use gameFiles from the activity data, or an empty object if not present
+
+  
+  if (importedData.gameData){
+    editorWindow.dataWaiting = importedData.gameData // in case the window isn't ready yet to receive the data
+  }
+
+  if(importedData.gameSettings){ 
+      editorWindow.prefsWaiting = importedData.gameSettings // remember the settings to load later   
+  }    
+  if (importedData.info && importedData.info.hasOwnProperty('activity')) {
+      editorWindow.window.webContents.send('setActivity',importedData.info.activity,importedData.info.source ? importedData.info.source : 'prebuilt') // select the relevant activity (this will also apply the settings)
+  }
+  if (importedData) {
+    sendCustomSettingFilesInStore(editorWindow.importFileStore)
+  }
+}
+
+const sendCustomSettingFilesInStore = (importedFileStore) => {
+  // this function sends the custom files in the importFileStore to the main window so that they can be displayed in the UI for activity settings
+  // the same thing is done when importing from the selector, but this does it for multiple files at once
+  Object.keys(importedFileStore).forEach((key) => {
+          if (key.startsWith('custom_')) {
+            let file = importedFileStore[key]
+            windows.main.window.webContents.send('customSelectImportFileResult', key.replace('custom_',''), true, file.name ? file.name : `custom${file.ext ? '.' + file.ext : ''}`)
+          }          
+        })
+}
+
 const openUserActivitiesDirDialog = () => {
   var defaultPath
   if (!fs.existsSync(config.userActivitiesDir)) {
@@ -1354,7 +1663,7 @@ const openUserActivitiesDirDialog = () => {
   } else {
     defaultPath = app.getPath('documents')
   }
-  dialog.showOpenDialog(windows.main, {
+  dialog.showOpenDialog(windows.main.window, {
     defaultPath: config.userActivitiesDir,
     properties: ['openDirectory', 'createDirectory']
   }).then(result => {
@@ -1365,7 +1674,7 @@ const openUserActivitiesDirDialog = () => {
       config.userActivitiesDir = result.filePaths[0].replace(/(\s+)/g, '\$1')
       if(debugMode){console.log(config)}
       saveConfigFile();
-      windows.main.webContents.send('loadActivities')
+      windows.main.window.webContents.send('loadActivities')
       // TODO save config file, reload activities list
     }
   });
@@ -1379,7 +1688,7 @@ const toggleAdvancedExportOptions = () => {
     config.showAdvancedExport = false
     if(debugMode){console.log('Show advanced export options is off')}
   }
-  windows.main.webContents.send('configStore', config)
+  windows.main.window.webContents.send('configStore', config)
   saveConfigFile();
 }
 
@@ -1395,7 +1704,7 @@ const saveConfigFile = () => {
 }
 
 const getReadyToExport = (type) => {
-  windows.main.webContents.send('getInputForExport'); // will put the data in the data holder and store activity type  
+  windows.main.window.webContents.send('getInputForExport'); // will put the data in the data holder and store activity type  
 }
 
 const exportFromActivity = () => {
@@ -1436,7 +1745,7 @@ const exportActivity = (data, activity, settings, files, source, type = 'html', 
       activityEditor.openFonts(settings).then ( fontData => {
         if(debugMode){console.log(fontData)}
         settings.scorm = false // add scorm (false) tag to the  settings
-        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, prefsStore, fontData)
+        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, windows.main.prefsStore, fontData)
         dialog.showSaveDialog(dialogOptions).then(result => {
           if (result.canceled) {
             if(debugMode){console.log("Cancelled")}
@@ -1519,7 +1828,7 @@ const exportActivity = (data, activity, settings, files, source, type = 'html', 
       activityEditor.openFonts(settings).then ( fontData => {
         if(debugMode){console.log(fontData)}
         settings.scorm = true // add scorm tag to the  settings
-        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, prefsStore, fontData)
+        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, windows.main.prefsStore, fontData)
 
         dialog.showSaveDialog(dialogOptions).then(result => {
           if (result.canceled) {
@@ -1568,16 +1877,20 @@ const openTableDialog = () => {
     ]
   }
 
-  dialog.showOpenDialog(windows.main, dialogOptions).then(result => {
+  if (!windows.main){
+    createEditorWindow() // if there is no main window, we need to create one before opening the dialog, otherwise the dialog won't open
+  }
+
+  dialog.showOpenDialog(windows.main.window, dialogOptions).then(result => {
     if (result.cancelled) {
       if(debugMode){console.log("Cancelled")}
       return
     }
     if(debugMode){console.log(result)}
     const fileExt = path.extname(result.filePaths[0])
-    if (fileExt.toLowerCase() != '.hex' &&fileExt.toLowerCase() != '.json' && fileExt.toLowerCase() != '.txt') {
+    if (fileExt.toLowerCase() != '.hext' &&fileExt.toLowerCase() != '.json' && fileExt.toLowerCase() != '.txt') {
       if(debugMode){console.log("File extension: " + fileExt)}
-      dialog.showErrorBox("Error opening file", "Invalid file extension. Please select a .hex or .json or .txt file.")
+      dialog.showErrorBox("Error opening file", "Invalid file extension. Please select a .hext or .json or .txt file.")
       return;
     }
 
@@ -1598,23 +1911,42 @@ const openTableDialog = () => {
             return;
           }
 
-          if(debugMode){console.log(data)}
-
-          const isJson = !(/[^,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]/.test(
-            data.replace(/"(\\.|[^"\\])*"/g, ''))) && eval('(' + data + ')');
-          if (isJson) {
-            openTablePath = result.filePaths[0]
-            openTable(data)
-          } else {
-            dialog.showErrorBox("Error opening file", "Invalid file format. Please used JSON format.")
-            return;
-          }
+          handleTableFileOpen(data, result.filePaths[0])          
 
         });
       }
     })
   });
 }
+
+function handleTableFileOpen(data, path){
+  const isJson = isValidJson(data)
+  if (isJson) {    
+    if (windows.main && windows.main.window && windows.main.virgin) {
+      openTable(data, windows.main)
+    } else {
+      const newEditorWindow = createEditorWindow()
+      newEditorWindow.openTablePath = path
+      newEditorWindow.dataWaiting = data
+      
+    }
+    windows.main.openTablePath = path
+  } else {
+    dialog.showErrorBox("Error opening file", "Invalid file format. Please used JSON format.")
+    return;
+  }
+}
+
+// TO DO: move to utils
+function isValidJson(data) {
+  try {
+    JSON.parse(data);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 
 const openProfileDialog = () => {
   var dialogOptions = {
@@ -1632,7 +1964,7 @@ const openProfileDialog = () => {
     ]
   }
 
-  dialog.showOpenDialog(windows.main, dialogOptions).then(result => {
+  dialog.showOpenDialog(windows.main.window, dialogOptions).then(result => {
     if (result.cancelled) {
       if(debugMode){console.log("Cancelled")}
       return
@@ -1684,27 +2016,26 @@ const openProfileDialog = () => {
 const saveTableDialog = (data) => {  
 
   var fileName = ''
-  let defaultPath = openTablePath
+  let defaultPath = windows.main.openTablePath
 
   if (defaultPath == ''){
-    if (profileStore.name != ''){
-      fileName = profileStore.name.replaceAll(' ','_') + '_'
+    if (windows.main.profileStore.name != ''){
+      fileName = windows.main.profileStore.name.replaceAll(' ','_') + '_'
     } else {
       fileName = 'New_'
     }
-    fileName += prefsStore.activity
-    defaultPath = fileName + '.json' 
-    // defaultPath = fileName + '.hext' // TO DO 
+    fileName += windows.main.prefsStore.activity
+    defaultPath = fileName + '.hext'     
   }
 
   var dialogOptions = {
     title: 'Save table',
     properties: ['createDirectory'],
     filters: [
-    //   {
-    //   name: 'hex table file',
-    //   extension: 'hext'
-    // },
+      {
+      name: 'hex table file',
+      extension: 'hext'
+    },
     {
       name: 'JSON file',
       extension: 'json'
@@ -1724,11 +2055,11 @@ const saveTableDialog = (data) => {
 
 const saveProfileDialog = () => {  
 
-    if(debugMode){console.log(profileStore)}
+    if(debugMode){console.log(windows.main.profileStore)}
     let defaultPath = openProfilePath
 
     if (defaultPath == ''){
-      defaultPath = profileStore.name + '.json' 
+      defaultPath = windows.main.profileStore.name + '.json' 
     }
 
     var dialogOptions = {
@@ -1752,36 +2083,47 @@ const saveProfileDialog = () => {
   }
 
 function loadProfileInEditor(){
-  profileStore.activities.forEach(activityProfile => {
+  windows.main.profileStore.activities.forEach(activityProfile => {
     activitySettingControlsStore = {}
     readActivitySettings(activityProfile.activity, activityProfile.source).then(settingControls => {
       activitySettingControlsStore[activityProfile.source + '_' + activityProfile.activity] = settingControls
       if(debugMode){console.log(Object.keys(activitySettingControlsStore).length + ' setting controls found')}
-      if(debugMode){console.log(profileStore.activities.length + ' activity settings in profile')}
+      if(debugMode){console.log(windows.main.profileStore.activities.length + ' activity settings in profile')}
       // when all the activity setting controls have been loaded, send the profile and the setting controls off to the profile editor
-      if (Object.keys(activitySettingControlsStore).length == profileStore.activities.length) {
-        windows.profileEditor.webContents.send('loadProfile', profileStore, activitySettingControlsStore)
+      if (Object.keys(activitySettingControlsStore).length == windows.main.profileStore.activities.length) {
+        windows.profileEditor.webContents.send('loadProfile', windows.main.profileStore, activitySettingControlsStore)
       }
     })
   })
 
-  if (profileStore.activities.length == 0){
-    windows.profileEditor.webContents.send('loadProfile', profileStore, activitySettingControlsStore)
+  if (windows.main.profileStore.activities.length == 0){
+    windows.profileEditor.webContents.send('loadProfile', windows.main.profileStore, activitySettingControlsStore)
   }
 }
 
-function openTable(data){  
+function openTable(data, editorWindow = windows.main){  
+
   try {     
-    inputData = JSON.parse(data)
+    const inputData = JSON.parse(data)
     if(inputData.hasOwnProperty('filesData')){
-      importFileStore = inputData.filesData
-      if(debugMode){console.log('Found files.')}
+      editorWindow.importFileStore = inputData.filesData      
+
+      if(debugMode){
+        console.log('Found files.')
+        console.log('Import file store:')
+        console.log(editorWindow.importFileStore)
+      }
     } else {
       if(debugMode){console.log('Data contains no files.')}
     }
-    windows.main.send('loadInput',inputData.input,importFileStore) // put the data in the table
-    prefsWaiting = inputData.settings // remember the settings to load later
-    windows.main.send('setActivity',inputData.activity,inputData.source) // select the relevant activity
+    // editorWindow.window.webContents.send('setActivity',inputData.activity,inputData.source) // select the relevant activity
+    editorWindow.window.webContents.send('loadInput',inputData.input,editorWindow.importFileStore,true) // put the data in the table
+    // could potentially delete gameData from editorWindow.importFileStore here?
+    editorWindow.currentActivity = inputData.activity // we will send this when ready
+    editorWindow.currentSource = inputData.source // we will send this when ready
+    editorWindow.prefsWaiting = inputData.settings // remember the settings to load later       
+    
+    if(debugMode) console.log('Prefs waiting:\n', editorWindow.prefsWaiting)
   }
   catch (error) {
     dialog.showErrorBox("Error opening file","JSON data in file could not be parsed.")
@@ -1790,10 +2132,14 @@ function openTable(data){
   }  
 }
 
+function importTable(importedData, editorWindow = windows.main){  
+  editorWindow.window.webContents.send('loadInput',importedData,editorWindow.importFileStore ? editorWindow.importFileStore : null) // put the data in the table
+}
+
 function openProfile(data){
   try {     
-    profileStore = JSON.parse(data)
-    lastSavedProfile = profileStore
+    windows.main.profileStore = JSON.parse(data)
+    lastSavedProfile = windows.main.profileStore
   }
   catch (error) {
     dialog.showErrorBox("Error opening file","JSON data in profile could not be parsed.")
@@ -1806,12 +2152,12 @@ function openProfile(data){
 }
 
 function closeProfile(){
-  profileStore = { name: '', activities: [] }
-  lastSavedProfile = profileStore
+  windows.main.profileStore = { name: '', activities: [] }
+  lastSavedProfile = windows.main.profileStore
   openProfilePath = ''
   activitySettingControlsStore = {}
   if(windows.profileEditor){
-    windows.profileEditor.webContents.send('loadProfile',profileStore, activitySettingControlsStore)
+    windows.profileEditor.webContents.send('loadProfile',windows.main.profileStore, activitySettingControlsStore)
   }
 }
 
@@ -1839,7 +2185,7 @@ function checkProfileChangesThen(action){
         if (result.response == 2) { return; } // Cancelled
         if (result.response == 0) { // Yes
           if (openProfilePath != ''){
-            saveProfile(profileStore,openProfilePath) // profileStore will have been updated in the checking process)
+            saveProfile(windows.main.profileStore,openProfilePath) // profileStore will have been updated in the checking process)
           } else {
             saveProfileDialog()
           }
@@ -1868,16 +2214,16 @@ function checkProfileChangesThen(action){
 
 function profileHasChanged(){
   // first a couple of simple checks so we don't have to do too much work to see if there's a change
-  if(profileStore.name != lastSavedProfile.name){
+  if(windows.main.profileStore.name != lastSavedProfile.name){
     return true // profile name has changed
   }
-  if(profileStore.activities.length != lastSavedProfile.activities.length){
+  if(windows.main.profileStore.activities.length != lastSavedProfile.activities.length){
     return true // there are not the same number as activities in the profile as before
   }
-  if(profileStore.activities.length > 0){
+  if(windows.main.profileStore.activities.length > 0){
     if(lastSavedProfile.activities.length > 0){
-      if(profileStore.activities[0].settings[Object.keys(profileStore.activities[0].settings)[0]] && lastSavedProfile.activities[0].settings[Object.keys(lastSavedProfile.activities[0].settings)[0]]){
-        if(profileStore.activities[0].settings[Object.keys(profileStore.activities[0].settings)[0]] != lastSavedProfile.activities[0].settings[Object.keys(lastSavedProfile.activities[0].settings)[0]]){
+      if(windows.main.profileStore.activities[0].settings[Object.keys(windows.main.profileStore.activities[0].settings)[0]] && lastSavedProfile.activities[0].settings[Object.keys(lastSavedProfile.activities[0].settings)[0]]){
+        if(windows.main.profileStore.activities[0].settings[Object.keys(windows.main.profileStore.activities[0].settings)[0]] != lastSavedProfile.activities[0].settings[Object.keys(lastSavedProfile.activities[0].settings)[0]]){
           return true // first setting in the first activity has changed
         }
       }
@@ -1893,7 +2239,7 @@ function profileHasChanged(){
   // if that's not worked, we'll make a hash of each and compare those
   // if this were for a bigger file, we'd want to do this in chunks
   const lastSaved = crypto.createHash('md5').update(JSON.stringify(lastSavedProfile)).digest("hex")
-  const currentProfile = crypto.createHash('md5').update(JSON.stringify(profileStore)).digest("hex")
+  const currentProfile = crypto.createHash('md5').update(JSON.stringify(windows.main.profileStore)).digest("hex")
 
   if(lastSaved == currentProfile){
     return false
@@ -1915,12 +2261,14 @@ function initiateSaveProfile(path=openProfilePath){
     if(debugMode){console.log('Getting latest version of profile')}
     windows.profileEditor.webContents.send('updateProfileToSave',path)   
   } else {
-    saveProfile(profileStore,path)
+    saveProfile(windows.main.profileStore,path)
   }
 
 }
 
-function initiateSaveTable(path=openTablePath){
+function initiateSaveTable(path=windows.main.openTablePath){
+
+  console.log(path)
 
   // if there is no path, we need to show the dialog instead
   if(path == ''){
@@ -1928,7 +2276,7 @@ function initiateSaveTable(path=openTablePath){
     return
   }
 
-  windows.main.webContents.send('getInputForSave',path)   
+  windows.main.window.webContents.send('getInputForSave',path)   
 
 }
 
@@ -1940,7 +2288,7 @@ function saveProfile(profile,path){
       if(debugMode){console.log(err)};
     } else {
       if(debugMode){console.log("File written successfully.")}
-      lastSavedProfile = profileStore
+      lastSavedProfile = windows.main.profileStore
       openProfilePath = path
 
       // we may be saving in anticipation of opening or closing the file, in which case this variable will have been set
@@ -1964,8 +2312,8 @@ function saveTable(inputData,path,fileData){
 
   let data = JSON.stringify(inputData)
 
-  if(!/.hex$|\.json$/.test(path)){
-    path += '.hex'
+  if(!/.hext$|\.json$/.test(path)){
+    path += '.hext'
   }
 
   fs.writeFile(path, data, { encoding: 'utf8' }, (err) => {
@@ -2026,7 +2374,7 @@ function unrollTemplates(settings){
 
 function activityFocused() {
   focusedWindow = BrowserWindow.getFocusedWindow()
-  if (focusedWindow != windows.main) {
+  if (focusedWindow != windows.main.window) {
     return windows.activities.find(window => window.windowId === focusedWindow.id)
   } else {
     return null
@@ -2088,7 +2436,7 @@ function getConfig() {
         resolve(currentConfig)
       }
       if(debugMode){console.log(currentConfig)}
-      // windows.main.webContents.send('setConfig', config); // not using this yet
+      // windows.main.window.webContents.send('setConfig', config); // not using this yet
     })
   });
 }
@@ -2111,23 +2459,23 @@ function openDocumentation(){
 
 
 function addActivityProfile() {
-  windows.main.webContents.send('getActivitySettingsForProfile')
+  windows.main.window.webContents.send('getActivitySettingsForProfile')
 }
 
 function getTableDataForClipboard(form) {
-  windows.main.webContents.send('copyToClipboard', form);
+  windows.main.window.webContents.send('copyToClipboard', form);
 }
 
 function askToClearTable() {
-  windows.main.webContents.send('clearTable');
+  windows.main.window.webContents.send('clearTable');
 }
 
 function askToDeleteUnusedRows() {
-  windows.main.webContents.send('deleteUnusedRows');
+  windows.main.window.webContents.send('deleteUnusedRows');
 }
 
 function askToDeleteUnusedCols() {
-  windows.main.webContents.send('deleteUnusedCols');
+  windows.main.window.webContents.send('deleteUnusedCols');
 }
 
 const aboutOptions = {
@@ -2161,6 +2509,11 @@ const applicationMenu = Menu.buildFromTemplate([
       isMac ? { role: 'close' } : { role: 'quit' }
     ],
     submenu: [
+      { label: 'New table', 
+        role: 'new',
+        accelerator: process.platform === 'darwin' ? 'Cmd+N' : 'Ctrl+N',
+        click: () => { createEditorWindow() }
+      },
       {
         label: 'Open table and settings…',
         role: 'open', 
@@ -2168,16 +2521,16 @@ const applicationMenu = Menu.buildFromTemplate([
         click: () => { openTableDialog() }
       },
       // TO DO!
-      // {
-      //   label: 'Save table and settings',
-      //   role: 'save',
-      //   accelerator: process.platform === 'darwin' ? 'Cmd+S' : 'Ctrl+S',
-      //   click: () => { initiateSaveTable() }
-      // },
+      {
+        label: 'Save table and settings',
+        role: 'save',
+        accelerator: process.platform === 'darwin' ? 'Cmd+S' : 'Ctrl+S',
+        click: () => { initiateSaveTable(windows.main.openTablePath) }
+      },
       {
         label: 'Save table and settings as…',
         role: 'save',
-        accelerator: process.platform === 'darwin' ? 'Cmd+S' : 'Ctrl+S',
+        accelerator: process.platform === 'darwin' ? 'Cmd+Alt+S' : 'Ctrl+Alt+S',
         click: () => { saveTableDialog() }
       },
       // {
@@ -2187,6 +2540,10 @@ const applicationMenu = Menu.buildFromTemplate([
       {
         label: 'Import table…',        
         click: () => { importTableDialog() }
+      },
+      {
+        label: 'Import activity…',        
+        click: () => { importActivityDialog() }
       },
       { type: 'separator' },
       {
@@ -2218,7 +2575,31 @@ const applicationMenu = Menu.buildFromTemplate([
       {
         label: 'Select user activities folder…',
         click: () => { openUserActivitiesDirDialog() }
+      },
+      { type: 'separator' },
+      {
+        id: 'printMenuItem', 
+      label: 'Print…',
+      accelerator: process.platform === 'darwin' ? 'Cmd+P' : 'Ctrl+P',
+      enabled: false,
+      click: () => { 
+      const focusedWindow = BrowserWindow.getFocusedWindow()
+      if (focusedWindow && windows.activities.some(activity => activity.windowId === focusedWindow.id)) {
+        focusedWindow.webContents.print({
+                silent: false,
+        printBackground: true,
+        color: true,
+        margins: {
+          marginType: 'minimum'
+        },
+        landscape: false,
+        scaleFactor: 100,
+        preferCSSPageSize: true
       }
+        )}
+  }
+},
+{ type: 'separator' },
     ]
   },
   // { role: 'editMenu' }
@@ -2254,8 +2635,8 @@ const applicationMenu = Menu.buildFromTemplate([
   {
     label: 'View',
     submenu: [
-      { role: 'reload' },
-      { role: 'forceReload' },
+      { role: 'reload', id: 'reloadMenuItem' },
+      { role: 'forceReload', id: 'forceReloadMenuItem' },
       { type: 'separator' },
       { role: 'resetZoom' },
       { role: 'zoomIn' },
@@ -2301,7 +2682,7 @@ const applicationMenu = Menu.buildFromTemplate([
       { type: 'separator' },
       {
         label: 'Set current activity settings as default',
-        click: () => { windows.main.webContents.send('requestActivitySettingDefaults') }
+        click: () => { windows.main.window.webContents.send('requestActivitySettingDefaults') }
       },
       {
         label: 'Reset current activity settings to factory',

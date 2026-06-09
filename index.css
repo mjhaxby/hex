@@ -3,10 +3,14 @@
   --fg-color: #5A5A5A;
   --fg-color-shade2: #474544;
   --fg-color-shade3: #535150;
+  --fg-color-shade4: #797979;
+
   --bg-color-shade1: #E8E9E1;
   --bg-color-shade2: #ddded7;
   --bg-color-shade3: #d5d6cf;
-
+  --controls-height: 200px;
+  --open-settings-height: 220px;
+  --rest-of-ui-height: 250px;
 }
 
 @font-face{
@@ -83,6 +87,14 @@ body{
   user-select: none
 }
 
+strong{
+  /* since ShareTech doesn't have a bold variant, we'll use text-shadow to make bold look bolder */
+  text-shadow: -0.5px 0, 0 0.5px, 0.5px 0, 0 -0.5px, -0.5px -0.5px, 0.5px 0.5px, -0.5px 0.5px, 0.5px -0.5px;
+}
+h1, h2, h3 {
+  text-align: center;
+}
+
 .preload *{
   animation-duration: 0s !important;
   -webkit-animation-duration: 0s !important;
@@ -101,6 +113,11 @@ body{
 .disabled img, .disabled svg{
   -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
   filter: grayscale(100%);
+}
+
+.tableRow.disabled {
+  pointer-events: all;
+  text-decoration: line-through;
 }
 
 hr{
@@ -145,7 +162,7 @@ textarea {
   overflow: auto;
 }
 
-input[type='text'], input[type='email'], input[type='number'], input[type='datetime-local'], select, textarea {
+input[type='text'], input[type='email'], input[type='number'], input[type='datetime-local'], input[type='time'], input[type='date'], select, textarea {
   background: none;
   border: none;
   border-bottom: solid 2px var(--fg-color-shade2);
@@ -165,7 +182,16 @@ input[type='text'], input[type='email'], input[type='number'], input[type='datet
   -moz-transition: border 0.3s;
   -ms-transition: border 0.3s;
   -o-transition: border 0.3s;
-  transition: border 0.3s;
+  transition: border 0.3s, width .6s ease-in-out;;
+}
+
+.tableRow.disabled input{
+  text-decoration: line-through
+}
+
+
+input[type='time'], input[type='date']{
+  height: 2em;
 }
 
 input:disabled, select:disabled{
@@ -242,8 +268,154 @@ table{
   border-collapse: collapse;
 }
 
-td, th{
+td{
   position: relative;
+}
+
+.detailEditor{
+  display: none;
+}
+
+.detail-mode .detailEditor{
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.detail-mode .hex-table{
+  display: none;
+}
+
+.detailEditorHeader{
+  width: 100%;
+}
+
+.detailEditorContent{
+  background-color: var(--bg-color-shade2);
+  flex-grow: 1;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  max-height: calc(100% - 100px);
+  overflow: hidden;
+  justify-content: center;
+}
+
+.detailEditorContent .ql-toolbar.ql-snow{
+  width: 100%;  
+  flex-grow: 2;  
+}
+
+.detailEditorContent .ql-container{
+  flex-grow: 2;
+  flex-shrink: 0.5;
+  height: auto;  
+  flex-basis: 100%;
+  min-height: calc(100% - 100px);
+  max-height: calc(100% - 50px);
+}
+
+.detailEditor.withSelect .ql-container,
+.detailEditor.withDateTime .ql-container {
+  flex-basis: 66%;
+}
+
+.detailEditor.withPreview.withSelect .ql-container,
+.detailEditor.withPreview.withDateTime .ql-container,
+.detailEditor.withPreview .ql-container {
+  /* flex-basis: 50%; */
+  flex: 1 1 0;
+}
+
+.detailEditor.withDateTime .inputCellDateTime{
+  flex: 0 0 16rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;  
+}
+
+.detailEditorButtons{
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+}
+
+.detailEditorButtons button svg{
+  height: 32px;
+  transform: scale(1.5);
+}
+
+.detailEditorButtons button{  
+  stroke: var(--fg-color-shade2);
+  padding: 2px 20px;
+}
+
+.detailEditorButtons button:hover{
+  stroke: var(--bg-color-shade2);
+}
+.detailEditor_fileContainer{
+  display: none;
+  align-items: center;
+  flex-basis: 50%;
+  overflow: scroll;
+  height: calc(100% - 100px);
+}
+
+.detailEditor.withImage .detailEditor_fileContainer{
+  display: flex;
+}
+
+
+.detailEditor_fileContainer .inputCellFile{
+  max-height: unset;
+  height: 100%;
+  width: 100%;
+}
+
+.detailEditor_fileContainer .inputCellFile:hover{
+  transform: unset;
+}
+
+.detailEditor_fileContainer .dataImagePreview{
+  transform: unset;
+  width: auto;
+}
+
+
+#activityName{
+  padding: 10px 10px;
+}
+
+#headerRow {
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  background-color: var(--bg-color-shade2);
+  padding: 0;
+}
+
+/* header row background (to stretch across the whole thing) */
+#headerRow th:last-child::after{
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 0px;
+    bottom: -2px;
+    width: 90%;
+    display: block;
+    background-color: var(--bg-color-shade2);
+    border: inherit;
+    z-index: -1;
+}
+
+#headerRow th{
+  margin-top: 0;
+  position: relative;
+}
+
+td, th{
   padding: 5px;
   vertical-align: bottom;
   border-left: 1em;
@@ -266,8 +438,9 @@ tr:hover .dataCell.selected{
   background-color: var(--fg-color-shade3);
 }
 
-input.invalid{
+input.invalid, input:invalid{
   border-bottom: solid 2px #cc6d3d;
+  color: #774024;
 }
 
 .selected{
@@ -291,13 +464,25 @@ input.invalid{
 }
 
 .rowHeader{
-  transform: translateY(0.3em);
-  min-width: 2.5em;
+  min-width: 2.5em;  
   height: 2em; /* doesn't affect much but needs this so that selectAreaRow can grow */
+  position: sticky;
+  left: -10px;
+  border-left: 0.25em;
+  background-color: var(--bg-color-shade2);
+  z-index: 800;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  justify-items: center;
 }
 
-.rowHeader:hover .rowControls{
+.rowHeader:hover .row-controls{
   opacity: 1;
+}
+
+.col-controls{
+  position: relative;
 }
 
 /* .rowHeader.withExpanded{
@@ -308,12 +493,15 @@ input.invalid{
 button:hover {
   background: var(--fg-color-shade2);
   color: var(--bg-color);
+  stroke: var(--bg-color);
 }
 
 button:disabled, button:disabled:hover{
   color: #DEDED7;
+  stroke: #DEDED7;
   border: solid 2px #DEDED7;
   background: none;
+  cursor: default;
 }
 
 label{
@@ -321,55 +509,137 @@ label{
   padding-right: 0.5em;
 }
 
-.dataCell{
+.dataCell{  
   position: relative;
   min-width: 15em;
-}
-
-.inputCellExtension.hidden{
-  display: none;
+  height: 25px;
+  transition: height 0.6s;
 }
 
 .inputCellText, .inputCellTextMirror, .inputCellExtension{
-  width: 100%;
-  display: inline-flex;
+  width: calc(100% - 1.75em);
+  min-width: 2em;
   justify-content: center;
   align-items: center;
   margin: auto;
-  text-overflow: ellipsis;
+  text-overflow: ellipsis;  
+  height: 100%;
 }
 
-.withPreview .inputCellText{
-  width: calc(100% - 2.25em);
+.noText .inputCellExtension{
+  width: auto;
 }
 
-.inputCellMore, .inputCellImageSelector{  
+.inputCellText{
+  width: 100%;
+  float: left;
+  min-height: 14px;
+}
+
+.noText .inputCellText, .noText .inputCellTextMirror{
+  display: none;
+}
+
+.always-show-detailBtn .inputCellText{
+  width: calc(100% - 20px);
+}
+
+.inputCellText, .inputCellTextMirror{
+  display: flex;
+}
+
+.inputCellExtension, .inputCellDetail{
+  display: none;
+  animation: growWidth 0.6s ease-in-out;
+}
+
+.inputCellDateTime, .inputCellSelect, .inputCellFile{
+  display: none;
+}
+
+.withDateTime .inputCellDateTime, .withSelect .inputCellSelect, .withPreview .inputCellFile{ /* note that file is a bit different, since we show it only when there's a preview (i.e. a file) */
+  display: inline-block;
+}
+
+.dataCell.noText:not(.withImage) .inputCellDetail.cellBtn{
+  display: none; /* if there's no text and no image, don't bother with the detail cell button – it's not useful and just overcrowds */
+}
+
+.dataCell.withPreview .inputCellText{
+  width: calc(100% - 4.25em);
+}
+
+.dataCell.withPreview .inputCellExtension{
+  width: auto;
+}
+
+.dataCell.withPreview:not(.expanded):hover{
+  height: 50px;
+  vertical-align: middle;
+}
+
+.dataCell.withPreview:not(.expanded):hover .inputCellText{
+  width: calc(100% - 5.25em);
+}
+
+.dataCell.withPreview:not(.expanded):hover .inputCellFile{
+  width: 2em;
+}
+
+.dataCell.withDateTime.noText, .dataCell.withSelect.noText{
+  /* make these cells shrink to content, since there'll never much much */
+min-width: 0;
+width: 1%;
+white-space: nowrap;
+}
+
+.expanded .cellBtn{ /* cell buttons widen when expanded */
+  width: 1.75em;
+}
+
+.cellBtn, .expanded .inputCellMore{  /* input cell more stays the same width even when expanded */
   border: none;
   text-align: center;
+  width: 14px;
+  padding: 0;
+  height: 100%;
+  stroke: var(--fg-color-shade2);
+  float: right;
 }
 
-.inputCellMore{
-  width: 14px;
+.inputCellMore{  
   /* padding: 0.125em; */
-  padding: 0;
   position: absolute;
   top: 0;
   left: calc(100% + 1px);
   z-index: 99;
-  height: 100%;
 }
 
+.always-show-detailBtn .inputCellDetail{
+  display: inline-block;
+}
+
+.inputCellDetail{
+  left: calc(100% - 15px); /* to do: adjust everything! */
+}
+
+
 th .inputCellMore{
+  /* position: relative; */
   left: auto;
   right: 1px;
   opacity: 0;
 }
 
 .inputCellImageSelector{
-  height: 1.75em;
+  /* height: 1.75em; */
   width: 1.75em;
   margin: 0.125em;
-  padding: 1px;
+  padding: 1px;  
+}
+
+.dataCell.withPreview .inputCellImageSelector{
+  display: none;
 }
 
 .inputCellImageSelector svg{
@@ -393,13 +663,13 @@ th .inputCellMore{
 }
 
 .inputCellFile{
-  display: inline-block;
   position: relative;
   max-height: 1em;
   width: 1em;
   margin: 0.125em;
-  margin-left: 1.125em;
-  transition: transform .5s ease-in-out;
+  /* margin-left: 1.125em; */
+  transition: transform .5s ease-in-out, width .6s ease-in-out, height .6s ease-in-out;
+  transform-origin: right;
 }
 
 .inputCellFile svg{
@@ -408,12 +678,12 @@ th .inputCellMore{
 }
 
 .inputCellFile:hover{
-  transform: scale(400%) translateX(-20%);
+  transform: scale(150%);
 }
 
-.inputCellFile:hover .fileDeleteBtn{
+/* .inputCellFile:hover .fileDeleteBtn{
   transform: scale(50%) translateX(-20%);
-}
+} */
 
 .expanded .inputCellFile:hover .fileDeleteBtn{
   transform: none;  
@@ -424,6 +694,161 @@ th .inputCellMore{
   opacity: 0.5;
 }
 
+.detailEditor .fileDeleteBtn{
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(300%);
+}
+
+.detailEditor.noText .detailEditorQuill{
+  display: none;
+}
+
+.detailEditor.noText .ql-toolbar button:not(.cellBtn), .detailEditor.noText .ql-toolbar select{
+  display: none;
+  /* hide everything on the tool bar except the insert image button */
+}
+
+.rowPreview{
+  background-color: var(--bg-color-shade3);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: 0.1em;
+  height: 60px;
+  flex-shrink: 0;
+  padding: 5px;
+  transition: height 0.6s ease-in-out;
+  width: 95%;
+  margin: auto;
+  overflow-x: auto;
+  overflow-y: visible;
+    position: relative;
+
+}
+
+.rowPreview::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 5px var(--fg-color-shade4);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.rowPreview:hover{
+  height: 120px;
+}
+
+.rowPreview:hover .rowPreviewItem{
+  height: 108px;
+  width: 192px;
+}
+
+.rowPreviewItem{  
+  background-color: var(--bg-color-shade2);
+  padding: 0.1em;
+  width: 96px;
+  height: 54px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 2px solid var(--fg-color-shade4);  
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8em;
+  aspect-ratio: 1 / 1;
+  transition: height 0.6s ease-in-out, width 0.6s ease-in-out, transform 0.6s ease-in-out, opacity 0.6s ease-in-out;
+}
+
+.rowPreviewItem.before:hover, .rowPreviewItem.after:hover{
+  transform: scale(110%);
+  z-index: 999;
+}
+
+.rowPreviewItem.current{
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+.rowPreviewItem.before{
+  transform: translateX(-50%);
+}
+
+.rowPreviewItem.after{
+  transform: translateX(50%);
+}
+
+.rowPreviewItem {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  gap: 0.5em;
+}
+
+.rowPreviewItem > * {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.rowPreviewItem > .rowPreviewLabel {
+  flex: 0 1 auto;
+  margin: 0;
+  font-size: 0.9em;
+  font-weight: bold;
+  color: var(--fg-color-shade4);
+  line-height: 1.1;
+  min-height: 1.1em;
+}
+
+.rowPreviewItem > .rowPreviewText,
+.rowPreviewItem > .rowPreviewDateTime,
+.rowPreviewItem > .rowPreviewSelect {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  line-height: 1.2;
+}
+
+.rowPreviewItem > .rowPreviewText {
+  display: block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.rowPreviewItem:not(:has(.rowImagePreview)) > .rowPreviewText {
+  display: -webkit-box;
+  white-space: normal;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.rowPreviewItem > .rowImagePreview {
+  flex: 1 1 auto;
+  align-self: center;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0;
+  display: block;
+  overflow: hidden;
+  transform: scale(90%);
+}
+
+.rowPreviewItem > .rowImagePreview * {
+  max-width: 100%;
+  max-height: 100%;
+}
+
 /* larger preview when expanded (override normal hover behaviour) */
 .expanded .inputCellFile, .expanded .dataImagePreview, .expanded .inputCellFile:hover{
   width: auto;
@@ -431,11 +856,26 @@ th .inputCellMore{
   max-height: 5em;
   transform: none;
   margin: 0.25em;
+  transform-origin: right;
 }
 
 /* in the case of containing an SVG, the data image preview will just set a height of 5em */
 .expanded div.dataImagePreview{
   height: 5em;
+}
+
+.expanded .inputCellText{
+  display: none;
+}
+
+.expanded .inputCellExtension{
+  display: inline-flex;
+  height: 100%;
+  vertical-align: top;
+}
+
+.expanded .inputCellDetail{
+  display: inline-block;
 }
 
 .dragPlaceholder{
@@ -451,7 +891,7 @@ th .inputCellMore{
   max-height: 100%;
   width: 100%;
   height: auto;
-  transform: scale(300%);
+  transform: scale(200%);
 }
 
 .inputCellTextMirror{
@@ -462,8 +902,10 @@ th .inputCellMore{
 }
 
 .rowNumber{
-  width: 50%;
-  margin-bottom: -50%;
+  /* transform: translateY(0.3em); */
+    flex: 1 1 0;
+  min-width: 50%;
+  /* margin-bottom: -50%; */
 }
 
 .colName{
@@ -556,10 +998,24 @@ th:hover .miniBtn, th:hover .inputCellMore{
   width: 16px;
 }
 
-.rowControls{
+.row-controls{
+  /* position: absolute;
+  right: 0; */
   opacity: 0;
   transition: 0.3s;
-  margin-bottom: -0.25em;
+  /* margin-bottom: -0.25em; */
+  /* transform: translateY(0.25em); */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content:space-around;
+  justify-items: center;
+  gap: 0.25em;
+  max-width: 50%;
+}
+
+.rowHeader .rowCheck{
+  opacity: 0;
 }
 
 .selectAreaCol, .selectAreaRow{
@@ -584,14 +1040,24 @@ th:hover .miniBtn, th:hover .inputCellMore{
 }
 
 .selectAreaRow{
-  margin-top: -2.25em;
-  height: 100%; /* will be about 2em most of the time */
+  position: absolute;
+  margin-top: -0.5em;
+  height: 100%;
   width: 100%;
+}
+
+.sortable .selectAreaRow{
+    cursor: move;
 }
 
 .selectAreaCol:hover, .selectAreaRow:hover{
   /* background-color: var(--fg-color-shade2); */
   opacity: 0.1;
+}
+
+.rowCheck{
+  z-index: 2;
+  background-color: var(--bg-color-shade2) !important;
 }
 
 /* .rowHeader.withExpanded .selectAreaRow{
@@ -676,8 +1142,8 @@ th:hover .miniBtn, th:hover .inputCellMore{
   position: absolute;
   /* bottom: 100%; */ /* set inline */
   width: max-content;
-  max-width: 300px;
-  max-height: 200px;
+  max-width: 400px;
+  max-height: var(--controls-height);
   padding: 2px;
   margin: 1px;
   font-size: 0.9em;
@@ -714,6 +1180,16 @@ th:hover .miniBtn, th:hover .inputCellMore{
   height: 80px;
 }
 
+#previewHolder{
+  width: 0;
+  height: 0;  
+  position: absolute;
+  z-index: 9999;
+  top: 0;
+  left: 0;
+  overflow: visible;
+}
+
 #buttons{
   position: relative;
   top: 50%;
@@ -736,7 +1212,7 @@ th:hover .miniBtn, th:hover .inputCellMore{
   background: var(--bg-color-shade2);
   font-family: "ShareTechMono","Courier New";
   clear: both;
-  height: calc(100% - 250px);
+  height: calc(100% - var(--rest-of-ui-height));
   min-height: 100px;
   width: 90%;
   transition: 0.5s;
@@ -747,7 +1223,7 @@ th:hover .miniBtn, th:hover .inputCellMore{
 
 
 #controlsEtc{
-  height: 200px;
+  height: var(--controls-height);
   overflow: visible;
 }
 
@@ -847,6 +1323,19 @@ th:hover .miniBtn, th:hover .inputCellMore{
   margin: 0.25em;
 }
 
+#settingsMover{
+  margin: auto;
+  opacity: 0;
+  height: 5px;
+  width: 90%;  
+  background-color: var(--bg-color-shade2);
+}
+
+#settingsMover:hover{
+  cursor: ns-resize;
+  opacity: 1;
+}
+
 .settingsArea{
   border: none;
   box-sizing: border-box; /* to stop padding adding width */
@@ -863,7 +1352,7 @@ th:hover .miniBtn, th:hover .inputCellMore{
 }
 
 .openSettings{
-  height: 220px;
+  height: var(--open-settings-height);
   /* padding: 20px; */
   transition: height 0.5s;
 }
@@ -900,4 +1389,30 @@ th:hover .miniBtn, th:hover .inputCellMore{
   height: 19px;
   width: 19px;
   transition: 0.5s ease-in-out;
+}
+
+.renumbered{
+  animation: flip 0.5s;
+}
+
+.notransition{
+  transition: none !important;
+}
+
+@keyframes growWidth{
+  from{
+    width: 0;
+  }
+}
+
+@keyframes flip{
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(90deg);
+  }
+  100% {
+    transform: rotateY(0deg);
+  }
 }

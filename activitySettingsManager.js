@@ -6,6 +6,7 @@ const fonts = [
     {name: 'Brush Script MT', style: 'cursive', src: 'websafe', isFont: true},
     {name: 'Cabin', style: 'sans-serif', src:'fonts/Cabin.ttf', format: 'ttf', isFont: true},
     {name: 'Courier New', style: 'monospace', src: 'websafe', isFont: true},
+    {name: 'Doto', style: 'monospace', src:'fonts/Doto.ttf', format: 'ttf', isFont: true},
     {name: 'Garamond', style: 'serif', src: 'websafe', isFont: true},      
     {name: 'Georgia', style: 'serif', src: 'websafe', isFont: true},  
     {name: 'Grandstander', style: 'sans-serif', src:'fonts/Grandstander.ttf', format: 'ttf', isFont: true},
@@ -311,7 +312,7 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
     })
 }
 
-function getSettings(settings, activityName = '', sourceName = '') { // gets the settngs as they've been set by the user
+function getSettings(settings, templateName = '', sourceName = '') { // gets the settngs as they've been set by the user
     // activityName variable will only be used by the profile editor
     var settingEl
     var settingsToReturn = {};
@@ -319,8 +320,8 @@ function getSettings(settings, activityName = '', sourceName = '') { // gets the
     var prefix = ''
 
     // for use in the profile editor
-    if (activityName != '') {
-        prefix = sourceName + '_' + activityName + '_'
+    if (templateName != '') {
+        prefix = sourceName + '_' + templateName + '_'
     }
 
     if (settings != null) {
@@ -343,13 +344,18 @@ function getSettings(settings, activityName = '', sourceName = '') { // gets the
                 // for text, santitize HTML, replace \n with <br> (and \\n with \n)
                 settingsToReturn[settings[i].name] = settingEl.value.replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll(/(?<!\\)\\n/g,'<br>').replaceAll(/\\\\n/g,'\\n')
             } else if (settings[i].type == 'font_family'){
-                settingsToReturn[settings[i].name] = fonts.find(font => font.name == settingEl.value)     
+                settingsToReturn[settings[i].name] = { ...fonts.find(font => font.name == settingEl.value) } // make copy of the font object so that we can add var property without overwriting
                 settingsToReturn[settings[i].name].var = settings[i].var
+                console.log('GETTING FONT SETTING')
+                console.log('NAME:' + settings[i].name)
+                console.log('VAR:' + settings[i].var)
+                console.log(settingsToReturn[settings[i].name])
             } else { // for everything else, just get its value
                 settingsToReturn[settings[i].name] = settingEl.value                
             }
         }
     }
+    settingsToReturn['activityName'] = document.getElementById('activityName').value
     return settingsToReturn
 }
 
@@ -406,86 +412,100 @@ function applyVariables(string,variables){
 
 function checkDependents(value,setting){
     setting.dependents.forEach(dependent =>{
-        let dependentName = dependent.name
-        if (setting.hasOwnProperty('variables') && dependent.name.includes('$')){
+        let dependentName = dependent.name ? dependent.name : null
+        let categoryName = dependent.category ? dependent.category : null
+        if (setting.hasOwnProperty('variables') && dependent.name && dependent.name.includes('$')){
             dependentName = applyVariables(dependentName,setting.variables)
         }
-        let dependentDiv = document.querySelector('div.setting[data-setting-name="' + dependentName + '"]')
-        if (!dependentDiv){
-            console.error(`Error finding dependent setting div ${dependentName}`)
+        let dependentDivs
+        if (dependentName){
+            dependentDivs = Array.from(document.querySelectorAll('div.setting[data-setting-name="' + dependentName + '"]'))
+        } else if (categoryName){
+            dependentDivs = Array.from(document.querySelectorAll('div.setting[data-category="' + categoryName + '"]'))
+        }
+        if (!dependentDivs || dependentDivs.length == 0){ // if the div doesn't exist
+            if(dependentName){
+                console.error(`Error finding dependent setting div ${dependentName}`)
+            } else if (categoryName){
+                console.error(`Error finding dependent category div ${categoryName}`)
+            } else {
+                console.error(`Error finding dependent setting div with no name or category specified`)
+            }
             return
         } else { // if the div exists
-            let dependentType = dependentDiv.getAttribute('data-setting-type')            
+            dependentDivs.forEach(dependentDiv => {
+                let dependentName = dependentDiv.getAttribute('data-setting-name')
+                let dependentType = dependentDiv.getAttribute('data-setting-type')
 
-            let dependentEl = document.getElementById(`setting_${dependentType}_${dependentName}`)
-            let dependentSetting = prefsStore.settings.find(setting => setting.name == dependentName)
-            
-            // enable or disable the dependent
-            if (dependent.hasOwnProperty('enable')){
-                if ((Array.isArray(dependent.enable) && dependent.enable.includes(value)) || dependent.enable == value){ // if the setting is set to a value that enables the dependent
-                    dependentEl.disabled = false
-                } else {
-                    dependentEl.disabled = true
-                }
-            }
-            if (dependent.hasOwnProperty('disable')){
-                if ((Array.isArray(dependent.disable) && dependent.disable.includes(value)) || dependent.disable == value){ // if the setting is set to a value that disables the dependent
-                    dependentEl.disabled = true
-                } else {
-                    dependentEl.disabled = false
-                }
-            }
-            
-            // set values according to triggers
-            if (dependent.hasOwnProperty('triggers')){                
-                let trigger = dependent.triggers.find(trigger => trigger.this == value) // find the trigger for the current value
-                if (trigger){
-                    // if there's a trigger, set its value
-                    if (dependentType == 'checkbox'){
-                        // for checkbox type, check according to value true or false
-                        if (trigger.dependent){
-                            dependentEl.checked = true
-                        } else {
-                            dependentEl.checked = false
-                        }
+                let dependentEl = document.getElementById(`setting_${dependentType}_${dependentName}`)
+                let dependentSetting = prefsStore.settings.find(setting => setting.name == dependentName)
+
+                // enable or disable the dependent
+                if (dependent.hasOwnProperty('enable')){
+                    if ((Array.isArray(dependent.enable) && dependent.enable.includes(value)) || dependent.enable == value){ // if the setting is set to a value that enables the dependent
+                        dependentEl.disabled = false
                     } else {
-                        // for all other setting types, set dependent literally to trigger value
-                        dependentEl.value = trigger.dependent
-                    }
-                } else if (dependentEl.disabled && dependent.hasOwnProperty('default')){
-                    // if there's no trigger and the dependent is disabled, set to the default value
-                    if (dependentType == 'checkbox'){
-                        // for checkbox type, check according to default
-                        if (dependent.default){
-                            dependentEl.checked = true
-                        } else {
-                            dependentEl.checked = false
-                        }
-                    } else {
-                        // for all other setting types, set dependent literally to default value
-                        dependentEl.value = dependent.default
+                        dependentEl.disabled = true
                     }
                 }
-            }            
+                if (dependent.hasOwnProperty('disable')){
+                    if ((Array.isArray(dependent.disable) && dependent.disable.includes(value)) || dependent.disable == value){ // if the setting is set to a value that disables the dependent
+                        dependentEl.disabled = true
+                    } else {
+                        dependentEl.disabled = false
+                    }
+                }
+                
+                // set values according to triggers
+                if (dependent.hasOwnProperty('triggers')){                
+                    let trigger = dependent.triggers.find(trigger => trigger.this == value) // find the trigger for the current value
+                    if (trigger){
+                        // if there's a trigger, set its value
+                        if (dependentType == 'checkbox'){
+                            // for checkbox type, check according to value true or false
+                            if (trigger.dependent){
+                                dependentEl.checked = true
+                            } else {
+                                dependentEl.checked = false
+                            }
+                        } else {
+                            // for all other setting types, set dependent literally to trigger value
+                            dependentEl.value = trigger.dependent
+                        }
+                    } else if (dependentEl.disabled && dependent.hasOwnProperty('default')){
+                        // if there's no trigger and the dependent is disabled, set to the default value
+                        if (dependentType == 'checkbox'){
+                            // for checkbox type, check according to default
+                            if (dependent.default){
+                                dependentEl.checked = true
+                            } else {
+                                dependentEl.checked = false
+                            }
+                        } else {
+                            // for all other setting types, set dependent literally to default value
+                            dependentEl.value = dependent.default
+                        }
+                    }
+                }            
 
-            if (dependentSetting && dependentSetting.hasOwnProperty('dependents')){
-                // if the dependcy also has depdencies, do a check for loops
-                if (detectDependencyLoops(setting,dependentSetting)){
-                    window.alert('The settings for this activity contain a dependency loop. Please alert the activity creator.')
-                    return false
-                } else {
-                    // we then need to trigger the dependents manually, as onchange won't fire
-                    settingChanged(dependentEl)      
-                }                
-            }
-            
-        }
+                if (dependentSetting && dependentSetting.hasOwnProperty('dependents')){
+                    // if the dependcy also has depdencies, do a check for loops
+                    if (detectDependencyLoops(setting,dependentSetting)){
+                        window.alert('The settings for this activity contain a dependency loop. Please alert the activity creator.')
+                        return false
+                    } else {
+                        // we then need to trigger the dependents manually, as onchange won't fire
+                        settingChanged(dependentEl)      
+                    }                
+                }
+                            
 
-        // Clear dependentLoopTracker after processing all dependencies for the setting
-        delete dependentLoopTracker[setting.name]
-
-    })
-}
+                // Clear dependentLoopTracker after processing all dependencies for the setting
+                delete dependentLoopTracker[setting.name]
+            }) // end of dependentDivs.forEach
+        }  // end of else dependent div exists
+    }) // end of setting.dependents.forEach
+} // end of checkDependents function
 
 function detectDependencyLoops(setting, dependent) {
     let stack = [];
@@ -496,14 +516,14 @@ function detectDependencyLoops(setting, dependent) {
         if (dependent.hasOwnProperty('dependents')) {
             console.log('Dependent also has dependents. Tracking to prevent loop.');
             if (dependentLoopTracker.hasOwnProperty(setting.name)) {
-                if (dependentLoopTracker[setting.name].includes(dependent.name)) {
+                if ((dependent.name && dependentLoopTracker[setting.name].includes('NAME_' +dependent.name) )|| (dependent.category && dependentLoopTracker[setting.name].includes('CATEGORY_' + dependent.category))) {
                     console.error('Dependency loop detected!');
                     return true;
                 } else {
-                    dependentLoopTracker[setting.name].push(dependent.name);
+                    dependentLoopTracker[setting.name].push(dependent.name ? 'NAME_' + dependent.name : 'CATEGORY_' + dependent.category);
                 }
             } else {
-                dependentLoopTracker[setting.name] = [dependent.name];
+                dependentLoopTracker[setting.name] = [dependent.name ? 'NAME_' + dependent.name : 'CATEGORY_' + dependent.category];
             }
 
             // Add dependents of the current dependent to the stack
@@ -548,11 +568,54 @@ function showSettings(source = '', activity = '') {
         //   settingsArea.style.height = "220px"
         //   settingsArea.style.padding = "20px"
         if (inputBox != null) {
-            inputBox.style.height = "calc(100% - 480px)"
+            inputBox.style.height = "calc(100% - var(--open-settings-height) - var(--rest-of-ui-height))"
         }
         settingsVisible[settingsID] = true
         // settingsArea.style.minHeight = "100px"
     }
+}
+
+var startY = 0
+var startHeight = 0
+
+function settingsSizeAdjustStart(e){
+    e.preventDefault();
+    startY = e.clientY;
+    var settingsArea = document.getElementById('settingsArea');
+    var inputBox = document.getElementById('inputBox');
+    var rect = settingsArea.getBoundingClientRect();
+    startHeight = rect.height;
+    document.addEventListener('mousemove', settingsSizeAdjustMove);
+    document.addEventListener('mouseup', settingsSizeAdjustEnd);
+    // Add visual feedback
+    document.body.style.cursor = 'ns-resize';
+    settingsArea.classList.add('notransition');
+    inputBox.classList.add('notransition');
+}
+
+function settingsSizeAdjustMove(e){
+    e.preventDefault();
+    var newHeight = startHeight + (startY - e.clientY);
+    
+    if (newHeight < 100) {
+        newHeight = 100;
+    } else if (newHeight > window.innerHeight - 350) {  // Simplified max calculation
+        newHeight = window.innerHeight - 350;
+    }
+    
+    document.documentElement.style.setProperty("--open-settings-height", newHeight + "px");
+}
+
+function settingsSizeAdjustEnd(e){
+    e.preventDefault();
+    document.removeEventListener('mousemove', settingsSizeAdjustMove);
+    document.removeEventListener('mouseup', settingsSizeAdjustEnd);
+    // Reset cursor
+    document.body.style.cursor = '';
+    var settingsArea = document.getElementById('settingsArea');
+    var inputBox = document.getElementById('inputBox');
+    settingsArea.classList.remove('notransition');
+    inputBox.classList.remove('notransition');
 }
 
 function changeActivitySettingsCategory(category, settingsArea = document.getElementById('settingsArea')) {
@@ -580,17 +643,17 @@ function determineColumnSettingsForSettings(numSettings) {
 }
 
 function showExample(sampleData) {
-    if (!tableIsEmpty()) {
+    if (!table.isEmpty()) {
         if (confirm('This will erase all data in the table and replace it with sample data. Are you sure you want to continue?')) {
-            clearTable();
+            table.clearTable();
         } else {
             return
         }
     }
     if(sampleData.hasOwnProperty('activity')){
-        convertArrayToTableData(sampleData.activity)
+        table.convertArrayToTableData(sampleData.activity)
     } else {
-        convertArrayToTableData(sampleData)
+        table.convertArrayToTableData(sampleData)
     }
     if(sampleData.hasOwnProperty('settings')){
         resetSettingsToDefault(true)
@@ -603,24 +666,33 @@ function checkSettings(profileSettings, activitySettings) {
         let originalSetting = activitySettings.find(obj => {
             return obj.name === setting.name
         })
-        if (originalSetting == null) {
+        if (originalSetting == null && setting.name != 'activityName') { 
             setting.exists = false
         } else {
             setting.exists = true
+            if(setting.name == 'activityName'){
+                setting.valid = true // we can allow any activity name, even if it doesn't match the current one, as long as it's a string (which it should be if it came from the settings)
+                return; // go to next setting immediately
+            }
             if (originalSetting.type == 'number') {
-                if (!isNaN(setting.value)) {
+                if (!isNaN(parseFloat(setting.value))) {
                     setting.valid = true
-                    if (originalSetting.hasOwnProperty('max') && setting.value > originalSetting.max) {
+                    if (originalSetting.hasOwnProperty('max') && parseFloat(setting.value) > originalSetting.max) {
                         setting.valid = false
+                        // console.log('SETTING ' + setting.name + ' INVALID: ABOVE MAX')
                     }
-                    if (originalSetting.hasOwnProperty('min') && setting.value < originalSetting.min) {
+                    if (originalSetting.hasOwnProperty('min') && parseFloat(setting.value) < originalSetting.min) {
                         setting.valid = false
+                        // console.log('SETTING ' + setting.name + ' INVALID: BELOW MIN')
                     }
                 } else {
                     setting.valid = false
+                    // console.log('SETTING ' + setting.name + ' INVALID: NOT A NUMBER')
                 }
             } else if (originalSetting.type == 'select' || originalSetting.type == 'select-import') {
-                if (originalSetting.options.includes(setting.value) || originalSetting.hasOwnProperty('optionValues') && originalSetting.optionValues.includes(setting.value)) {
+                if ((originalSetting.options.includes(setting.value) || originalSetting.options.includes(parseFloat(setting.value))) 
+                    || originalSetting.hasOwnProperty('optionValues') && (originalSetting.optionValues.includes(setting.value) || originalSetting.optionValues.includes(parseFloat(setting.value)))) {
+                // select could contain numbers, so we'll parse float just in case
                     setting.valid = true
                 } else if (originalSetting.type == 'select-import') {
                     setting.valid = true                                    
@@ -683,7 +755,7 @@ function setSettings(settings, settingControls = prefsStore.settings, showErrors
     }
     let checkedSettings = checkSettings(settingsAsArray, settingControls)
     checkedSettings.forEach(setting => {
-        if (setting.exists) {
+        if (setting.exists && setting.name != 'activityName') {
             let activitySetting = settingControls.find((actSet) => actSet.name == setting.name)
             let activitySettingEl = document.getElementById(prefix + 'setting_' + activitySetting.type + '_' + activitySetting.name)
             if (setting.valid) {
@@ -716,13 +788,15 @@ function setSettings(settings, settingControls = prefsStore.settings, showErrors
             }
         } else { // setting does not exist
             // add to last of deleted errors
-            deletedErrors.push(setting.name)
+            if (setting.name != 'activityName'){ // we can ignore activityName not existing, as this is just the name of the activity in the settings and doesn't have to match the current activity
+                deletedErrors.push(setting.name)
+            }
         }        
     })
     var errorString = ''
 
         if (invalidErrors.length > 0) {
-            errorString += 'One or more settings saved in the '+ activity.replaceAll('_',' ') + ' profile did not match the expected type. This may be due to an update in the activity. The values have been reset to their defaults.\n'
+            errorString += 'One or more saved settings did not match the expected type. This may be due to an update in the activity. The values have been reset to their defaults.\n'
             invalidErrors.forEach(error => {
                 errorString += '-' + error + '\n'
             })

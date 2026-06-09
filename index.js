@@ -14,38 +14,57 @@ var pageLoaded = false
 var lastExportedScormID = ''
 var appVersion
 
+var virgin = true
+var tableObserver
+
+// const table = new TableManager('table0')
+const table = new TableTester('table0') // for testing purposes - this will replace the normal table manager with one that has testing functions, but is otherwise the same
+
 // PAGE FUNCTIONS
 
 document.addEventListener('DOMContentLoaded',pageLoad)
 
 function pageLoad(){
-  //Allow us to type tabs in the text area field
-  // document.getElementById('inputBox').addEventListener('keydown', function(e) {
-  //   if (e.key == 'Tab') {
-  //     e.preventDefault();
-  //     var start = this.selectionStart;
-  //     var end = this.selectionEnd;
-  //
-  //     // set textarea value to: text before caret + tab + text after caret
-  //     this.value = this.value.substring(0, start) +
-  //       "\t" + this.value.substring(end);
-  //
-  //     // put caret at right position again
-  //     this.selectionStart =
-  //       this.selectionEnd = start + 1;
-  //   }
-  // });
-  headerRow(numCols) // add the header row with controls
-  addRow(1) // add the first data row
+
+  pageLoaded = true // just indicates that the DOM is ready
+
+  const inputBox = document.getElementById('inputBox')
+  inputBox.appendChild(table.tableElement) // add the table element (this is needed before we can do anything else with the table, so we'll just make it with 0 rows and cols for now and then add the rest of the structure when we get the activity prefs)
+  inputBox.appendChild(table.detailEditor) // add the detail editor element
+
+  table.initializeWysiwyg('')
+
   loadActivities()
-  document.body.appendChild(dragPlaceholder())
+  document.body.appendChild(table.dragPlaceholder())
   setTimeout(function(){
-    document.body.classList.remove('preload');
+    document.body.classList.remove('preload');      
+    ipcRenderer.send('editorWindowReady') // let main know that the renderer is ready, so it can send the config and any other info it needs to send on load
   },500)
-  pageLoaded = true
+
   applyAppConfig() // this should have already happened, but it won't hurt to apply it again if it hasn't
   // if it hasn't happened (maybe the page was reloaded), it will request the config which will retrigger the same function
-  document.body.addEventListener('pointerdown', deselectAll, true); // unselect when clicking anywhere
+
+  document.body.addEventListener('pointerdown', (e) => table.deselectAll(e), true)
+  setTimeout(function(){ // add the table observer after a delay, so as not to trigger it with the initial preparation of the table
+    tableObserver = new MutationObserver(markTableModified)
+    tableObserver.observe(table.tableBody, {subtree: true, childList: true, attributes: true, characterData: true})
+    table.tableBody.addEventListener('input', markTableModified)
+  },1000)
+
+  table.enableTableRowSorting()
+  
+}
+
+
+
+// to do – move into table manager? have a new general function that will look for other changes in the document, rather than just the table?
+function markTableModified(e) {
+  if (!virgin) return
+  if (!tableObserver) return // if the table observer isn't ready yet, we don't want to mark the table as modified because of the changes that are being made to set it up
+  virgin = false
+  tableObserver.disconnect()
+  table.tableBody.removeEventListener('input', markTableModified)
+  ipcRenderer.send('tableModified') // tell main process that the table has been modified
 }
 
 // apply preferences set by the app
@@ -65,14 +84,17 @@ function applyAppConfig(){
 }
 
 function run() {
-  validity = checkValidity()
+
+  table.saveTextFromDetailEditor() // first save any text that might be in the detail editor, so it gets included in the validity check and the data that we send to main
+
+  const validity = checkValidity()
   if (validity.valid){
     var data = [];
     // let textBlock = convertTableDataToBlock();
     const selector = document.getElementById('activitySlct')
     var activity = selector.value
     var source = selector.options[selector.selectedIndex].getAttribute('data-source')
-    data = convertTableToTrimmedArray(true,true)    
+    data = table.convertTableToTrimmedArray(true,true)    
     settings = getSettings(prefsStore.settings)
     console.log(settings)
      //send the info to main process
@@ -83,7 +105,9 @@ function run() {
 }
 
 function exporter(){
-  validity = checkValidity()  
+    table.saveTextFromDetailEditor() // first save any text that might be in the detail editor, so it gets included in the validity check and the data that we send to main
+
+  const validity = checkValidity()  
   if (validity.valid){
       ipcRenderer.send('exportActivity'); // since export can be called from elsewhere, we won't bother sending the data from here
   } else {
@@ -91,9 +115,13 @@ function exporter(){
   }
 }
 
-function selectActivity(){
-  clearUnusedRowsFromEnd()
-  clearUnusedColsFromEnd()
+function selectActivity(){  
+    if(table.detailEditorCell){
+      table.closeDetailEditor() // close detail editor if open, make sure everything is up to date first
+  }
+
+  table.clearUnusedRowsFromEnd(true)
+  table.clearUnusedColsFromEnd(true)
   loadPrefs()
 
   packageIDEl = document.getElementById('packageID')
@@ -124,14 +152,21 @@ function setPrefs(prefs, customDefaults={}){
   // save prefs
   prefsStore = prefs
 
+  document.getElementById('activityName').setAttribute('placeholder', prefsStore.hasOwnProperty('activity') ? `new ${prefsStore.activity.replaceAll('_', ' ')}` : '')
+
   // set table size etc first
   //replace header column (what's a bit stupid is that we add it when the page first loads and then replace it - there may be a better way)
-  tableBody = document.getElementById('tableBody')
-  tableBody.removeChild(tableBody.children[0])
-  headerRow(numCols)
+  let tableBody = table.tableBody
+  // tableBody = document.getElementById('tableBody')
+  // tableBody.removeChild(tableBody.children[0])
+  table.removeHeaderRow()
+  if (prefs.hasOwnProperty('cols_min') && prefs.cols_min > table.numCols()){
+    table.addNewColIDsToEnd(prefs.cols_min) // make sure the table manager knows about the new cols before we add the header row with controls, so it can add the colIDs for those cols
+  }
+  table.headerRow(table.numCols())
 
   // disable or re-enable images selector
-  checkDataTypeCols()
+  table.checkDataTypeCols()
 
   //set up settings area
   settingsArea = document.getElementById("settingsArea")
@@ -141,6 +176,9 @@ function setPrefs(prefs, customDefaults={}){
     if (Object.keys(customDefaults).length > 0){
       prefsStore.customDefaults = customDefaults
       setSettings(customDefaults,prefs.settings)
+        if(customDefaults.activityName && customDefaults.activityName != ''){
+          document.getElementById('activityName').value = customDefaults.activityName
+      }
     }
   }
   if (prefs.hasOwnProperty('description')){
@@ -179,20 +217,20 @@ function setPrefs(prefs, customDefaults={}){
   }
 
   // make sure there are the minimum number of cols required
-  if (prefs.hasOwnProperty('cols_min') && numCols < prefs.cols_min){
-    for (let i = numCols+1; i <= prefs.cols_min; i++){
-      addCol(i)
+  if (prefs.hasOwnProperty('cols_min') && table.numCols() < prefs.cols_min){
+    for (let i = table.numCols()+1; i <= prefs.cols_min; i++){
+      table.addCol()
     }
   }
 
   // make sure there are the minimum number of rows required
-  if (prefs.hasOwnProperty('rows_min') && numRows < prefs.rows_min){
-    for (let i = numRows+1; i <= prefs.rows_min; i++){
-      addRow(i)
+  if (prefs.hasOwnProperty('rows_min') && table.numRows() < prefs.rows_min){
+    for (let i = table.numRows(); i <= prefs.rows_min; i++){
+      table.addRow()
     }
   }
   // reduce opacity on unused columns and rows if there are any
-  updateAppearanceForUnused()
+  table.updateAppearanceForUnused()
 }
 
 function exampleButton(number = 0,includesSettings = false, title = '') {
@@ -228,11 +266,11 @@ function exampleButton(number = 0,includesSettings = false, title = '') {
 
 function checkValidity(){
   validityCheckList = {enoughCols: true, enoughRows: true, emptyCellsOK: true, emptyCells: [], valid: true}
-  if (prefsStore.hasOwnProperty('cols_min') && prefsStore.cols_min > numCols){
+  if (prefsStore.hasOwnProperty('cols_min') && prefsStore.cols_min > table.numCols()){
     validityCheckList.enoughCols = false
     validityCheckList.valid = false
   }
-  if (prefsStore.hasOwnProperty('rows_min') && prefsStore.rows_min > numRows){
+  if (prefsStore.hasOwnProperty('rows_min') && prefsStore.rows_min > table.numEnabledRows()){
     validityCheckList.enoughRows = false
     validityCheckList.valid = false
   }
@@ -240,36 +278,40 @@ function checkValidity(){
     // NOTE: we can't use the rowContainsEmptyCell() function here because we want to ignore rows and cols than we don't actually need
     var rowsToCheck
     var colsToCheck
-    if (prefsStore.hasOwnProperty('rows_max') && numRows > prefsStore.rows_max){ // if there are more rows than necessary
-      rowsToCheck = prefsStore.rows_max // only check max required
-      if (rowsToCheck > numRows){
-        rowsToCheck = numRows
+    if (prefsStore.hasOwnProperty('rows_max') && table.numRows() > prefsStore.rows_max){ // if there are more rows than necessary
+      rowsToCheck = prefsStore.rows_max-1 // only check max required
+      if (rowsToCheck > table.numRows()-1){
+        rowsToCheck = table.numRows()-1
       }
     } else {
-      rowsToCheck = numRows // else check all
+      rowsToCheck = table.numRows()-1 // else check all
     }
-    if (prefsStore.hasOwnProperty('cols_max') && numCols > prefsStore.cols_max){ // if there are more cols than necessary
-      colsToCheck = prefsStore.cols_max // only check max required
-      if (colsToCheck > numCols){
-        colsToCheck = numCols
+    if (prefsStore.hasOwnProperty('cols_max') && table.numCols() > prefsStore.cols_max){ // if there are more cols than necessary
+      colsToCheck = prefsStore.cols_max-1 // only check max required
+      if (colsToCheck > table.numCols()-1){
+        colsToCheck = table.numCols()-1
       }
     } else {
-      colsToCheck = numCols // else check all
+      colsToCheck = table.numCols()-1 // else check all
     }
     var nonEmptyRowFound = false // no longer needed?
     var nonEmptyColFound = false // no longer needed?
     var emptyCells = []
     var inputCellText
-    for (let row=rowsToCheck; row>0; row--){ // go backwards, so we can ignore excess blanks at the end unless they're important
-      // numColsEmptyOnRow = 0
-      nonEmptyColFound = false
-      for (let col=colsToCheck; col>0; col--){
-        let inputCellText = document.getElementById('inputCellText_' + row + '_' + col)
-        let inputCellFile = document.getElementById('inputCellFile_' + row + '_' + col)
+    for (let row=rowsToCheck; row>=0; row--){ // go backwards, so we can ignore excess blanks at the end unless they're important
+      // table.numColsEmptyOnRow = 0
+      let rowEl = table.get('row',row)
+      if (rowEl.classList.contains('disabled')){ // if the row is disabled, we can ignore any empty cells in it, since we won't be using it anyway
+        continue
+      }
+      nonEmptyColFound = false      
+      for (let col=colsToCheck; col>=0; col--){
+        let inputCellText = table.getTableCellTextElement(row,col)
+        let inputCellFile = table.getTableCellFileElement(row,col)
         // we don't need to check for minimum rows by itself because cols can be optional but rows can't (unless blanks are explicitly allowed)
         if ((inputCellText.value == '' && (inputCellFile.classList.contains('disabled') || (!inputCellFile.classList.contains('disabled') && inputCellFile.classList.contains('hidden')))) // cell is empty if there is no text and file holder disabled (signalling it can't be used), or if file holder is not disabled (signalling it can be used) but is hidden (signalling it is empty)
-        && ( ((nonEmptyRowFound || nonEmptyColFound) && (prefsStore.hasOwnProperty('cols_min') && col <= prefsStore.cols_min))
-          || ((prefsStore.hasOwnProperty('rows_min') && row <= prefsStore.rows_min) && (prefsStore.hasOwnProperty('cols_min') && col <= prefsStore.cols_min))
+        && ( ((nonEmptyRowFound || nonEmptyColFound) && (prefsStore.hasOwnProperty('cols_min') && col < prefsStore.cols_min))
+          || ((prefsStore.hasOwnProperty('rows_min') && row <= prefsStore.rows_min) && (prefsStore.hasOwnProperty('cols_min') && col < prefsStore.cols_min))
         ) ) {
           // numColsEmptyOnRow++
           emptyCells.push(inputCellText) // only remember the empty cells that are important
@@ -296,16 +338,16 @@ function displayValidityInfo(validity){
   var message = "The data in the table is not valid for this activity."
   var activityName = document.getElementById('activitySlct').value.replaceAll('_',' ')
   if (!validity.enoughRows){
-    message += '\n' + activityName.charAt(0).toUpperCase() + activityName.slice(1) + ' requires ' + prefsStore.rows_min + ' rows and you only have ' + numRows + " row"
-    if (numRows > 1){
+    message += '\n' + activityName.charAt(0).toUpperCase() + activityName.slice(1) + ' requires ' + prefsStore.rows_min + ' rows and you only have ' + table.numRows() + " row"
+    if (table.numRows() > 1){
       message += 's.'
     } else {
       message += '.'
     }
   }
   if (!validity.enoughCols){
-    message += '\n' + activityName.charAt(0).toUpperCase() + activityName.slice(1) + ' requires ' + prefsStore.cols_min + ' columns and you only have ' + numCols + " column"
-    if (numCols > 1){
+    message += '\n' + activityName.charAt(0).toUpperCase() + activityName.slice(1) + ' requires ' + prefsStore.cols_min + ' columns and you only have ' + table.numCols() + " column"
+    if (table.numCols() > 1){
       message += 's.'
     } else {
       message += '.'
@@ -350,7 +392,16 @@ function generateID(){
 
 // Electron stuff:
 
-ipcRenderer.on('loadInput', (event, data, fileStore) => {
+ipcRenderer.on('loadInput', (event, data, fileStore, waitingForActivity=false) => {
+
+  // if DOM not ready, create event
+  if (!pageLoaded){
+    document.addEventListener("DOMContentLoaded", function(event) { 
+      ipcRenderer.emit('loadInput', event, data, fileStore, activity, source)
+    });
+    return
+  }
+
   var dataAsArray = []
   if (typeof data == 'object'){
     dataAsArray = data
@@ -376,13 +427,19 @@ ipcRenderer.on('loadInput', (event, data, fileStore) => {
   }
 
   // empty the table
-  if(tableIsEmpty()){
-    convertArrayToTableData(dataAsArray)
+  if(table.isEmpty()){    
+    table.convertArrayToTableData(dataAsArray)
+    markTableModified()
   } else {
     if (confirm('This will erase all data currently in the table and cannot be undone. Are you sure you want to continue?')){
-      clearTable()
-      convertArrayToTableData(dataAsArray)
+      table.clearTable()
+      table.convertArrayToTableData(dataAsArray)
+      markTableModified()
     }
+  }
+
+  if(waitingForActivity){
+    ipcRenderer.send('getActivity')
   }
   
 })
@@ -396,10 +453,12 @@ ipcRenderer.on('getInputForSave', (event,path) => { // main.js requests the data
 })
 
 function importImage(cell,file=false,cellOffset=0){
+  let cellID = cell.classList.contains('detailEditor') ? table.detailEditorCell : cell.dataset.cell  
+
   if(file){
-    ipcRenderer.send('dataSelectImportFromFile', cell.id, ['image'], file, cellOffset)
+    ipcRenderer.send('dataSelectImportFromFile', cellID, ['image'], file, cellOffset)
   } else {    
-    ipcRenderer.send('dataSelectImport', cell.id, ['image'],cellOffset)
+    ipcRenderer.send('dataSelectImport', cellID, ['image'], cellOffset)
   }
 }
 
@@ -407,7 +466,8 @@ ipcRenderer.on('dataCellFileImportResult', (event,cellID,fileStoreItem) => {
   // console.log(event)
   // console.log(cellID)
   // console.log(fileStoreItem)
-  addImageToCell(cellID,fileStoreItem)
+  table.addImageToCell(cellID,fileStoreItem)
+  markTableModified()
 })
 
 function sendInput(purpose='export',path=''){
@@ -415,7 +475,7 @@ function sendInput(purpose='export',path=''){
   const selector = document.getElementById('activitySlct')
   var activity = selector.value
   var source = selector.options[selector.selectedIndex].getAttribute('data-source')
-  var input = convertTableToTrimmedArray(true,true)
+  var input = table.convertTableToTrimmedArray(true,true)
   var settings = getSettings(prefsStore.settings)
   var packageIDEl = document.getElementById('packageID')
 
@@ -442,15 +502,8 @@ function sendInput(purpose='export',path=''){
   
 }
 
-ipcRenderer.on('setPrefs', (event, prefs,customDefaults) => {
-  if (prefs.hasOwnProperty('error')){
-    alert('The hex settings in this activity have not been formatted correctly.\n'+prefs.error)
-  } else {
-    setPrefs(prefs,customDefaults)
-  }
-});
+function changeSelectedActivity(activity, source){
 
-ipcRenderer.on('setActivity', (event, activity, source) => {
   let selector = document.getElementById('activitySlct')
   var selectIndex = -1
   for (let i=0; i< selector.options.length; i++){
@@ -473,6 +526,28 @@ ipcRenderer.on('setActivity', (event, activity, source) => {
     selector.selectedIndex = selectIndex // this will trigger loading the saved activity settings if there are any
     selectActivity() // not triggered by the change, so we'll trigger it here
   }
+}
+
+
+ipcRenderer.on('setPrefs', (event, prefs,customDefaults) => {
+  if (prefs.hasOwnProperty('error')){
+    alert('The hex settings in this activity have not been formatted correctly.\n'+prefs.error)
+  } else {
+    setPrefs(prefs,customDefaults)
+  }
+});
+
+ipcRenderer.on('setActivity', (event, activity, source) => {
+
+  if(!pageLoaded){
+    document.addEventListener("DOMContentLoaded", function(event) {
+      ipcRenderer.emit('setActivity', event, activity, source)
+    });
+    return
+  }
+
+  changeSelectedActivity(activity, source)
+
 });
 
 ipcRenderer.on('copyToClipboard', (event, form) => {
@@ -487,16 +562,16 @@ ipcRenderer.on('copyToClipboard', (event, form) => {
 
 ipcRenderer.on('clearTable', (event) => {
   if (confirm('This will erase all data in the table and cannot be undone. Are you sure you want to continue?')){
-    clearTable();
+    table.clearTable();
   }
 })
 
 ipcRenderer.on('deleteUnusedRows', (event) => {
-  clearUnusedRowsFromEnd();
+  table.clearUnusedRowsFromEnd();
 })
 
 ipcRenderer.on('deleteUnusedCols', (event) => {
-  clearUnusedColsFromEnd();
+  table.clearUnusedColsFromEnd();
 })
 
 ipcRenderer.on('loadActivities', (event) => { // this is used for reloading the activities from main
@@ -527,6 +602,9 @@ ipcRenderer.on('getActivitySettingsForProfile', (event) => {
 ipcRenderer.on('applyActivitySettings', (event, settings) => {
   console.log(settings)
   setSettings(settings,prefsStore.settings,false) // later change to false
+  if(settings.activityName && settings.activityName != ''){
+    document.getElementById('activityName').value = settings.activityName
+  }
 })
 
 // ipcRenderer.on('showAdvancedExport', (event) => {

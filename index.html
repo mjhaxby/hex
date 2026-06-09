@@ -7,19 +7,31 @@
     <title>hex</title>
     <script src="utilities.js"  charset="utf-8"></script>
     <script src="icons.js"  charset="utf-8"></script>
+    <script src="node_modules/quill/dist/quill.js"  charset="utf-8"></script>    
+    <script src="node_modules/quilljs-markdown/dist/quilljs-markdown.js"  charset="utf-8"></script>
+    <script src="node_modules/showdown/dist/showdown.js" charset="utf-8"></script>
+    <script src="markdown-utils.js"  charset="utf-8"></script>
+    <script src="Sortable.min.js" charset="utf-8"></script>
+    <!-- <script src="columns-resize.js" charset="utf-8"></script> --> <!-- not currently using: possibly our table has too many complexities to make it compatible -->
     <script src="tableManager.js"  charset="utf-8"></script>
+    <script src="tableTester.js" charset="utf-8"></script> <!-- for testing table manager functions -->
     <script src="index.js"  charset="utf-8"></script>
     <script src="activitySettingsManager.js"  charset="utf-8"></script>
     <link rel="stylesheet" href="toggle-switch.css"> <!--Only works in its own style sheet-->
     <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="node_modules/quill/dist/quill.core.css">
+    <link rel="stylesheet" href="node_modules/quill/dist/quill.snow.css">
+    <link rel="stylesheet" href="hex-quill.css"> <!-- overrides for quill styles, to make it fit hex better -->
   </head>
   <body class="preload">
+    <div id="previewHolder"></div>
     <div id="topArea">
       <img id="hex-logo" src="hex.svg">
       <div id="buttons">
         <select name="activityType" id="activitySlct" onchange="selectActivity()">
 
         </select>
+        <input id="activityName" class="" type="text"></input>
         <button id="runBtn" onclick="run()">run</button>
         <button id="exportBtn" onclick="exporter()">export</button>
         <div id="advancedExport" class="preload">
@@ -47,9 +59,8 @@
       </div>
     </div>
     <br>
-    <!-- <textarea id="inputBox" rows="8" cols="50"></textarea> -->
     <div id="inputBox">
-      <table>
+      <!-- <table>
         <tbody id="tableBody">
           <tr id="lastRow">
             <th class="numCol"></th>
@@ -57,10 +68,11 @@
             <td><div class="addBottom miniBtn" onclick="addRow(numRows+1)">+</div></td>
           </tr>
       </tbody>
-      </table>
+      </table> -->
     </div>
-    <div id="controlsEtc">
+    <div id="controlsEtc">      
       <h2 id="settingsTitle" onclick="showSettings()"><i class="showSettingsButton arrow down" id="showSettingsButton"></i></img>activity settings</h2>
+      <div id="settingsMover" onmousedown="settingsSizeAdjustStart(event)"></div>
       <div id="settingsArea" class="settingsArea">
       </div>
       <small><p>Node.js <span id="node-version"></span>,
