@@ -29,7 +29,15 @@
         {"name":"soundsEnabled","label":"Sounds","type":"checkbox","default":true,"category":"Look and feel"},
         {"name":"successMessage","label":"Winning message","type":"text","default":"You made it!","category":"Language"},
         {"name":"loseMessage","label":"Winning message","type":"text","default":"GAME OVER!","category":"Language"},
-        {"name":"playAgainText","label":"Play again text","type":"text","default":"Play again?","category":"Language"}
+        {"name":"playAgainText","label":"Play again text","type":"text","default":"Play again?","category":"Language"},
+        {"name": "remainingLifeText", "label": "Remaining life text (screen reader)", "type": "text", "default": "Remaining life", "category": "Language", "info": "The text that will be announced by screen readers to indicate a remaining life."},
+        {"name":"remainingLivesText","label":"Remaining lives text","type":"text","default":"Lives remaining","category":"Language"},        
+        {"name":"tileText","label":"Tile text","type":"text","default":"tile","category":"Language","info":"Used in screen reader text to refer to the tiles."},
+        {"name":"instructions","label":"Instructions","type":"text","default":"Jump on the correct tiles to get to the end of the maze. The path is made up of words from a specific category.","category":"Language"},
+        {"name":"srCorrectMessageText","label":"Correct message (screen reader)","type":"text","default":"Safe!","category":"Language","info":"The message that will be announced by screen readers when the correct tile is stepped on."},
+        {"name":"srStartingTileText","label":"Starting tile text (screen reader)","type":"text","default":"Start of maze.","category":"Language","info":"The text that will be announced by screen readers to indicate the starting tile."},
+        {"name":"srEndingTileText","label":"Ending tile text (screen reader)","type":"text","default":"End of maze.","category":"Language","info":"The text that will be announced by screen readers to indicate the ending tile."},
+        {"name": "spriteText", "label": "Sprite description (screen reader)", "type": "text", "default": "Sprite", "category": "Language", "info": "The text that will be announced by screen readers to describe the sprite."}        
     ],
     "sample_datas":[
         {"title":"Regular and irregular verbs","activity": [["be","accept"],["become","arrive"],["begin","ask"],["break","bake"],["bring","call"],["build","clean"],["buy","climb"],["catch","close"],["choose","compare"],["come","cook"],["cost","dance"],["cut","drop"],["do","enjoy"],["draw","fix"],["drink","help"],["drive","invite"],["eat","jump"],["fall","kiss"],["feel","laugh"],["fight","like"],["find","listen"],["fly","live"],["forget","love"],["get","need"],["give","open"],["go","paint"],["grow","play"],["have","pull"],["hear","push"],["hide","rain"],["hold","remember"],["keep","smile"],["know","start"],["leave","talk"],["lend","travel"],["let","turn"],["lose","use"],["make","visit"],["mean","wait"],["meet","walk"],["pay","want"],["put","wash"],["read","watch"],["ride","work"],["ring",""],["run",""],["say",""],["see",""],["sell",""],["send",""],["show",""],["sing",""],["sit",""],["sleep",""],["speak",""],["spend",""],["stand",""],["swim",""],["take",""],["teach",""],["tell",""],["think",""],["throw",""],["understand",""],["wear",""],["win",""],["write",""]]},    
@@ -222,10 +230,11 @@
             color: var(--text);
         }
 
-        .hexagon:hover {
+        .hexagon:hover, .hexagon:focus {
             transform: translateY(5px);
             /* fill: rgb(45, 45, 255); */
             transition-timing-function: cubic-bezier(0.1, 0.1, 0.1, 3);
+            outline: none;
         }
 
         .hexagon:active {
@@ -379,6 +388,13 @@
             opacity: 0;
         }
 
+        .announcements{
+            position: absolute;
+            top: -999px;
+            left: -999px;
+            overflow: hidden;
+        }
+
 
         @keyframes drop-in {
             0% {
@@ -515,6 +531,7 @@
         }
     </style>
     <script>
+        //global vars
         var totalHexagons
         var maze
         var mazeEl
@@ -534,13 +551,19 @@
         var resizeWindowTimeout
         var moveMazeTimeout
 
+        var gameOver = false; // whether won or lost
+
         const images = {
-            hexagon: '<svg class="hexagon-image" width="100%" height="100%" viewBox="0 0 300 200" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;"><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M-0,63.124L75,0L225,0L300,63.124L300,103.859L225,166.983L75,166.983L0,103.859L-0,63.124Z" style="fill:inherit;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M300,63.124L300,103.859L225,166.983L225,126.248L300,63.124Z" style="fill:white;fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M75,126.248L75,166.983L0,103.859L0,63.124L75,126.248Z" style="fill:rgb(91,91,91);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><rect x="75" y="126.248" width="150" height="40.735" style="fill:rgb(193,193,193);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M210.231,29.074L210.231,12.43L270.463,63.124L260.575,71.446L210.231,29.074Z" style="fill:rgb(92,92,92);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><rect x="89.769" y="12.43" width="120.463" height="16.644" style="fill:rgb(194,194,194);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M39.425,71.446L29.537,63.124L89.769,12.43L89.769,29.074L39.425,71.446Z" style="fill:white;fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M260.575,71.446L210.231,113.818L89.769,113.818L39.425,71.446L89.769,29.074L210.231,29.074L260.575,71.446Z" style="fill:rgb(215,215,215);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M-0,63.124L75,0L225,0L300,63.124L225,126.248L75,126.248L-0,63.124ZM89.769,113.818L29.537,63.124L89.769,12.43L210.231,12.43L270.463,63.124L210.231,113.818L89.769,113.818Z" style="fill:rgb(235,235,235);fill-opacity:0.5;"/></g></svg>'
+            hexagon: '<svg aria-hidden="true" class="hexagon-image" width="100%" height="100%" viewBox="0 0 300 200" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;"><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M-0,63.124L75,0L225,0L300,63.124L300,103.859L225,166.983L75,166.983L0,103.859L-0,63.124Z" style="fill:inherit;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M300,63.124L300,103.859L225,166.983L225,126.248L300,63.124Z" style="fill:white;fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M75,126.248L75,166.983L0,103.859L0,63.124L75,126.248Z" style="fill:rgb(91,91,91);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><rect x="75" y="126.248" width="150" height="40.735" style="fill:rgb(193,193,193);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M210.231,29.074L210.231,12.43L270.463,63.124L260.575,71.446L210.231,29.074Z" style="fill:rgb(92,92,92);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><rect x="89.769" y="12.43" width="120.463" height="16.644" style="fill:rgb(194,194,194);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M39.425,71.446L29.537,63.124L89.769,12.43L89.769,29.074L39.425,71.446Z" style="fill:white;fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M260.575,71.446L210.231,113.818L89.769,113.818L39.425,71.446L89.769,29.074L210.231,29.074L260.575,71.446Z" style="fill:rgb(215,215,215);fill-opacity:0.5;"/></g><g transform="matrix(1,0,0,1.19773,0,0)"><path d="M-0,63.124L75,0L225,0L300,63.124L225,126.248L75,126.248L-0,63.124ZM89.769,113.818L29.537,63.124L89.769,12.43L210.231,12.43L270.463,63.124L210.231,113.818L89.769,113.818Z" style="fill:rgb(235,235,235);fill-opacity:0.5;"/></g></svg>'
         }
 
 
 
         function pageLoad() {
+                    if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }
+
 
             let paths = []
 
@@ -683,12 +706,14 @@
             path.hexagons.forEach((hexagon, idx) => {
                 hexagon.path = true
                 hexagon.pathIndex = idx;
-            });
-
-            // add sparkles to the end of the path
-            addSparkles(path.hexagons.at(-1).el.firstElementChild)
+            });        
 
             maze.addLabels(goodList, badList)
+
+            // add sparkles to the end of the path
+            addSparkles(path.hexagons.at(-1).el.firstElementChild)    
+            // add ending tile text to aria label for screen readers
+            path.hexagons.at(-1).el.ariaLabel += '. ' + gameSettings.srEndingTileText
 
             maze.addRedundantPaths(goodList)
 
@@ -709,7 +734,9 @@
                 path.hexagons[0].moveCursorHere() // put cursor on first hexagon
                 showLives()
                 window.addEventListener('resize', resizeWindow)
-                path.hexagons[0].showPath() // show already be set, but if using a gradient, then we need to set it again
+                path.hexagons[0].showPath() // show already be set, but if using a gradient, then we need to set it again                
+                announce(gameSettings.instructions + '…' + gameSettings.srStartingTileText + ': ' + path.hexagons[0].label + '. …' + gameSettings.srEndingTileText + ': ' + path.hexagons.at(-1).label)                
+                // to do: Option to show instructions in a pop up message. If set, this isn't included in the announcement, and this announcement is read only when dismissing the message.
             }, 2000)
 
             currentPathIndex = 0
@@ -944,7 +971,7 @@
                         }
                         if (!hexagon.el.classList.contains('empty')) { // shouldn't select empty ones, but just in case
                             hexagon.el.firstChild.firstChild.innerHTML = hexagon.label
-                            hexagon.el.setAttribute('aria-label', hexagon.label)
+                            hexagon.el.ariaLabel = gameSettings.tileText + ': ' + hexagon.label
                             hexagon.el.setAttribute('role', 'button')
                         }
                         if (goodListBuffer.length == 0) {
@@ -1015,6 +1042,7 @@
         }
 
         function jumpTo(hexagon) {
+            if (gameOver) return
             if(gameSettings.soundsEnabled){
                 setTimeout(function () {
                     clickSound.play()
@@ -1034,7 +1062,10 @@
                     setTimeout(function () {                                 
                         sprite.classList.add('bouncing');
                         showOverlay(gameSettings.successMessage,true,true)
+                        gameOver = true
                     }, 2000)
+                } else {
+                    announce(hexagon.label + ': ' + gameSettings.srCorrectMessageText)
                 }
             } else {
                 hexagon.moveCursorHere(true)
@@ -1043,8 +1074,10 @@
         }
 
         function handleKeyPressHexagon(e) {
+            if(e.repeat || gameOver) return // ignore if holding down key
             if (e.key == 'Enter' || e.key == ' ') {
-                e.preventDefault()
+                e.preventDefault()                
+                e.stopPropagation()
                 jumpTo(maze.getHexagonById(e.currentTarget.getAttribute('data-hexagon-ref')))
             }
         }
@@ -1147,12 +1180,15 @@
                                 hexagon.el.removeAttribute('tabindex')
                             }
                         })
+                        this.el.focus()
                 }
 
                 if (!lose) {
                     this.el.classList.add('current')
                 } else {
                     this.el.classList.add('falling')
+                    this.el.blur() // focus should have gone already, but just in case
+                    this.el.ariaHidden = true;
                 }
 
                 if (prevHex) {
@@ -1210,7 +1246,8 @@
             }
 
             this.showPath = function () {
-                this.el.classList.add('path')
+                this.el.classList.add('path')           
+                this.el.ariaLabel = gameSettings.tileText + ': ' + this.label + ', ' + gameSettings.srCorrectMessageText + ' ' + (this.pathIndex != null ? (this.pathIndex + 1) : '')
                 if(pathColors.length > 0 && this.hasOwnProperty('pathIndex')) {
                     this.el.style.fill = '#' + pathColors[this.pathIndex]                
                 }
@@ -1237,7 +1274,7 @@
         }
 
         function createSprite() {
-            sprite = newElement('div', { id: 'sprite' }, sprites[gameSettings.sprite])
+            sprite = newElement('div', { id: 'sprite', ariaLabel: gameSettings.spriteText }, sprites[gameSettings.sprite])
             cursor = newElement('div', { id: 'cursor' })
             container.appendChild(sprite)
             container.appendChild(cursor)
@@ -1249,6 +1286,8 @@
             // let currentMazeTransform = container.style.transform // remember where it was
 
             el.appendChild(cursor)
+            // console.log('Moving cursor to hexagon ' + el.getAttribute('data-hexagon-ref'))
+            // console.log(cursor.offsetParent)
             // container.style.transform = null
 
             // Force reflow to ensure DOM updates before measuring position
@@ -1280,10 +1319,17 @@
         }
 
         function moveSpriteTo(el, flipped = false) {
+            console.log('moveSpriteTo – Current time is ' + performance.now())
             // now only used for when the sprite is falling
             let originalSpritePosition = elementPosition(sprite.firstChild)
+            console.log('firstChild', sprite.firstChild)
+            console.log('firstElementChild', sprite.firstElementChild)
 
-            el.appendChild(sprite)
+            if(el.firstElementChild) {            
+                el.firstElementChild.appendChild(sprite) // I don't understand why, but this works better when moving using the keyboard.
+            } else {
+                el.appendChild(sprite)
+            }
 
             // Force reflow to ensure DOM updates before measuring position
             // This line reads a layout property, forcing the browser to update the layout
@@ -1306,22 +1352,26 @@
         function showLives() {
             let livesContainer = document.getElementById('livesContainer')
             if (livesContainer) {
-                livesContainer.innerHTMKL = ''
+                livesContainer.innerHTML = ''                
             } else {
-                livesContainer = newElement('div', { id: 'livesContainer' })
+                livesContainer = newElement('div', { id: 'livesContainer', role: 'region' })
             }
             for (let i = 0; i < gameSettings.numLives - 1; i++) {
-                let life = newElement('div', { class: 'life' }, sprites[gameSettings.sprite])
+                let life = newElement('div', { class: 'life', ariaLabel: gameSettings.remainingLifeText }, sprites[gameSettings.sprite])
                 livesContainer.appendChild(life)
             }
+            livesContainer.ariaLabel = gameSettings.remainingLivesText + ': ' + livesContainer.childElementCount
             document.body.appendChild(livesContainer)
         }
 
         function loseLife() {
             let livesContainer = document.getElementById('livesContainer')
             let life = livesContainer.firstElementChild
-            if (livesContainer.childElementCount == 0) {
+            let numLives = livesContainer.childElementCount
+            if (numLives == 0) {
                 // game over
+                announce(gameSettings.loseMessage)
+                gameOver = true
                 if(gameSettings.soundsEnabled){
                         setTimeout(function () {
                             loseSound.play()
@@ -1329,6 +1379,7 @@
                         }, 2000)                        
                     }
             } else if (life) {
+                announce(gameSettings.remainingLivesText + ': ' + numLives)
                 if(gameSettings.soundsEnabled){
                     setTimeout(function () {
                         badSound.play()
@@ -1342,6 +1393,7 @@
             container.appendChild(sprite)
             sprite.style = null
             path.hexagons[0].moveCursorHere() // option to continue where left off? option to erase path?
+            announce(gameSettings.srStartingTileText + ': ' + path.hexagons[0].label + '. ' + gameSettings.srEndingTileText + ': ' + path.hexagons.at(-1).label)
             life.style.transform = 'translateY(-200%)'
             setTimeout(function () { life.remove() }, 500)
         }
@@ -1351,6 +1403,7 @@
             let newPosition = elementPosition(element)
             let deltaX = originalPosition.x - newPosition.x; // Δx = x2 - x1
             let deltaY = originalPosition.y - newPosition.y; // Δy = y2 - y1            
+            console.log(`Animating move. Original position: (${originalPosition.x}, ${originalPosition.y}), New position: (${newPosition.x}, ${newPosition.y}), Delta: (${deltaX}, ${deltaY}), Flipped: ${flipped}, Jump: ${jump}`)
 
             if (jump) {
                 // Fun jump: squash at start, stretch at peak, normal at end
@@ -1406,6 +1459,7 @@
         }
 
         function adjustMazePosition(recenterToCursor = false) {
+            console.log('adjustMazePosition – Current time is ' + performance.now())
             clearTimeout(moveMazeTimeout)
             moveMazeTimeout = setTimeout(function () {
                 if (mazeEl.offsetWidth > window.innerWidth || mazeEl.offsetHeight > window.innerHeight) {
@@ -1581,6 +1635,23 @@
             }
             return newData
         }
+
+        let srAnnounceTimer
+        let srBlankAnnounceTimer
+
+        
+      function announce(message){
+        let status = document.getElementById('sr-status')
+        if (!status || !message) return
+        status.textContent = ''
+        clearTimeout(srAnnounceTimer)
+        srAnnounceTimer = setTimeout(function(){
+            status.textContent = message
+        }, 20)
+        srBlankAnnounceTimer = setTimeout(function(){
+            status.textContent = ''
+        }, 5000)
+      }
 
         function chance(numerator, denominator) {
             if (denominator === 0) {
@@ -1956,7 +2027,8 @@
 
 
 <body>
-    <div id="overlay" class="overlay hidden"></div>
+    <div id="sr-status" class="announcements" aria-live="polite" aria-atomic="true"></div>
+    <div id="overlay" class="overlay hidden" aria-live="assertive"></div>
     <div id="mazeContainer">            
     </div>
 </body>

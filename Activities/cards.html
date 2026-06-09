@@ -17,8 +17,15 @@
       {"name":"dealOnLoad","label":"Deal cards on load","type":"select","options":["Off","All","Exactly…"],"dependents":[
         {"name":"cardsToDeal","enable":"Exactly…"}
       ]},
-      {"name":"cardsToDeal","label":"Cards to deal on load","type":"number","min":1,"default":1}
-
+      {"name":"cardsToDeal","label":"Cards to deal on load","type":"number","min":1,"default":1},
+      {"name":"textDeal","label":"Deal button text","type":"text","default":"Deal","info":"Text shown on the button used to deal cards."},
+      {"name":"textDeck","label":"Deck text","type":"text","default":"Deck","info":"For screenreaders only."},
+      {"name":"textMore","label":"More button text","type":"text","default":"More","info":"For screenreaders only."},
+      {"name":"textReturn","label":"Return to deck button text","type":"text","default":"Return (all dealt cards) to deck","info":"For screenreaders only. The words in brackets will only be used if the relevant setting is on."},
+      {"name":"textDiscard","label":"Discard button text","type":"text","default":"Discard (all)","info":"For screenreaders only. The word in brackets will only be used if discarding all cards."},
+      {"name":"textRestore","label":"Restore button text","type":"text","default":"Restore discarded cards to the deck","info":"For screenreaders only."},
+      {"name":"textHide","label":"Flip down button text","type":"text","default":"Hide (all)","info":"For screenreaders only. The word in brackets will only be used if flipping all cards."},
+      {"name":"textReveal","label":"Flip up button text","type":"text","default":"Reveal (all)","info":"For screenreaders only. The word in brackets will only be used if flipping all cards."}
     ],
     "sample_datas":[
         {"title":"Jobs","activity":[["bricklayer","JOBS"],["architect","JOBS"],["chef","JOBS"],["intern","JOBS"],["cook","JOBS"],["pet sitter","JOBS"],["security guard","JOBS"],["paramedic","JOBS"],["undertaker","JOBS"],["baby sitter","JOBS"],["surgeon","JOBS"],["engineer","JOBS"],["fishmonger","JOBS"],["baker","JOBS"],["nurse","JOBS"],["barista","JOBS"],["sales assistant","JOBS"],["plumber","JOBS"],["lawyer","JOBS"],["firefighter","JOBS"]]},
@@ -51,6 +58,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <title>Cards</title>
     <script>
         const mode = 'free' // free, timesup, memory match (memory match to do)
         const numTeams = 2
@@ -68,12 +76,12 @@
         var teamPlaying = 1
         var dealingCards = false
 
-        var icons = {}
-
-        icons.ok = '<svg class="icon ok" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;"> <g transform="matrix(1.00921,0,0,1.07529,4.6257,-9.15356)"> <path d="M3.171,72.077C13.238,79.35 21.989,86.754 29.993,94.233C45.493,62.504 63.245,34.81 86.749,15.79" style="fill:none;stroke:inherit;;stroke-width:inherit;"/> </g> </svg>'
-        icons.discard = '<svg class="icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;"> <g transform="matrix(-0.903069,-1.09726e-16,1.01849e-16,-0.839285,95.2835,102.034)"> <path d="M84.015,89.586L16.273,89.586L26.434,8.279L73.854,8.279L84.015,89.586Z" style="stroke:inherit;stroke-width: inherit;"/> </g> <g transform="matrix(0.939219,1.30104e-17,1.47451e-17,0.935097,3.78789,1.93384)"> <path d="M81.77,9.051L54.264,9.051L54.264,2.915L44.141,2.915L44.141,9.051L16.636,9.051L16.636,14.583L81.77,14.583L81.77,9.051Z" style="stroke:inherit;stroke-width: inherit;"/> </g></svg>'
-        icons.undiscard = '<svg class="icon" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;"> <g transform="matrix(-0.903069,-1.09726e-16,1.01849e-16,-0.839285,107.41,105.609)"> <path d="M84.015,89.586L16.273,89.586L26.434,8.279L73.854,8.279L84.015,89.586Z" style="stroke:inherit;stroke-width: inherit;"/> </g> <g transform="matrix(0.918968,0.193985,-0.193134,0.914935,20.6236,-9.89022)"> <path d="M81.77,9.051L54.264,9.051L54.264,2.915L44.141,2.915L44.141,9.051L16.636,9.051L16.636,14.583L81.77,14.583L81.77,9.051Z" style="stroke:inherit;stroke-width: inherit;"/> </g> <g transform="matrix(1.81955,-0.798159,0.910719,1.72045,-28.1801,6.49053)"> <g transform="matrix(0.44602,0.20692,-0.236101,0.471711,14.1013,2.76937)"> <path d="M4.807,10.342L1.723,29.183L20.564,32.268" style="fill:none;stroke:inherit;stroke-width: inherit;stroke-linejoin:miter;stroke-miterlimit:10;"/> <path d="M1.723,29.183C12.268,21.717 30.003,11.363 45.126,21.203" style="fill:none;stroke:inherit;stroke-width: inherit;"/> </g> </g></svg>'
-        icons.return = '<svg class="icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-miterlimit:10;"> <g transform="matrix(0.428234,-1.94021,1.92654,0.278891,12.3952,104.239)">  <g transform="matrix(0.0723014,0.502993,-0.49945,0.111018,51.1661,-17.8072)">  <path d="M35.392,79.553L48.691,93.25L62.389,79.951" style="fill:none;stroke:inherit;;stroke-width: inherit;"/>  <path d="M48.691,93.25C48.893,79.595 50,4.628 50,4.628" style="fill:none;stroke:inherit;;stroke-width: inherit;stroke-linejoin:round;stroke-miterlimit:1.5;"/>  </g> </g></svg>'
+        const icons = {
+        ok: '<svg class="icon ok" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;"> <g transform="matrix(1.00921,0,0,1.07529,4.6257,-9.15356)"> <path d="M3.171,72.077C13.238,79.35 21.989,86.754 29.993,94.233C45.493,62.504 63.245,34.81 86.749,15.79" style="fill:none;stroke:inherit;;stroke-width:inherit;"/> </g> </svg>',
+        discard: '<svg class="icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;"> <g transform="matrix(-0.903069,-1.09726e-16,1.01849e-16,-0.839285,95.2835,102.034)"> <path d="M84.015,89.586L16.273,89.586L26.434,8.279L73.854,8.279L84.015,89.586Z" style="stroke:inherit;stroke-width: inherit;"/> </g> <g transform="matrix(0.939219,1.30104e-17,1.47451e-17,0.935097,3.78789,1.93384)"> <path d="M81.77,9.051L54.264,9.051L54.264,2.915L44.141,2.915L44.141,9.051L16.636,9.051L16.636,14.583L81.77,14.583L81.77,9.051Z" style="stroke:inherit;stroke-width: inherit;"/> </g></svg>',
+        undiscard: '<svg class="icon" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;"> <g transform="matrix(-0.903069,-1.09726e-16,1.01849e-16,-0.839285,107.41,105.609)"> <path d="M84.015,89.586L16.273,89.586L26.434,8.279L73.854,8.279L84.015,89.586Z" style="stroke:inherit;stroke-width: inherit;"/> </g> <g transform="matrix(0.918968,0.193985,-0.193134,0.914935,20.6236,-9.89022)"> <path d="M81.77,9.051L54.264,9.051L54.264,2.915L44.141,2.915L44.141,9.051L16.636,9.051L16.636,14.583L81.77,14.583L81.77,9.051Z" style="stroke:inherit;stroke-width: inherit;"/> </g> <g transform="matrix(1.81955,-0.798159,0.910719,1.72045,-28.1801,6.49053)"> <g transform="matrix(0.44602,0.20692,-0.236101,0.471711,14.1013,2.76937)"> <path d="M4.807,10.342L1.723,29.183L20.564,32.268" style="fill:none;stroke:inherit;stroke-width: inherit;stroke-linejoin:miter;stroke-miterlimit:10;"/> <path d="M1.723,29.183C12.268,21.717 30.003,11.363 45.126,21.203" style="fill:none;stroke:inherit;stroke-width: inherit;"/> </g> </g></svg>',
+        return: '<svg class="icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-miterlimit:10;"> <g transform="matrix(0.428234,-1.94021,1.92654,0.278891,12.3952,104.239)">  <g transform="matrix(0.0723014,0.502993,-0.49945,0.111018,51.1661,-17.8072)">  <path d="M35.392,79.553L48.691,93.25L62.389,79.951" style="fill:none;stroke:inherit;;stroke-width: inherit;"/>  <path d="M48.691,93.25C48.893,79.595 50,4.628 50,4.628" style="fill:none;stroke:inherit;;stroke-width: inherit;stroke-linejoin:round;stroke-miterlimit:1.5;"/>  </g> </g></svg>'
+        }
 
         // function makeSVG(svgObj){
         //     let svgEl = document.createElement('svg')
@@ -87,6 +95,36 @@
         // }
 
         function pageLoad() {
+            if(gameSettings.activityName != ''){
+                window.document.title = gameSettings.activityName + ' – ' + window.document.title
+            }
+            
+            const discardAll = document.getElementById('discardAll')
+            const returnAll = document.getElementById('returnAll')
+            const deal = document.getElementById('deal')
+            const deck = document.getElementById('deck')
+            const more = document.getElementById('more')
+            const undiscard = document.getElementById('undiscard')
+            const revealAll = document.getElementById('revealAll')
+            const hideAll = document.getElementById('hideAll')
+            
+            // set button text from settings
+            deal.innerHTML = gameSettings.textDeal
+            deck.setAttribute('aria-label', gameSettings.textDeck)
+            deck.setAttribute('title', gameSettings.textDeck)            
+            more.setAttribute('aria-label', gameSettings.textMore)
+            more.setAttribute('title', gameSettings.textMore)
+            returnAll.setAttribute('aria-label', gameSettings.textReturn.replaceAll(/[()]/g, '')) // remove brackets 
+            returnAll.setAttribute('title', gameSettings.textReturn.replaceAll(/[()]/g, '')) // remove brackets )
+            discardAll.setAttribute('aria-label', gameSettings.textDiscard.replaceAll(/[()]/g, '')) // remove brackets )
+            discardAll.setAttribute('title', gameSettings.textDiscard.replaceAll(/[()]/g, '')) // remove brackets )
+            undiscard.setAttribute('aria-label', gameSettings.textRestore)
+            undiscard.setAttribute('title', gameSettings.textRestore)
+            revealAll.setAttribute('aria-label', gameSettings.textReveal.replaceAll(/[()]/g, '')) // remove brackets )
+            revealAll.setAttribute('title', gameSettings.textReveal.replaceAll(/[()]/g, '')) // remove brackets )
+            hideAll.setAttribute('aria-label', gameSettings.textHide.replaceAll(/[()]/g, '')) // remove brackets )
+            hideAll.setAttribute('title', gameSettings.textHide.replaceAll(/[()]/g, '')) // remove brackets )
+
 
             // set color
             setColorTheme(gameSettings.color.toLowerCase());
@@ -426,6 +464,12 @@
 
         }
 
+        function deckKeyDown(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                dealCards(dealNum.value)
+            }
+        }
+
         function returnCard(id, animateDeck = true, animateCardArea = true, excludeCardArea = [], originalPos = false, animationSpeed = 800) {
             let index = deck.findIndex((card) => card.id === id);
             deck[index].dealt = false
@@ -714,6 +758,22 @@
                 el.setAttribute('data-state', gameSettings.cardFaceDefault)  // up or down
             }, 10)
 
+            // set attributes for accessibility
+            elFront.ariaLabel = 'Card front: ' + card.front
+            elBack.ariaLabel = 'Card back: ' + card.back
+            if (gameSettings.cardFaceDefault == 'up') {
+                elFront.ariaHidden = 'false'
+                elBack.ariaHidden = 'true'
+                elFront.tabIndex = 0
+                elBack.tabIndex = -1
+            } else {
+                elFront.ariaHidden = 'true'
+                elBack.ariaHidden = 'false'
+                elFront.tabIndex = -1
+                elBack.tabIndex = 0
+            }            
+
+
             // according to the discard style, add these classes so that the CSS rule to hide the discard button container can kick in at the right time
             if (gameSettings.discardStyle == 'OK (front only)') {
                 el.classList.add('discard-front-only')
@@ -733,6 +793,18 @@
             elInner.onclick = function () {
                 clickCard(card.id);
             };
+
+            elFront.onkeypress = function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    clickCard(card.id);
+                }
+            }
+
+            elBack.onkeypress = function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    clickCard(card.id);
+                }
+            }
 
             elFront.setAttribute('class', 'face front')
             elBack.setAttribute('class', 'face back')
@@ -895,6 +967,22 @@
                 innerEl.classList.remove(currentState)
                 innerEl.classList.add(newState)
                 cardEl.setAttribute('data-state', newState)
+
+                let front = cardEl.querySelector('.face.front')
+                let back = cardEl.querySelector('.face.back')
+                if (newState == 'up') {
+                    front.ariaHidden = 'false'
+                    front.tabIndex = 0
+                    front.focus()              
+                    back.ariaHidden = 'true'
+                    back.tabIndex = -1                    
+                } else {                    
+                    back.ariaHidden = 'false'
+                    back.tabIndex = 0
+                    back.focus()
+                    front.ariaHidden = 'true'
+                    front.tabIndex = -1                    
+                }
 
                 stats.cardFaces[currentState]--
                 stats.cardFaces[newState]++
@@ -1190,6 +1278,19 @@
 
         }
 
+        let srAnnounceTimer = null
+
+        function announce(urgent=false){
+            let status = document.getElementById('sr-status' + (urgent ? '-urgent' : ''))
+            if (!status || !message) return
+            status.textContent = ''
+            clearTimeout(srAnnounceTimer)
+            srAnnounceTimer = setTimeout(function(){
+                status.textContent = message
+            }, 20)
+        }
+        
+
         // duration in seconds
         function startCountdown(duration) {
 
@@ -1230,10 +1331,25 @@
 
             // seconds ones
             secOnes.textContent = seconds % 10
+
+            if (gameSettings.hasOwnProperty('time') && (time == Math.floor(gameSettings.time * 0.5) || time == 10)){
+                announceTimeLeft(minutes, seconds)
+            }
+        }
+
+        function announceTimeLeft(minutes, seconds){
+            let stringTimeLeft
+            if (minutes > 0){
+                    stringTimeLeft = gameSettings.srTextTimeLeft.replace('%m', minutes).replace('$s', seconds).replace(`%(\w+)%\w*`, minutes > 1 ? '$1$2' : '$1').replace(`$(\w+)$\w*`, seconds > 1 ? '$1$2' : '$1') //format: %m %minute%s $s $second$s // %m = number of minutes %_% surrounds word for minutes, where the following characters are the plural suffix. Same for seconds but using $
+            } else {
+                stringTimeLeft = gameSettings.srTextTimeLeft.replace('%m', '').replace('$s', seconds).replace(`%(\w+)%\w*`, '').replace(`$(\w+)$\w*`, seconds > 1 ? '$1$2' : '$1') //format: %m %minute%s $s $s$second$s // %m = number of minutes %_% surrounds word for minutes, where the following characters are the plural suffix. Same for seconds but using $
+            }
+            announce(stringTimeLeft, true)
         }
 
         function endCountdown() {
             if (mode == 'timesup') {
+                announce(gameSettings.srTextTimesUp)
                 nextTeam()
             }
         }
@@ -1491,7 +1607,7 @@
             touch-action: manipulation;
         }
 
-        button:hover {
+        button:hover, button:focus {
             box-shadow: var(--fg-color-trans) 0 0 0 0.5vh;
         }
 
@@ -1542,11 +1658,11 @@
 
 
         /* lift card */
-        .down:hover {
+        .down:hover, .down .face:focus {
             transform: rotate3d(-1, 1, 0, 160deg);
         }
 
-        .down:hover .face {
+        .down:hover .face, .down .face:focus {
             -webkit-box-shadow: 0.5em 0.5em 0.25em 0.25em rgba(0, 0, 0, 0.2);
             -moz-box-shadow: 0.5em 0.5em 0.25em 0.25em rgba(0, 0, 0, 0.2);
             box-shadow: 0.5em 0.5em 0.25em 0.25em rgba(0, 0, 0, 0.2);
@@ -1560,19 +1676,27 @@
         }
 
         /* lift card */
-        .up:hover {
+        .up:hover, .up .face:focus {
             transform: rotate3d(-1, 1, 0, 20deg);
         }
 
-        .up:hover .face {
+        .up:hover .face, .up .face:focus {
             -webkit-box-shadow: -0.5em -0.5em 0.25em 0.25em rgba(0, 0, 0, 0.2);
             -moz-box-shadow: -0.5em -0.5em 0.25em 0.25em rgba(0, 0, 0, 0.2);
             box-shadow: -0.5em -0.5em 0.25em 0.25em rgba(0, 0, 0, 0.2);
         }
 
         /* no shadow effect when hovering */
-        .no-flip:hover .face {
+        .no-flip:hover .face, .no-flip .face:focus {
             box-shadow: 0 0em 0.25em 0.25em rgba(0, 0, 0, 0.2);
+        }
+
+        .front:focus{
+            outline: 5px solid var(--front-fg);
+        }
+
+        .back:focus{
+            outline: 5px solid var(--back-fg);
         }
 
         .card-inner {
@@ -1744,8 +1868,10 @@
         .card.discard-front-only[data-state="up"] .discard-button,
         .card.discard-back-only[data-state="down"] .discard-button,
         .card.cardControlsVisible .discard-button,
-        .card.cardControlsVisible .return-button {
-            /* Show the button on hover */
+        .card.cardControlsVisible .return-button,
+        .discard-button:focus,
+        .return-button:focus {
+            /* Show the button on hover or focus */
             transform: scale(1);
         }
 
@@ -1940,8 +2066,12 @@
             z-index: 900;
         }
 
-        #deck:hover .card:last-child {
+        #deck:hover .card:last-child, #deck:focus .card:last-child {
             transform: translateY(-5vh)
+        }
+
+        #deck:focus{
+            outline: none;
         }
 
         #revealAll,
@@ -2372,10 +2502,19 @@
             text-align: center;
             font-size: 10vh;
         }
+
+        .announcements{
+            position: absolute;
+            left: -999px;
+            top: -999px;
+            overflow: hidden;            
+        }
     </style>
 </head>
 
 <body>
+    <div id="sr-status" aria-live="polite" role="status" aria-live="polite" aria-atomic="true"  class="announcements"></div>
+    <div id="sr-status-urgent" aria-live="assertive" role="status" aria-live="polite" aria-atomic="true"  class="announcements"></div>
     <div id="controls">
         <div id="countdown" class="control timesup hidden">
             <div class="number" id="min-tens">0</div>
@@ -2403,7 +2542,7 @@
     </div>
     <div id="cardArea">
     </div>
-    <div id="deck" onclick="dealCards(1)"></div>
+    <div id="deck" onclick="dealCards(1)" onkeydown="deckKeyDown(event)" tabindex="1" aria-label="Deck"></div>
 </body>
 <script src="activityController.js"></script>
 <!--This space is for either the activityController (when running in electron) or the game data (after export) -->

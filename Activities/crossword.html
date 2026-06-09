@@ -116,6 +116,7 @@
       --correct: #8CC084;
       --fg-color-active: #91918D;
       --slot-font-size: 3.5vh;
+      --slot-border-width: 1.5px;
     }
 
     [data-theme="serious blue"] {
@@ -391,8 +392,36 @@
 
     /* hide check box for printing */
     @media print {
+        * {
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+
       #checkBox {
         display: none;
+      }
+
+      #codeButton {
+        display: none;
+      }
+
+      body{
+        background-color: white;
+      }
+
+      .slot.filled {
+        background-color: white;
+        color: black;
+      }
+
+        .grid {
+          page-break-inside: avoid;
+          transform: scale(0.8);
+          transform-origin: top left;
+        }
+
+      .slot.prefilled{
+        background-color: grey;
       }
     }
 
@@ -499,44 +528,60 @@
       text-align: center;
       display: table-cell;
       vertical-align: middle;
+      background-clip: padding-box; /* prevent bleeding when using gradients */
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      will-change: background-size, transform;
+      /* keep the existing background color behaviour */  
+      transition: 200ms ease-in-out;
+      position: relative;
+      z-index: 0;
+        box-sizing: border-box;
+      /* slightly scale to hide sub-pixel gaps */
+      -webkit-transform: translateZ(0) scale(1.01) ;
+      transform: translateZ(0) scale(1.01);
+
     }
 
+        /* filled cell: draw all four inner lines (same visual as old filled + allows hover thicker lines) */
     .filled {
       background-color: var(--bg-color);
-      box-shadow:
-        /* left "border" */
-        inset 1px 0 0 0 var(--fg-color),
-        /* right "border" */
-        inset -1px 0 0 0 var(--fg-color),
-        /* top "border" */
-        inset 0 1px 0 0 var(--fg-color),
-        /* bottom "border" */
-        inset 0 -1px 0 0 var(--fg-color);
-      transition: 200ms ease-in-out;
+      color: var(--fg-color);
+      background-image:
+        linear-gradient(to right, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to left, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to bottom, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to top, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: left top, right top, top left, bottom left;
+      background-size: var(--slot-border-width) 100%, var(--slot-border-width) 100%, 100% var(--slot-border-width), 100% var(--slot-border-width);
+      transition: transform 200ms ease-in-out, background-size 200ms ease-in-out, background-color 200ms;
     }
+
 
     .filled:hover {
       transform: scale(1.2);
       background-color: var(--color1);
       color: var(--on-color1);
-      box-shadow:
-        /* left "border" */
-        inset 2px 0 0 0 var(--fg-color),
-        /* right "border" */
-        inset -2px 0 0 0 var(--fg-color),
-        /* top "border" */
-        inset 0 2px 0 0 var(--fg-color),
-        /* bottom "border" */
-        inset 0 -2px 0 0 var(--fg-color);
+      /* thicker inner lines on hover */
+      background-image:
+        linear-gradient(to right, var(--fg-color) calc((var(--slot-border-width)) * 2), transparent var(--slot-border-width)),
+        linear-gradient(to left, var(--fg-color) calc((var(--slot-border-width)) * 2), transparent var(--slot-border-width)),
+        linear-gradient(to bottom, var(--fg-color) calc((var(--slot-border-width)) * 2), transparent var(--slot-border-width)),
+        linear-gradient(to top, var(--fg-color) calc((var(--slot-border-width)) * 2), transparent var(--slot-border-width));
+      background-size: calc((var(--slot-border-width)) * 2) 100%, calc((var(--slot-border-width)) * 2) 100%, 100% calc((var(--slot-border-width)) * 2), 100% calc((var(--slot-border-width)) * 2);
+      z-index: 1;
     }
 
-    .selectedWord {
+    .filled.selectedWord,
+    .slot.filled.selectedWord {
       background-color: var(--color2);
       color: var(--on-color2);
       animation: popUpDown 150ms ease-in-out;
     }
 
-    .selectedSlot {
+    .filled.selectedSlot,
+    .slot.filled.selectedSlot {
       background-color: var(--color1);
       color: var(--on-color1);
     }
@@ -552,128 +597,232 @@
     }
 
     .touchRight {
-      box-shadow:
-        /* right "inner border" */
-        inset -1px 0 0 0 var(--fg-color);
+            background-image:
+        linear-gradient(to left, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: right top;
+      background-size: var(--slot-border-width) 100%;
     }
 
     .touchLeft {
-      box-shadow:
-        /* left "inner border" */
-        inset 1px 0 0 0 var(--fg-color);
+      background-image:
+        linear-gradient(to right, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: left top;
+      background-size: var(--slot-border-width) 100%;  
     }
 
     .touchHorizontal {
-      box-shadow:
-        /* top "inner border" */
-        inset 0 1px 0 0 var(--fg-color),
-        /* bottom "inner border" */
-        inset 0 -1px 0 0 var(--fg-color);
+      background-image:
+        linear-gradient(to bottom, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to top, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: top left, bottom left;
+      background-size: 100% var(--slot-border-width), 100% var(--slot-border-width);
     }
 
     .touchTop {
-      box-shadow:
-        /* top "inner border" */
-        inset 0 1px 0 0 var(--fg-color);
+         background-image:
+        linear-gradient(to bottom, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: top left;
+      background-size: 100% var(--slot-border-width);
     }
 
     .touchBottom {
-      box-shadow:
-        /* bottom "inner border" */
-        inset 0 -1px 0 0 var(--fg-color);
+      background-image:
+        linear-gradient(to top, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: bottom left;
+      background-size: 100% var(--slot-border-width);
     }
 
     .touchVertical {
-      box-shadow:
-        /* left "inner border" */
-        inset 1px 0 0 0 var(--fg-color),
-        /* right "inner border" */
-        inset -1px 0 0 0 var(--fg-color);
+
+      background-image:
+        linear-gradient(to right, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to left, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: left top, right top;
+      background-size: var(--slot-border-width) 100%, var(--slot-border-width) 100%;
     }
 
+       /* corners / three-side combos */
     .touchTopRight {
-      box-shadow:
-        /* right "inner border" */
-        inset -1px 0 0 0 var(--fg-color),
-        /* top "inner border" */
-        inset 0 1px 0 0 var(--fg-color);
+      background-image:
+        linear-gradient(to left, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to bottom, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: right top, top left;
+      background-size: var(--slot-border-width) 100%, 100% var(--slot-border-width);
     }
 
     .touchTopLeft {
-      box-shadow:
-        /* left "inner border" */
-        inset 1px 0 0 0 var(--fg-color),
-        /* top "inner border" */
-        inset 0 1px 0 0 var(--fg-color);
+      background-image:
+        linear-gradient(to right, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to bottom, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: left top, top left;
+      background-size: var(--slot-border-width) 100%, 100% var(--slot-border-width);
     }
 
     .touchBottomRight {
-      box-shadow:
-        /* right "inner border" */
-        inset -1px 0 0 0 var(--fg-color),
-        /* bottom "inner border" */
-        inset 0 -1px 0 0 var(--fg-color);
+      background-image:
+        linear-gradient(to left, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to top, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: right top, bottom left;
+      background-size: var(--slot-border-width) 100%, 100% var(--slot-border-width);
     }
 
     .touchBottomLeft {
-      box-shadow:
-        /* left "inner border" */
-        inset 1px 0 0 0 var(--fg-color),
-        /* bottom "inner border" */
-        inset 0 -1px 0 0 var(--fg-color);
+      background-image:
+        linear-gradient(to right, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to top, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: left top, bottom left;
+      background-size: var(--slot-border-width) 100%, 100% var(--slot-border-width);
     }
 
+    /* three-side helpers */
     .touchHorizontalLeft {
-      box-shadow:
-        /* left "inner border" */
-        inset 1px 0 0 0 var(--fg-color),
-        /* top "inner border" */
-        inset 0 1px 0 0 var(--fg-color),
-        /* bottom "inner border" */
-        inset 0 -1px 0 0 var(--fg-color);
+      background-image:
+        linear-gradient(to right, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to bottom, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to top, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: left top, top left, bottom left;
+      background-size: var(--slot-border-width) 100%, 100% var(--slot-border-width), 100% var(--slot-border-width);
     }
 
     .touchHorizontalRight {
-      box-shadow:
-        /* right "inner border" */
-        inset -1px 0 0 0 var(--fg-color),
-        /* top "inner border" */
-        inset 0 1px 0 0 var(--fg-color),
-        /* bottom "inner border" */
-        inset 0 -1px 0 0 var(--fg-color);
+      background-image:
+        linear-gradient(to left, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to bottom, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to top, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: right top, top left, bottom left;
+      background-size: var(--slot-border-width) 100%, 100% var(--slot-border-width), 100% var(--slot-border-width);
     }
 
     .touchVerticalTop {
-      box-shadow:
-        /* left "inner border" */
-        inset 1px 0 0 0 var(--fg-color),
-        /* right "inner border" */
-        inset -1px 0 0 0 var(--fg-color),
-        /* top "inner border" */
-        inset 0 1px 0 0 var(--fg-color);
+      background-image:
+        linear-gradient(to right, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to left, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to bottom, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: left top, right top, top left;
+      background-size: var(--slot-border-width) 100%, var(--slot-border-width) 100%, 100% var(--slot-border-width);
     }
 
     .touchVerticalBottom {
-      box-shadow:
-        /* left "inner border" */
-        inset 1px 0 0 0 var(--fg-color),
-        /* right "inner border" */
-        inset -1px 0 0 0 var(--fg-color),
-        /* bottom "inner border" */
-        inset 0 -1px 0 0 var(--fg-color);
+      background-image:
+        linear-gradient(to right, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to left, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to top, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: left top, right top, bottom left;
+      background-size: var(--slot-border-width) 100%, var(--slot-border-width) 100%, 100% var(--slot-border-width);
     }
 
+    /* all four inner sides */
     .touchAll {
-      box-shadow:
-        /* left "inner border" */
-        inset 1px 0 0 0 var(--fg-color),
-        /* right "inner border" */
-        inset -1px 0 0 0 var(--fg-color),
-        /* top "inner border" */
-        inset 0 1px 0 0 var(--fg-color),
-        /* bottom "inner border" */
-        inset 0 -1px 0 0 var(--fg-color);
+      background-image:
+        linear-gradient(to right, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to left, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to bottom, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width)),
+        linear-gradient(to top, var(--fg-color) var(--slot-border-width), transparent var(--slot-border-width));
+      background-repeat: no-repeat;
+      background-position: left top, right top, top left, bottom left;
+      background-size: var(--slot-border-width) 100%, var(--slot-border-width) 100%, 100% var(--slot-border-width), 100% var(--slot-border-width);
     }
+
+
+
+
+    /* .touchTopRight { */
+      /* box-shadow: */
+        /* right "inner border" */
+        /* inset -1px 0 0 0 var(--fg-color), */
+        /* top "inner border" */
+        /* inset 0 1px 0 0 var(--fg-color); */
+    /* } */
+
+    /* .touchTopLeft { */
+      /* box-shadow: */
+        /* left "inner border" */
+        /* inset 1px 0 0 0 var(--fg-color), */
+        /* top "inner border" */
+        /* inset 0 1px 0 0 var(--fg-color); */
+    /* } */
+
+    /* .touchBottomRight { */
+      /* box-shadow: */
+        /* right "inner border" */
+        /* inset -1px 0 0 0 var(--fg-color), */
+        /* bottom "inner border" */
+        /* inset 0 -1px 0 0 var(--fg-color); */
+    /* } */
+
+    /* .touchBottomLeft { */
+      /* box-shadow: */
+        /* left "inner border" */
+        /* inset 1px 0 0 0 var(--fg-color), */
+        /* bottom "inner border" */
+        /* inset 0 -1px 0 0 var(--fg-color); */
+    /* } */
+
+    /* .touchHorizontalLeft { */
+      /* box-shadow: */
+        /* left "inner border" */
+        /* inset 1px 0 0 0 var(--fg-color), */
+        /* top "inner border" */
+        /* inset 0 1px 0 0 var(--fg-color), */
+        /* bottom "inner border" */
+        /* inset 0 -1px 0 0 var(--fg-color); */
+    /* } */
+
+    /* .touchHorizontalRight { */
+      /* box-shadow: */
+        /* right "inner border" */
+        /* inset -1px 0 0 0 var(--fg-color), */
+        /* top "inner border" */
+        /* inset 0 1px 0 0 var(--fg-color), */
+        /* bottom "inner border" */
+        /* inset 0 -1px 0 0 var(--fg-color); */
+    /* } */
+
+    /* .touchVerticalTop { */
+      /* box-shadow: */
+        /* left "inner border" */
+        /* inset 1px 0 0 0 var(--fg-color), */
+        /* right "inner border" */
+        /* inset -1px 0 0 0 var(--fg-color), */
+        /* top "inner border" */
+        /* inset 0 1px 0 0 var(--fg-color); */
+    /* } */
+
+    /* .touchVerticalBottom { */
+      /* box-shadow: */
+        /* left "inner border" */
+        /* inset 1px 0 0 0 var(--fg-color), */
+        /* right "inner border" */
+        /* inset -1px 0 0 0 var(--fg-color), */
+        /* bottom "inner border" */
+        /* inset 0 -1px 0 0 var(--fg-color); */
+    /* } */
+
+    /* .touchAll { */
+      /* box-shadow: */
+        /* left "inner border" */
+        /* inset 1px 0 0 0 var(--fg-color), */
+        /* right "inner border" */
+        /* inset -1px 0 0 0 var(--fg-color), */
+        /* top "inner border" */
+        /* inset 0 1px 0 0 var(--fg-color), */
+        /* bottom "inner border" */
+        /* inset 0 -1px 0 0 var(--fg-color); */
+    /* } */
 
     .recalculateAnimation {
       animation: shake 0.5s
@@ -861,6 +1010,11 @@
   var composingWillEnd = false
 
   function pageLoad() {    
+            if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }
+
+
     setColorTheme(gameSettings.color.toLowerCase());
     setTimeout(function () { // let page load first, so the window will open properly and we'll see the loading screen
       window.onresize = tempHideGrid;      
@@ -1621,11 +1775,12 @@
           if (longest) {
             // get longest word of available candidates
             var candidate = wordsToAttach.words[0]
-              wordsToAttach.words.forEach(word=>{
-                    if (word.length > candidate.length) {
-                      candidate = word
-                    }
-                })
+            for (let j = 1; j < wordsToAttach.words.length; j++) {
+              let word = wordsToAttach.words[j];
+                  if (word.length > candidate.length) {
+                    candidate = word
+                  }
+              }
             for (let j = 0; j < basesToTry[i].length; j++) {
                 if (basesToTry[i][j] == wordsToAttach.letter) {    
                   wordStart = getWordStartForIntersection(grid.gridRef, basesToTry[i], j, candidate)
@@ -1648,10 +1803,11 @@
             }
                    
           } else {
-              wordsToAttach.words.forEach(candidate => {
-                for (let j = 0; j < basesToTry[i].length; j++) {
-                  if (basesToTry[i][j] == wordsToAttach.letter) {
-                    wordStart = getWordStartForIntersection(grid.gridRef, basesToTry[i], j, candidate)
+              for (let j = 0; j < wordsToAttach.words.length; j++) {
+                let candidate = wordsToAttach.words[j];
+                for (let k = 0; k < basesToTry[i].length; k++) {
+                  if (basesToTry[i][k] == wordsToAttach.letter) {
+                    wordStart = getWordStartForIntersection(grid.gridRef, basesToTry[i], k, candidate)
                     if (wordStart.row > 0 && wordStart.col > 0) { // no words in top most or top-right cell
                       let wordIndex = words.findIndex(word => word.text === candidate)
                       // TO DO: Feed ref from the beginning instead of looking up after (will need to replace candidate with candidate.text etc.)
@@ -1672,7 +1828,7 @@
                     }
                   }
                 }
-              })
+              }
             }
 
           }
@@ -1708,20 +1864,22 @@
 
       let findStartingIndexOnGrid = function (gridRef, word) {
         var ref
-        gridRef.forEach(row => {
-          row.forEach(cell => {
+        for (let i=0; i < gridRef.length; i++) {
+          let row = gridRef[i];
+          for (let j=0; j < row.length; j++) {
+            let cell = row[j];
             if (cell.vertical.hasOwnProperty('word') && cell.vertical.word.text == word) {
               ref = { row: cell.vertical.word.row, col: cell.vertical.word.column, vertical: true }
-              return false;
+              break;
             } else if (cell.horizontal.hasOwnProperty('word') && cell.horizontal.word.text == word) {
               ref = { row: cell.horizontal.word.row, col: cell.horizontal.word.column, vertical: false }
-              return false;
+              break;
             }
             if (ref) {
-              return false;
+              break;
             }
-          })
-        })
+          }
+        }
         return (ref)
       }
 

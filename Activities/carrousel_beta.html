@@ -3,7 +3,7 @@
     "cols_min":1,
     "cols_max":5,
     "rows_min":1,
-    "cols":[{"title":"Front","text":true,"image":true},{"title":"Back","text":true,"image":true},{"title":"Show from","text":false,"image":false,"datetime":true},{"title":"Show until","text":false,"image":false,"datetime":true},"Category"],
+    "cols":[{"title":"Front","text":true,"image":true,"defaultShowDetailButton": true},{"title":"Back","text":true,"image":true,"defaultShowDetailButton": true},{"title":"Show from","text":false,"image":false,"datetime":true},{"title":"Show until","text":false,"image":false,"datetime":true},"Category"],
     "description": "For displaying images or information. Items can be shown from and until specific dates. The parameter columns allows items to be shown according to the URL parameter `show`. If no parameter is given, all items will be shown.",
     "markdown_support":true,
     "empty_cells_allowed":true,
@@ -3989,6 +3989,12 @@
     var fontSizeAdjustDelay
 
     function pageLoad() {
+
+        if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }
+
+
       if (gameSettings.category.length > 0){
         gameSettings.categories = gameSettings.category.split(/\s*,\s*/)
       } else {

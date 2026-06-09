@@ -632,6 +632,11 @@
       var elapsedSeconds = 0
 
       function pageLoad(){
+        if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }
+
+
         if (gameSettings.color.toLowerCase() != 'default'){
           setColorTheme(gameSettings.color.toLowerCase())
         }

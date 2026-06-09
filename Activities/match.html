@@ -26,8 +26,19 @@
       {"name":"minAttempts","label":"Minimum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to show the “show answers” button after a number of attempts.","category":"behavior"},
       {"name":"maxAttempts","label":"Maximum attempts","type":"number","min":0,"default":0,"info":"Set to a number higher than 0 to prevent answers after a number of attempts.","category":"behavior"},
       {"name":"checkButton","label":"Check button","type":"text","default":"check","category":"language"},
+      {"name":"pass","label":"Completion % (SCORM only)","type":"number","default":80,"max":100,"category":"behavior"},
       {"name":"attemptsText","label":"Attempts text","type":"text","default":"attempts: ","category":"language"},
-      {"name":"pass","label":"Completion % (SCORM only)","type":"number","default":80,"max":100,"category":"behavior"}
+      {"name":"srDragableContainerLabel","label":"Card bank label","type":"text","default":"Bank","category":"language","info":"For screen readers only."},
+      {"name":"srStaticContainerLabel","label":"Static container label","type":"text","default":"Answers","category":"language","info":"For screen readers only."},
+      {"name":"srDragableCardLabel","label":"Dragable card label","type":"text","default":"Moveable Card","category":"language","info":"For screen readers only."},
+      {"name":"srStaticCardLabel","label":"Static card text","type":"text","default":"Answer Card","category":"language","info":"For screen readers only."},
+      {"name":"srSelectedText","label":"Selected text","type":"text","default":"selected","category":"language","info":"For screen readers only."},
+      {"name":"srUnselectedText","label":"Unselected text","type":"text","default":"unselected","category":"language","info":"For screen readers only."},
+      {"name":"srMatchedText","label":"Matched text","type":"text","default":"matched","category":"language","info":"For screen readers only."},
+      {"name":"srReturnedToBankText","label":"Returned to bank text","type":"text","default":"returned to bank","category":"language","info":"For screen readers only."},
+      {"name":"srDetachedText","label":"Detached text","type":"text","default":"detached","category":"language","info":"For screen readers only."},
+      {"name":"srLockedText","label":"Detached text","type":"text","default":"correct","category":"language","info":"For screen readers only."}
+      
     ],
     "sample_datas":[
       {"title":"British Denonyms","activity":[["English","England"],["Welsh","Wales"],["Scottish","Scotland"],["Irish","Ireland"],["British","Britain"],["","Weland"],["Scotish",""],["Anglish",""]]},
@@ -348,6 +359,16 @@
         background-repeat: no-repeat;
         background-position: center;
         background-size: contain;
+      }
+
+      .card:focus{
+        transform: scale(1.1);
+      }
+
+      .card.selected{
+        transform: scale(1.2), translateY(-5px) !important;
+        border-width: 4px !important;
+        opacity: 1 !important;
       }
 
       .dragable{
@@ -934,19 +955,30 @@ s
       var shrunkCardContainer = false
       const listModeMaximum = 12 // above this many static cards, cards will be displayed inline instead of a list
       var originalListOrderedByDragable = false // we'll use this bool to disable sorting alphabetically if the user put their data in alphabetical order to begin with (it will make matching too easy!)
+      var selectedCard = null
 
 
       function pageLoad(){
+        if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }        
+        
         cardContainer = document.getElementById('cardContainer')
         staticContainer = document.getElementById('staticContainer')
+
+        // set names for accessibility
+        cardContainer.setAttribute('aria-label',gameSettings.srDragableContainerLabel)
+        staticContainer.setAttribute('aria-label',gameSettings.srStaticContainerLabel)
+
         seperateCards(gameData) // fills dragableList and staticList
         // now we'll make a list that has just the words in the dragable list, without the index (which the scorm uses to save positions)
         var wordsInDragableList = []
         for (let i = 0; i<dragableList.length; i++){
-          if (dragableList[i].word != ''){
-            wordsInDragableList.push(dragableList[i].word)
+          if (dragableList[i].text != ''){
+            wordsInDragableList.push(dragableList[i].text)
           }
-        }
+        }     
+        console.log('Words in dragable list: ' + wordsInDragableList.join(', '))   
         // and use that list to check if they're in a dragable order (we need this later when applying settings)
         originalListOrderedByDragable = checkListOrder(wordsInDragableList)        
         // now we can safely shuffle the cards and fill our lists
@@ -1146,37 +1178,42 @@ s
         }
       }
 
-      function addCard(word,index,container,dragable=false){ // note that words might actually be images! hooray for updates!
-        newCard = document.createElement('div')
-        newCard.setAttribute('class', 'card')
-        newCard.setAttribute('id', 'card' + cardCount) //note: not the same as data-index
-        newCard.setAttribute('data-index',index)
+      function addCard(front,index,container,dragable=false){
+         let newCard = newElement('div', {class: 'card', id: 'card' + cardCount, 'data-index': index, tabindex: 0, dataType: dragable ? 'dragable' : 'static', role: 'button', ariaRoledescription: (dragable ? gameSettings.srDragableCardLabel : gameSettings.srStaticCardLabel), ariaLabel: front.text ? front.text : front}) // note: data-index is not the same as the index used for saving in scorm, which is hashed and stored in data-value. This is just for reference
       
-        if(typeof word == 'string'){ // if simple string card, just add as is
-          newCard.innerHTML = word
-          newCard.setAttribute('data-value',word)
-        } else if (typeof word == 'object' && !word.hasOwnProperty('image')) {
-          newCard.innerHTML = word.text
-          newCard.setAttribute('data-value',word.text)
-        } else if (word.hasOwnProperty('image')){
-            addImageToEl(newCard, word.image, word.text)
+        newCard.addEventListener('keydown', function(event){
+          if (event.key === 'Enter' || event.key === ' '){ // allow selecting cards with enter or space
+            event.preventDefault() // prevent scrolling when space is pressed
+            selectCard(this)
+          }
+        })
+
+        if(typeof front == 'string'){ // if simple string card, just add as is
+          newCard.innerHTML = front
+          newCard.setAttribute('data-value',front) 
+        } else if (typeof front == 'object' && !front.hasOwnProperty('image')) {
+          newCard.innerHTML = front.text
+          newCard.setAttribute('data-value',front.text)
+        } else if (front.hasOwnProperty('image')){
+            addImageToEl(newCard, front.image, front.text)
             if(gameSettings.imageSize<=50){
               // when images are shown small, use a slightly different class so that the answers attach sidewise (like they do with words)
               newCard.classList.add('icon')  
             } else {
               newCard.classList.add('image')
             }            
-            newCard.setAttribute('data-value',word.image.data)
-            if(word.image.dimensions.width > 0 && word.image.dimensions.height > 0){
-              newCard.style.aspectRatio = `${word.image.dimensions.width}/${word.image.dimensions.height}`        
+            newCard.setAttribute('data-value',front.image.data)
+            if(front.image.dimensions.width > 0 && front.image.dimensions.height > 0){
+              newCard.style.aspectRatio = `${front.image.dimensions.width}/${front.image.dimensions.height}`        
             } else {
               newCard.style.aspectRatio = '1/1'
             }
         }
         // newCard.classList.add('notransition') // will be removed afterwards
+        newCard.setAttribute('onclick', 'selectCard(this)') // all cards are selectable
         if (dragable){
           newCard.setAttribute('onmousedown', 'dragElement(event, this)')
-          newCard.setAttribute('ontouchstart', 'dragElement(event, this)')
+          newCard.setAttribute('ontouchstart', 'dragElement(event, this)')          
           newCard.classList.add('dragable')
           container.appendChild(newCard)
           // use following for magnet board
@@ -1192,7 +1229,7 @@ s
           if (staticList.length > listModeMaximum || gameSettings.forceCompact){
             cardWrapper.classList.add('inline')
           }
-          if (word.hasOwnProperty('image') && gameSettings.imageSize>50){
+          if (front.hasOwnProperty('image') && gameSettings.imageSize>50){
             cardWrapper.classList.add('with-image') // only count it as holding an image if it's big enough
           }
           container.appendChild(cardWrapper)
@@ -1201,15 +1238,15 @@ s
         }
         cardCount++
       }
-      function addCards(wordList,dragable=false){
+      function addCards(valueList,dragable=false){
         if(dragable){
           container = cardContainer
         } else {
           container = staticContainer
         }
-        for(let i=0;i<wordList.length;i++){
-          if((typeof wordList[i].word == 'string' && wordList[i].word != '') || (typeof wordList[i].word == 'object' && (wordList[i].word.text != '' || wordList[i].word.hasOwnProperty('image')))){
-            addCard(wordList[i].word,wordList[i].index,container,dragable)
+        for(let i=0;i<valueList.length;i++){
+          if((typeof valueList[i] == 'string' && valueList[i] != '') || (typeof valueList[i] == 'object' && (valueList[i].text != '' || valueList[i].hasOwnProperty('image')))){
+            addCard(valueList[i],i,container,dragable)
           } else if (!dragable){
             blankCards++
           }
@@ -1226,8 +1263,13 @@ s
         // 1. Someone might make a small update to the activity to fix a typo for example. This would break saved scorm states if we used the word for the hash.
         // 2. There could be two words that are the same, in which case we wouldn't be able to differentiate them!
         for(let i=0;i<data.length;i++){
-          dragableList.push({word:data[i][1], index: ('d'+i).hashCode()})
-          staticList.push({word:data[i][0], index: ('s'+i).hashCode()})
+          let staticCard = {text:data[i][0].text, index: ('s'+i).hashCode()}
+          if (data[i][0].hasOwnProperty('image')){
+            staticCard.image = data[i][0].image
+          }
+          let dragableCard = {text:data[i][1], index: ('d'+i).hashCode()}
+          dragableList.push(dragableCard)
+          staticList.push(staticCard)        
           if (data[i][0].text != "" || data[i][0].hasOwnProperty('image')){
             totalCount++
           }
@@ -1251,11 +1293,11 @@ s
       function getCorrectAnswers(){
         let answers = []
         staticList.forEach(staticCard => {
-          let possibleMatches = gameData.filter(dataPoint => dataPoint[0] == staticCard.word)
+          let possibleMatches = gameData.filter(dataPoint => dataPoint[0] == staticCard.text)
           if (possibleMatches.length > 0){
             // we'll just take the first one
             // TO DO: indicate when there is more than one correct answer
-            let dragableCard = dragableList.find(item => item.word == possibleMatches[0][1])
+            let dragableCard = dragableList.find(item => item.text == possibleMatches[0][1])
             answers.push({static: staticCard.index, dragable: dragableCard.index})
           }
         })        
@@ -1272,6 +1314,108 @@ s
             attachCards(dragableCard, staticCard)
           }
         })
+      }
+
+      function selectCard(card){
+        if (selectedCard == null){
+          selectedCard = card
+          card.classList.add('selected')
+          announceCardState(card, gameSettings.srSelectedText)
+          if (card.dataset.type == 'dragable'){
+            firstAvailableStaticCard = document.querySelector('.static:not(.attached)')
+            if (firstAvailableStaticCard != null){
+              firstAvailableStaticCard.focus() // move focus to the first available static card, so that keyboard users know where to go next
+            }
+          }
+        } else if (selectedCard == card){
+          selectedCard.classList.remove('selected')
+          selectedCard.blur() // remove focus so that it doesn't look like it's still selected, even though it's not
+          announceCardState(selectedCard, gameSettings.srUnselectedText)
+          selectedCard = null          
+        } else {
+          if (selectedCard.dataset.type != card.dataset.type && !selectedCard.classList.contains('locked') && !card.classList.contains('locked')){ // if the two cards are different types and neither of them is locked in place
+            let dragableCard = selectedCard.dataset.type == 'dragable' ? selectedCard : card
+            let staticCard = card.dataset.type == 'static' ? card : selectedCard
+
+            // if the dragable card is already attached to something, we should detach it first
+            if(dragableCard.classList.contains('attached')){
+              let otherStaticCard = dragableCard.parentElement.querySelector('.static')     
+
+              detachCards(dragableCard,otherStaticCard,pos3,pos4)            
+            }
+
+            if(staticCard.classList.contains('attached')){ // if the card we're trying to attach to is already attached to something, we should detach it first
+              let otherDragableCard = staticCard.parentElement.querySelector('.dragable, .exdragable')
+
+              detachCards(otherDragableCard,staticCard,pos3,pos4)
+              dropCard(otherDragableCard)
+            }
+
+            attachCards(dragableCard, staticCard)
+            selectedCard.blur()
+            card.blur()
+            selectedCard.classList.remove('selected')
+            selectedCard = null          
+          } else {
+            selectedCard.classList.remove('selected')
+            selectedCard = card
+            card.classList.add('selected')            
+          }
+        } 
+      }
+
+      function returnCardToBank(event){
+          if (event && event.target !== event.currentTarget) return;
+
+        if (selectedCard != null && selectedCard.dataset.type == 'dragable'){
+          if (selectedCard.classList.contains('exdragable')){
+            detachCards(selectedCard,selectedCard.parentElement.children[0],pos3,pos4)            
+          }
+            dropCard(selectedCard)
+
+            selectedCard.classList.remove('selected')
+            selectedCard.blur() // remove focus so that it doesn't look like it's still selected, even though it's not
+            selectedCard = null            
+        }
+      }
+
+      function handleKeyDown(event){
+        if (event.key === 'Enter' || event.key === ' '){ // if the user presses enter or space
+          event.preventDefault() // prevent scrolling when space is pressed
+          selectCard(event.target)
+        }
+      }
+
+      let srAnnounceTimer = null
+
+      function srCardTypeLabel(card){
+        return card.dataset.type == 'dragable'
+        ? gameSettings.srDragableCardLabel
+        : gameSettings.srStaticCardLabel
+      }
+
+      function srCardText(card){
+        let val = card.getAttribute('data-value')
+        return (val && val.trim() !== '') ? val : ''
+      }
+
+      function announce(message){
+        let status = document.getElementById('sr-status')
+        if (!status || !message) return
+        status.textContent = ''
+        clearTimeout(srAnnounceTimer)
+        srAnnounceTimer = setTimeout(function(){
+        status.textContent = message
+        }, 20)
+      }
+
+      function announceCardState(card, stateText){
+        let typeText = srCardTypeLabel(card)
+        let valueText = srCardText(card)
+        let msg = valueText !== ''
+        ? (typeText + ': ' + valueText + '. ' + stateText)
+        : (typeText + '. ' + stateText)
+        announce(msg)
       }
 
 
@@ -1493,6 +1637,13 @@ s
         if(gameSettings.checkMode == 'auto'){
           getFeedback()
         }
+
+        announce(
+          dragableCard.ariaLabel + ' ' +
+          gameSettings.srMatchedText + ' ' +
+          staticCard.ariaLabel
+        )
+
       }
       function detachCards(dragableCard,staticCard,mouse_x,mouse_y){
         cardContainer.appendChild(dragableCard)
@@ -1510,6 +1661,12 @@ s
         // set the element's new position:
         dragableCard.style.top = mouse_y - (dragableCard.offsetHeight/2) + "px";
         dragableCard.style.left = mouse_x - (dragableCard.offsetWidth/2) + "px";
+
+        announce(
+          dragableCard.ariaLabel + ' ' +
+          gameSettings.srDetachedText + ' ' +
+          staticCard.ariaLabel
+        )
 
       }
       function pickUpCard(dragableCard,mouse_x,mouse_y){
@@ -1563,6 +1720,10 @@ s
             showShowAnswersButton()
           }
         }
+
+        announce(
+          scoreAsPercentage + '% '          
+        )
       }
 
       function showRemainingAttempts(){
@@ -1577,6 +1738,10 @@ s
         } else {
           attemptsText.innerHTML = gameSettings.attemptsText + ' ' + attempts + '/' + gameSettings.maxAttempts
         }
+
+        announce (
+          attemptsText.textContent
+        )
       }
 
       function showShowAnswersButton(){
@@ -1632,6 +1797,18 @@ s
         element.classList.add('locked')
         element.onmousedown = null
         element.ontouchstart = null
+        element.removeEventListener('keydown', handleKeyDown)
+
+
+        // for accessibility, make locked cards unfocusable – instead, the parent element (the card wrapper) will be focusable so that the user can still access the information about the card, but it won't seem like they are selecting the card itself which is now locked in place
+        element.setAttribute('tabindex', -1)
+        element.parentElement.setAttribute('tabindex', 0)
+
+        // below may run twice, but better to run it twice than to miss it
+        // add label to clarify that the two cards are matched and correct        
+        let staticCard = element.parentElement.querySelector('[data-type="static"]')
+        let dragableCard = element.parentElement.querySelector('[data-type="dragable"]')
+        element.parentElement.setAttribute('aria-label', (staticCard && dragableCard) ? (staticCard.ariaLabel + ' ' + gameSettings.srMatchedText + ' ' + dragableCard.ariaLabel + ' ' + gameSettings.srLockedText) : element.ariaLabel + ' ' + gameSettings.srLockedText)
       }
 
       function compareCards(staticCard,dragableCard){
@@ -1799,6 +1976,38 @@ s
         el.title = text
     }
 
+    function newElement(tag, properties = {}, innerHTML = '') {
+    let el = document.createElement(tag)
+    for (const property in properties) {
+        let propertyName
+        if (property.startsWith('_')) {
+            // we'll use leading underscores to indicate direct property setting (forcing camel case to be preserved)
+            propertyName = property.slice(1) // remove leading underscore
+        } else {
+            propertyName = property.replaceAll(/([A-Z])/g, '-$1').toLowerCase() // change camel case to kebab-case
+        }
+        
+        if(propertyName == 'disabled' || propertyName == 'checked' || propertyName == 'required' || propertyName == 'selected'){
+            el[propertyName] = properties[property] // for disabled, checked and required, we need to set these differently            
+        } else {
+            el.setAttribute(propertyName, properties[property])
+        }        
+    }
+    if (typeof innerHTML == 'string' || typeof innerHTML == 'number') {
+        el.innerHTML = String(innerHTML)
+    } else if (Array.isArray(innerHTML)) {
+        innerHTML.forEach(child => {
+            if (child instanceof Element) {
+                el.appendChild(child)
+            }
+        })
+    } else if (innerHTML instanceof Element) {
+        el.appendChild(innerHTML)
+    }
+    return el
+}
+
+
         // adapted from https://www.svgbackgrounds.com/tools/svg-to-css/
         function modern_SVG2CSS(SVG_input) {
       var safe_svg = SVG_input.replace('width="100%"', '') // remove width property
@@ -1858,10 +2067,11 @@ s
           </div>
                  
         </div>
-        <div id="cardContainer" class="container notransition"></div>
+        <div id="cardContainer" class="container notransition" onclick="returnCardToBank(event)" role="region" aria-label="Bank"></div>
       </div>
+      <div id="sr-status" role="status" aria-live="polite" aria-atomic="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
       <div class="wrapper notransition" id="staticWrapper"> <!-- no transition will be removed after settings are applied-->
-        <div id="staticContainer" class="container"></div>
+        <div id="staticContainer" class="container" role="region" aria-label="Answers"></div>
       </div>
       <div id="controls" class="notransition"><!-- no transition will be removed after settings are applied-->
         <button id="check-btn" class="notransition" onclick="getFeedback();">check</button><!-- no transition will be removed after settings are applied-->

@@ -18,7 +18,10 @@
         ]},
       {"name":"spinnerLimit","label":"Number of spinner items","type":"number","min":4,"default":9},      
       {"name":"zoomBehavior","label":"Zoom in on spinner item","type":"select","options":["When text doesn't fit","Always","Never"],"optionValues":["fit","always","never"]},
-      {"name":"autoReveal","label":"Reveal information in second columns automatically when zooming","type":"checkbox","default":false}
+      {"name":"autoReveal","label":"Reveal information in second columns automatically when zooming","type":"checkbox","default":false},
+      {"name":"spinLabel_SR","label":"Spin button label (for screen readers)","type":"text","default":"Spin","category":"accessibility"},
+      {"name":"closeLabel_SR","label":"Close button label (for screen readers)","type":"text","default":"Close","category":"accessibility"},
+      {"name":"moreLabel_SR","label":"More button label (for screen readers)","type":"text","default":"+","category":"accessibility"}
     ],
     "sample_datas":[        
          {"title":"Conversation topics","activity":[["home town", "Where are you from? What do you like about this place? What do you not like? […]"],
@@ -207,33 +210,41 @@
         }
 
         /* From tutorial https://dev.to/madsstoumann/wheel-of-fortune-with-css-p-pi-1ne9 */
-        :where(.pie) {
-            --_items: 12;
-            all: unset;
-            aspect-ratio: 1 / 1;
-            container-type: inline-size;
-            direction: ltr;
-            display: grid;
-            position: relative;
-            height: 90vh;
-            max-width: 100vw;
+        /* container */
+:where(.pie) {
+  --_items: 12;
+  all: unset;
+  aspect-ratio: 1 / 1;
+  container-type: inline-size;
+  direction: ltr;
+  display: grid;
+  position: relative;
+  height: 90vh;
+}
 
-            &::after {
-                aspect-ratio: 1/cos(30deg);
-                background-color: var(--pointer);
-                clip-path: polygon(0 0, 0% 100%, 100% 50%);
-                content: "";
-                height: 4cqi;
-                position: absolute;
-                place-self: center left;
-                scale: 1.4;
-                margin-left: -1cqi;
-                z-index: 999;                
-            }
+/* pointer */
+:where(.pie)::after {
+  aspect-ratio: 1/cos(30deg);
+  background-color: var(--pointer);
+  clip-path: polygon(0 0, 0% 100%, 100% 50%);
+  content: "";
+  height: 4cqi;
+  position: absolute;
+  place-self: center left;
+  scale: 1.4;
+  margin-left: -1cqi;
+  z-index: 999;
+  transition: opacity 500ms;
+}
 
-            &>* {
-                position: absolute;
-            }
+.zoomed :where(.pie)::after{
+    opacity: 0;
+}
+
+/* direct children */
+:where(.pie) > * {
+  position: absolute;
+}
 
             button {
                 aspect-ratio: 1 / 1;
@@ -257,7 +268,7 @@
                 transform: scale(90%);
             }
 
-            ul {
+            .pie ul {
                 all: unset;                
                 display: grid;
                 inset: 0;
@@ -265,54 +276,60 @@
                 clip-path: inset(0 0 0 0 round 50%);
                 z-index: 100;
                 pointer-events: none;
-
-
-                li {
-                    /* Following rules will be added on run */
-                    /* &:nth-of-type(1) { --_idx: 1; } */
-                    /* &:nth-of-type(2) { --_idx: 2; } */
-                    /* &:nth-of-type(3) { --_idx: 3; } */
-                    /* &:nth-of-type(4) { --_idx: 4; } */
-                    /* &:nth-of-type(5) { --_idx: 5; } */
-                    /* etc. */
-                    align-content: center;                                    
-                    clip-path: polygon(0% 0, 100% 50%, 0% 100%);
-                    display: grid;
-                    font-size: 10cqi;
-                    grid-area: 1 / -1;
-                    aspect-ratio: 1/calc(2*tan(180deg/var(--_items)));
-                    list-style: none;
-                    /* padding-left: 1ch; */
-                    text-indent: 5cqi;
-                    rotate: calc(360deg / var(--_items) * calc(var(--_idx) - 1));
-                    transform-origin: center right;
-                    width: 50cqi;
-                    transition: transform 2s, opacity 300ms, filter 5s, background-color .2s;
-                    pointer-events: auto;                    
-                }
-
-                .wedge-text{
-                    width: 80%;
-                    text-wrap: nowrap;
-                    text-overflow: ellipsis;
-                    overflow: hidden;
-                    transition: opacity 2s;
-                }
-
-                li.skipped{
-                    filter:brightness(90%) grayscale(20%);
-                }
-
-                li.skipped .wedge-text{
-                    opacity: 0;
-                }
-
-                li.current{
-                    cursor: pointer;                    
-                    background-color: var(--bg-color-selected);
-                    color: var(--fg-color-selected);
-                }
             }
+                
+
+            #innerPie > li {
+                /* Following rules will be added on run */
+                /* &:nth-of-type(1) { --_idx: 1; } */
+                /* &:nth-of-type(2) { --_idx: 2; } */
+                /* &:nth-of-type(3) { --_idx: 3; } */
+                /* &:nth-of-type(4) { --_idx: 4; } */
+                /* &:nth-of-type(5) { --_idx: 5; } */
+                /* etc. */
+                align-content: center;                                    
+                clip-path: polygon(0% 0, 100% 50%, 0% 100%);
+                display: grid;
+                font-size: 10cqi;
+                grid-area: 1 / -1;
+                aspect-ratio: 1/calc(2*tan(180deg/var(--_items)));
+                list-style: none;
+                /* padding-left: 1ch; */
+                text-indent: 5cqi;
+                rotate: calc(360deg / var(--_items) * calc(var(--_idx) - 1));
+                transform-origin: center right;
+                width: 50cqi;
+                transition: transform 2s, opacity 300ms, filter 5s, background-color .2s;
+                pointer-events: auto;                    
+            }
+
+            .wedge:focus .wedge-text{
+                font-weight: bold;
+            }
+
+            .wedge-text{
+                width: 80%;
+                text-wrap: nowrap;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                transition: opacity 2s;
+            }
+
+            #innerPie > li.skipped{
+                filter:brightness(90%) grayscale(20%);
+            }
+
+            #innerPie > li.skipped .wedge-text{
+                opacity: 0;
+            }
+
+            #innerPie > li.current{
+                cursor: pointer;                    
+                background-color: var(--bg-color-selected);
+                color: var(--fg-color-selected);
+            }
+        
+    
 
             #zoom{
                 background-color: var(--bg-color-selected);
@@ -333,6 +350,12 @@
                 min-height: 1px; /* so I can use % inside */
             }
 
+            .zoomed #zoom, .prezoomed #zoom{
+                opacity: 1;
+            }
+
+
+
             #zoom br{
                 height: 0px;
             }
@@ -341,22 +364,60 @@
                 height: 100%;
                 width: 50%;
                 float: left;
-                shape-outside: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 50 100" enable-background="new 0 0 50 100" xml:space="preserve"><path fill="%23751113" d="M6.7,50C6.7,26.1,26.1,6.7,50,6.7V0H0v100h50v-6.7C26.1,93.3,6.7,73.9,6.7,50z"/></svg>')                
+                /* shape-outside: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 50 100" enable-background="new 0 0 50 100" xml:space="preserve"><path fill="%23751113" d="M6.7,50C6.7,26.1,26.1,6.7,50,6.7V0H0v100h50v-6.7C26.1,93.3,6.7,73.9,6.7,50z"/></svg>')                 */
+                /* shape-outside: circle(50% at 100% 50%); */
+                 shape-outside: polygon(
+                    0% 0,
+                    100% 0,
+                    64% 4%,
+                    37% 10%,
+                    18% 20%,
+                    6% 33%,
+                    2% 50%,  /* Deepest point of the bite */
+                    6% 67%,
+                    18% 80%,
+                    37% 90%,
+                    64% 96%,
+                    100% 100%,
+                    0% 100%
+                );
             }
 
             .circle-shape-right{
                 height: 100%;
                 width: 50%;
                 float: right;
-                shape-outside: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 50 100" enable-background="new 0 0 50 100" xml:space="preserve"><path fill="%23751113" d="M0,0v6.7c23.9,0,43.3,19.4,43.3,43.3S23.9,93.3,0,93.3v6.7h50V0H0z"/></svg>')
+                /* shape-outside: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 50 100" enable-background="new 0 0 50 100" xml:space="preserve"><path fill="%23751113" d="M0,0v6.7c23.9,0,43.3,19.4,43.3,43.3S23.9,93.3,0,93.3v6.7h50V0H0z"/></svg>') */
+                shape-outside: polygon(
+                    100% 0,
+                    2% 0,
+                    36% 4%,
+                    63% 10%,
+                    82% 20%,
+                    94% 33%,
+                    98% 50%,  /* Deepest point of the bite */
+                    94% 67%,
+                    82% 80%,
+                    63% 90%,
+                    36% 96%,
+                    2% 100%,
+                    100% 100%
+                );
             }
 
 
             #zoomHeader{
                 font-size: 300px;
-                height: 70%;
+                height: 95%;
                 transition: transform 500ms;
+                text-align: center;
+                padding: 5%;
             }
+
+            .with-detail #zoomHeader{
+                height: 70%;                
+            }
+
 
             /* #zoomHeader div, #zoomDetail div{
                 height: 100%;
@@ -370,6 +431,7 @@
             #zoomDetail{
                 display: none;
                 transition: transform 500ms;
+                text-align: center;
             }
 
             .with-detail #zoomDetail{
@@ -389,24 +451,74 @@
                 background: none;
                 opacity: 0.5;
                 transition: opacity 300ms, transform 600ms, height 600ms;                                
-                height: 5%;
+                height: 5vh;
+                width: 5vh;
             }
 
             .zoom-button:hover{
                 opacity: 1;
             }
 
+            #zoomMore{
+                display: none;
+            }
 
-        }
+            .with-detail #zoomMore{
+                display: inline-block;                
+            }
+    
+
+            @media (orientation: portrait){ /* or: @media (max-aspect-ratio: 1/1) */
+                .pie {
+                    transform: translateX(50vw);
+                }
+                
+                #zoomHeader{
+                    width: 45%;
+                    margin-right: 2%;
+                    text-align: right;
+                    /* padding-right: 70%; */
+                }
+
+                #zoomDetail{
+                    width: 45%;
+                    margin-left: 2%;
+                    text-align: right;
+                }
+
+                .zoom-button {
+                    transform: translateX(-100%) scale(150%);
+                }
+            
+                .zoom-button:hover{
+                    transform: translateX(-100%) scale(175%);   
+                }
+            }
+
+                        
+
+
+        
     </style>
     <script>
         var pie
         var wedges = []
         var wedgesDone = 0
 
+        var windowResizeTimeout
+
         const animationDuration = 4000; // Duration of spin animation in milliseconds
 
         function pageLoad() {
+            if(gameSettings.activityName != ''){
+                window.document.title = gameSettings.activityName + ' – ' + window.document.title
+            }
+
+            // set accessibility labels from settings
+            document.getElementById('spinBtn').setAttribute('aria-label', gameSettings.spinLabel_SR)
+            document.getElementById('zoomClose').setAttribute('aria-label', gameSettings.closeLabel_SR)
+            document.getElementById('zoomMore').setAttribute('aria-label', gameSettings.moreLabel_SR)
+        
             setColorTheme(gameSettings.color.toLowerCase())
             pie = document.getElementById("pie")
 
@@ -431,6 +543,24 @@
             sounds.chime.load()
 
             makePie(data)
+
+            window.addEventListener('resize', () => {
+                clearTimeout(windowResizeTimeout)
+                windowResizeTimeout = setTimeout(() => {
+                    wedges.forEach(wedge =>{
+                        shrinkTextToFit(wedge.el.firstChild, 0.3, false)
+                    })
+                    if(document.body.classList.contains('zoomed')){                        
+                        let zoom = document.getElementById('zoom')
+                        let zoomHeader = zoom.querySelector('#zoomHeader')
+                        let zoomDetail = zoom.querySelector('#zoomDetail')
+                        shrinkTextToFit(zoomHeader.firstChild,0.9)
+                        if(zoom.classList.contains('with-detail') && zoom.classList.contains('expanded')){
+                            shrinkTextToFit(zoomDetail.firstChild,0.9)
+                        }
+                    }
+                }, 250)
+            })
         }
 
 
@@ -512,16 +642,21 @@
             let zoomClose = zoom.querySelector('#zoomClose')
             let zoomMore = zoom.querySelector('#zoomMore')
             
-            zoom.style.opacity = 1
+            document.body.classList.add('prezoomed')
             if(gameSettings.color.toLowerCase() == 'rainbow'){
                 zoom.style.backgroundColor = window.getComputedStyle(wedges[index].el).backgroundColor
             }
-            zoom.querySelector('#zoomClose').setAttribute('onclick',`zoomWedge(${index},false)`)
+            if (zoomClose){
+                zoomClose.setAttribute('onclick',`zoomWedge(${index},false)`)
+                zoomClose.tabIndex = -1 // not yet focusable
+                zoomClose.setAttribute('aria-hidden', 'true') 
+            }
             zoomHeader.innerHTML = `<div>${wedges[index].text}</div>`
             if(wedges[index].detail.length > 0){
                 zoom.classList.add('with-detail')
                 zoom.classList.add('expanded')
                 zoomDetail.innerHTML = `<div>${wedges[index].detail}</div>`
+                zoomDetail.setAttribute('aria-hidden', 'true')
                 shrinkTextToFit(zoomDetail.firstChild,0.9)
             } else {
                 zoom.classList.remove('with-detail')
@@ -531,11 +666,17 @@
             zoomHeader.style.transform = 'scale(0)'
             zoomDetail.style.transform = 'scale(0)'
 
+            if(zoomMore){
+                zoomMore.tabIndex = -1 // not yet focusable
+                zoomMore.setAttribute('aria-hidden', 'true')
+            }
+
             // time for adjustments to be made to zoom detail
             if(wedges[index].detail.length > 0 && !gameSettings.autoReveal){
                 setTimeout(function(){
                     zoomMore.innerHTML = '+'
-                    zoom.classList.remove('expanded')                    
+                    zoom.classList.remove('expanded')       
+
                 },100)
             }            
         }
@@ -544,19 +685,38 @@
             let zoom = document.getElementById('zoom')            
             let zoomHeader = zoom.querySelector('#zoomHeader')
             let zoomDetail = zoom.querySelector('#zoomDetail') 
+            let zoomMore = zoom.querySelector('#zoomMore')
+            let zoomClose = zoom.querySelector('#zoomClose')
 
             shrinkTextToFit(zoomHeader.firstChild,0.8)
 
             wedges[index].el.style.transform = zoomIn ? 'rotate(359deg)' : null
             wedges[index].el.style.zIndex = zoomIn ? '999' : null
-            zoom.style.opacity = 1
+            document.body.classList.add('zoomed')        
+            document.body.classList.remove('prezoomed')    
 
             document.getElementById('spinBtn').style.scale = zoomIn ? 0 : null        
 
             if(zoomIn){
                 sounds.winding.play()
+
+                // various things to prevent interaction and for accessibility while zoomed in
+                wedges[index].el.style.pointerEvents = 'none' // prevent clicking again while zooming in
+                wedges[index].el.tabIndex = -1 // prevent focusing while zoomed in (in case of keyboard user zooming in from the start)
+                document.getElementById('spinBtn').disabled = true // prevent spinning while zoomed in
+                document.getElementById('spinBtn').setAttribute('aria-hidden', 'true')    
+                document.getElementById('innerPie').setAttribute('aria-hidden', 'true')  
+                wedges[index].el.blur() // in case it was focused when clicked, to prevent screen reader from reading the text while zoomed in
             } else {
                 sounds.windingRev.play()
+
+                // restore interaction and accessibility when zooming out
+                wedges[index].el.style.pointerEvents = null // allow clicking again
+                wedges[index].el.tabIndex = 0 // prevent focusing while zoomed in (in case of keyboard user zooming in from the start)
+                document.getElementById('spinBtn').disabled = false // prevent spinning while zoomed in
+                document.getElementById('spinBtn').setAttribute('aria-hidden', 'false')
+                document.getElementById('innerPie').setAttribute('aria-hidden', 'false') 
+                spinBtn.focus() // move focus back to spin button, so that keyboard users aren't left focused on an invisible element
             }
 
             let i = zoomIn ? index+1 : index-1 // zooming in, start from the next wedge, otherwise from one below
@@ -598,15 +758,34 @@
                     wedges[index].el.style.pointerEvents = 'none'
                     zoomHeader.style.transform = null
                     zoomDetail.style.transform = null
+
+                    if(zoomMore && wedges[index].detail.length > 0){
+                        zoomMore.tabIndex = 0 // now focusable
+                        zoomMore.setAttribute('aria-hidden', 'false') 
+                    }
+                    if(zoomClose){
+                        zoomClose.tabIndex = 0 // now focusable
+                        zoomClose.setAttribute('aria-hidden', 'false') 
+                    }
                 },1800)                
             } else {                
                 setTimeout(function(){
-                    zoom.style.opacity = 0
+                    document.body.classList.remove('zoomed')
+                    document.body.classList.remove('prezoomed')
                 },2000)
                 zoomHeader.style.transform = 'scale(0)'
                 zoomDetail.style.transform = 'scale(0)'
                 wedges[index].el.style.opacity = null
                 wedges[index].el.style.pointerEvents = null
+
+                if(zoomMore){
+                    zoomMore.tabIndex = -1 // no longer focusable
+                    zoomMore.setAttribute('aria-hidden', 'true') 
+                }
+                if(zoomClose){
+                    zoomClose.tabIndex = -1 // no longer focusable
+                    zoomClose.setAttribute('aria-hidden', 'true') 
+                }
             }
         }     
         
@@ -614,14 +793,17 @@
             let zoom = document.getElementById('zoom')
             let expandButton = zoom.querySelector('#zoomMore')
             let zoomHeader = zoom.querySelector('#zoomHeader')
+            let zoomDetail = zoom.querySelector('#zoomDetail')
             if(zoom.classList.contains('expanded')){
                 zoom.classList.remove('expanded')
                 zoomMore.innerHTML = '+'
                 shrinkTextToFit(zoomHeader.firstChild,0.8)
+                zoomDetail.setAttribute('aria-hidden', 'true')
             } else {
                 zoom.classList.add('expanded')
                 zoomMore.innerHTML = '-'
                 shrinkTextToFit(zoomHeader.firstChild,0.8)
+                zoomDetail.setAttribute('aria-hidden', 'false')
             }
         }
 
@@ -655,7 +837,7 @@
             newFontSize--
             if (newFontSize < 12) { // if it get very small, force it to scroll instead
                 if(defaultToScroll){
-                    element.style.overflow = 'scroll'
+                    // element.style.overflowY = 'scroll'
                 }
                 // element.style.height = desiredPercent * parentHeight
             } else {
@@ -688,8 +870,12 @@
 
             let previousWedge = wedges[chosenWedge]
             if(previousWedge){
-                previousWedge.el.setAttribute('onclick',null)
+                previousWedge.el.removeAttribute('onclick')
+                previousWedge.el.onkeydown = null
                 previousWedge.el.classList.remove('current')
+                previousWedge.el.tabIndex = -1 // remove from tab order for accessibility reasons
+                previousWedge.el.setAttribute('aria-current','false') // remove current for accessibility reasons
+                previousWedge.el.setAttribute('role',null) // remove button role for accessibility reasons
             }
 
             if(gameSettings.mode == 'random sequence'){
@@ -749,11 +935,16 @@
 
             previousEndDegree = newEndDegree;
             
-            prepareZoom(chosenWedge)
+            prepareZoom(chosenWedge)            
 
             setTimeout(function(){ // after spin animation
 
                 sounds.chime.play()
+                
+                wedges[chosenWedge].el.tabIndex = 0 // make it focusable for accessibility reasons
+                wedges[chosenWedge].el.focus() // focus it for accessibility reasons
+                wedges[chosenWedge].el.setAttribute('aria-current','true') // mark as current for accessibility reasons
+                wedges[chosenWedge].el.setAttribute('role','button') // mark as button for accessibility reasons
                     
                 if(gameSettings.zoomBehavior == 'always' || gameSettings.zoomBehavior == 'fit' && (wedges[chosenWedge].el.firstChild.scrollWidth > wedges[chosenWedge].el.firstChild.offsetWidth || wedges[chosenWedge].el.firstChild.style.fontSize == '12px')){ // to do, check for fit!                    
                     setTimeout(function(){
@@ -769,13 +960,24 @@
                     spin.disabled = false
 
                     // enable manual zooming            
-                    wedges[chosenWedge].el.setAttribute('onclick',`zoomWedge(${chosenWedge})`)
+                    wedges[chosenWedge].el.addEventListener('click', function(){zoomWedge(chosenWedge)})      
                 }
 
 
 
                 // mark as current with class
                 wedges[chosenWedge].el.classList.add('current')
+
+                const currentWedgeIndex = chosenWedge
+                const activateCurrentWedge = () => zoomWedge(currentWedgeIndex)
+
+                wedges[currentWedgeIndex].el.onclick = activateCurrentWedge
+                wedges[currentWedgeIndex].el.onkeydown = event => {
+                    if (event.key === ' ' || event.key === 'Enter') {
+                        event.preventDefault()
+                        activateCurrentWedge()
+                    }
+                }
             },animationDuration)
 
         });
@@ -1218,13 +1420,13 @@ console.log('playing '+ (wedges.length < 5 ? rotations*wedges.length : rotations
 
 <body>
     <fieldset class="pie" id="pie">
-        <button id="spinBtn" type="button"></button>
+        <button id="spinBtn" type="button" aria-label="Spin"></button>
         <div id="zoom">
             <div class="circle-shape-left"></div>
             <div class="circle-shape-right"></div>
-            <button id="zoomClose" class="zoom-button">×</button>
+            <button id="zoomClose" class="zoom-button" aria-label="Close" aria-hidden="true" tabindex="-1">×</button>
             <div id="zoomHeader"></div>
-            <button id="zoomMore" class="zoom-button" onclick="expandZoom()">-</button>
+            <button id="zoomMore" class="zoom-button" onclick="expandZoom()" aria-hidden="true" tabindex="-1">-</button>
             <div id="zoomDetail"></div>
         </div>
     </fieldset>

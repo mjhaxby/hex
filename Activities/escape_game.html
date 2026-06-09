@@ -1,7 +1,7 @@
 <!--*HEX SETTINGS START*
   {
     "cols_min":3,
-    "cols":[{"title":"Section","text":true,"image":true},"Question","Answer","Req. similarity %","Req. indices","Completition message",{"title":"Unlocked section","text":true,"image":true},"Hint","Alt. Answer","===="],
+    "cols":[{"title":"Section","text":true,"image":true,"defaultShowDetailButton": true},{"title":"Question","text":true,"image":true,"url":true,"defaultShowDetailButton": true},"Answer","Req. similarity %","Req. indices",{"title":"Completition message","text":true,"image":true,"url":true},{"title":"Unlocked section","text":true,"image":true,"url":true,"defaultShowDetailButton": true},"Hint","Alt. Answer","===="],
     "description": "Learners must unlock all sections to complete the game.",    
     "markdown_support":true,
     "empty_cells_allowed":true,
@@ -93,6 +93,11 @@
 
     function pageLoad() {
 
+              if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }
+
+
       setColorTheme(gameSettings.color.toLowerCase())
 
       setUpBackground()
@@ -182,12 +187,22 @@
           answers: [data[2]],
           requiredSimilarity: ((data.length > 3 && data[3].length > 0) ? parseInt(data[3]) : gameSettings.requiredSimilarity),
           requiredIndices: ((data.length > 4 && data[4] != '') ? resolveNumberList(data[4],[index+1]) : []),
-          completionMessage: (data.length > 5 ? data[5] : ''),
+          completionMessage: (data.length > 5 ? data[5] : {text: ''}),
           sectionUnlocked: (data.length > 6 ? data[6] : null),
           hint: (data.length > 7 ? data[7] : null),
           dependentCells: [],
           dependenciesMet: 0,
           solved: false          
+        }
+        if (data[1].text == '' && !data[1].image && (!data[1].url || data[1].url == '')) {
+          cell.question.empty = true
+        } else {
+          cell.question.empty = false
+        }
+        if (cell.completionMessage.text == '' && !cell.completionMessage.image && (!cell.completionMessage.url || cell.completionMessage.url == '')) {
+          cell.completionMessage.empty = true
+        } else {
+          cell.completionMessage.empty = false
         }
         // add any additional answers
         if (data.length > 8){
@@ -221,7 +236,7 @@
               let requiredRow = Math.floor((index-1) / gameSettings.cols)
               let requiredCol = (index-1) % gameSettings.cols
               // add the co-ordinates to the dependentCells list (so long as this cell exists and has a question and an answer)
-              if (requiredRow < grid.length && requiredCol < grid[requiredRow].length &&  (grid[requiredRow][requiredCol].question != '' && grid[requiredRow][requiredCol].answers.length > 0)){
+              if (requiredRow < grid.length && requiredCol < grid[requiredRow].length &&  (!grid[requiredRow][requiredCol].question.empty && grid[requiredRow][requiredCol].answers.length > 0)){
                 grid[requiredRow][requiredCol].dependentCells.push({row: row, col: col})
               } else {
                 // if the requirement is "invalid" (refers to a section that doesn't exist, has no question or has no answer), then remove it
@@ -307,7 +322,7 @@
 
     function openSection(row,col,triggerEl){
       let cell = grid[row][col]
-      if(cell.question != ''){
+      if(!cell.question.empty){
         if(gameSettings.hoverAnimation.toLowerCase() == 'glitch'){
         unglitchEffect(triggerEl.children[0])
         // enableGlitchAnimation = false
@@ -328,6 +343,7 @@
       let hint = document.getElementById('hint')
       answer.setAttribute('onkeyup',`handleAnswerKeyUp(event,this,${row},${col})`)
       okBtn.setAttribute('onclick',`submitAnswer(${row},${col},document.getElementById('answer'))`)
+      answer.focus()
 
       hint.classList.add('hidden')
 
@@ -342,16 +358,28 @@
         answer.placeholder = makeInstruction(cell.answers)
       }
 
-      showDialogBox('questionBox',cell.question)
+      showDialogBox('questionBox',cell.question.text,true,cell.question.image,cell.question.url)
       answer.style = 'none'
       answer.value = ''
     }
 
-    function showDialogBox(id,text,showButtons=true){
+    function showDialogBox(id,text,showButtons=true,image=null,url=''){
       let dialogEl = document.getElementById(id)
       let textEl = dialogEl.querySelector('.dialog-text')
+      let imageEL = dialogEl.querySelector('.dialog-image')
       let buttons = dialogEl.querySelector('.dialog-btns')
       dialogEl.classList.remove('hidden')
+      if (image){
+        // show image
+        imageEL.classList.remove('hidden')
+        addImageToEl(imageEL,image,text)
+        textEl.classList.add('with-image')
+      } else {
+        // hide image
+        imageEL.classList.add('hidden')
+        imageEL.style = null
+        textEl.classList.remove('with-image')
+      }
       textEl.innerHTML = `<div class="inner-dialog">${replaceBrWithP(text)}</div>`
       textEl.scrollTo(0, 0)
       if(showButtons){
@@ -599,9 +627,12 @@
           cell.solved = true
           cellEl = document.getElementById(`cellContents_${cell.row}_${cell.col}`)
           cellEl.classList.add('solved')
-          if (cell.sectionUnlocked && cell.sectionUnlocked != ''){
-            if (cell.sectionUnlocked.hasOwnProperty('image')){
+          if (cell.sectionUnlocked && (cell.sectionUnlocked.text != '' || cell.sectionUnlocked.hasOwnProperty('image') || (cell.sectionUnlocked.url && cell.sectionUnlocked.url != ''))){
+            cellEl.classList.add('unlocked') // override hidden setting (if set) for unlocked sectins containing something new
+            if (cell.sectionUnlocked.hasOwnProperty('image')){         
+              cellEl.innerHTML = '' // clear existing contents
               addImageToEl(cellEl,cell.sectionUnlocked.image,cell.sectionUnlocked.hasOwnProperty('text') ? cell.sectionUnlocked.text : '')             
+              cellEl.classList.add('image')
             } else if (cell.sectionUnlocked.hasOwnProperty('text') && cell.sectionUnlocked.text != ''){
               cellEl.innerHTML = cell.sectionUnlocked.text
             }
@@ -615,8 +646,8 @@
             }            
             // to do: winning animations
           } else {
-            if (cell.completionMessage != ''){
-            showDialogBox('messageBox',cell.completionMessage)
+            if (!cell.completionMessage.empty){
+            showDialogBox('messageBox',cell.completionMessage.text,true,cell.completionMessage.image,cell.completionMessage.url)
             closeDialogBox('questionBox',false)
           } else {
             closeDialogBox('questionBox')
@@ -630,7 +661,7 @@
         if (gameSettings.completeAllToWin){
           for (let row = 0; row < grid.length; row++){
             for (let col = 0; col < grid[row].length; col++){
-              if (!grid[row][col].solved && grid[row][col].question != ''){
+              if (!grid[row][col].solved && !grid[row][col].question.empty){
                 return false
               }
             }
@@ -672,7 +703,7 @@
     function animateLoad(style){
 
       return new Promise(function (resolve, reject){
-        let cells = Array.from(document.querySelectorAll('.cell-contents:not(.blocked):not(.solved.solve-style-hide)'))
+        let cells = Array.from(document.querySelectorAll('.cell-contents:not(.blocked):not(.solved.solve-style-hide:not(.unlocked))'))
 
   
         if(style=='none'){
@@ -1349,6 +1380,10 @@
       vertical-align: center;
     }
 
+    a{
+      color: var(--fg-color)
+    }
+
     button{
       background: none;
       border: none;
@@ -1395,6 +1430,7 @@
       width: 100%;      
       background-repeat: no-repeat;    
       background-size: contain;
+      background-position: center;
       transition: opacity 600ms ease-in-out, transform 600ms ease-in-out;
     }
 
@@ -1426,6 +1462,10 @@
     .cell-contents.solved.solve-style-hide{
       opacity: 0;
       pointer-events: none;
+    }
+
+    .cell-contents.solved.solve-style-hide.unlocked{
+      opacity: 1;
     }
 
     .tinted{
@@ -1556,6 +1596,15 @@
     .dialog-btns{
       display: flex;
       position: relative;
+    }
+
+    .dialog-image{
+      height: 50%;
+      width: 100%;
+      background-position: center;
+      background-size: contain;
+      background-repeat: no-repeat;
+      margin-bottom: 1vh;
     }
 
 /* 
@@ -1749,7 +1798,8 @@
     <div id="questionBox" class="dialog-box hidden">
       <div class="dialog-box-background"></div>
       <button class="close-btn" onclick="closeDialogBox('questionBox')">×</button>
-      <div id="question" class="dialog-text"></div>      
+      <div id="questionImage" class="dialog-image hidden"></div>
+      <div id="questionText" class="dialog-text"></div>      
       <input id="answer">      
       <div class="dialog-btns">
         <button id="questionBoxBtn" class="ok-btn">ok</button>
@@ -1760,6 +1810,7 @@
     <div id="messageBox" class="dialog-box hidden">
       <div class="dialog-box-background"></div>
       <button class="close-btn" onclick="closeDialogBox('messageBox')">×</button>
+      <div id="messageImage" class="dialog-image hidden"></div>
       <div id="message" class="dialog-text"></div>      
       <div class="dialog-btns">
         <button id="messageBoxBtn" class="ok-btn" onclick="closeDialogBox('messageBox')">ok</button>

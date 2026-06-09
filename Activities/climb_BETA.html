@@ -1,11 +1,14 @@
 <!--*HEX SETTINGS START*
   {
+    "markdown_support":true,
     "cols_min":2,
-    "rows_min":1,
+    "rows_min":1,    
     "cols":[{"title":"Question","text":true,"image":true},{"title":"Answer","text":true,"image":false},{"title":"Alternative Answer","text":true,"image":false},"===="],
     "description":"Type or choose the right word to go up.",
     "settings":[
-      {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait"],"category":"look and feel"},
+      {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait","Neon"],"category":"look and feel"},
+      {"name":"font","label":"Font","type":"font_family","category":"look and feel","var":"main-font"},
+      {"name":"borderRadius","label":"Border roundness","type":"select","options":["None","Normal","Extra"],"optionValues":[0,7,14],"default":7,"category":"look and feel"},
       {"name":"shuffle","label":"Shuffle","type":"checkbox","default":true,"category":"gameplay"},
       {"name":"theme","label":"Theme","type":"select","options":["Balloon ride","Ocean","Trip to the moon","Custom"],"category":"look and feel","dependents":
         [
@@ -201,6 +204,8 @@
       --power-low: #e85252;
       --power-med: #eee690;
       --power-high: #7ded99;
+
+      --border-radius: 7px;
     }
 
     [data-theme="rose garden"] {
@@ -398,6 +403,23 @@
       --close-enough: #DE9654;
       --half-correct: #EDE8AB;
     }
+    [data-theme="neon"]{
+      --bg-color: black;
+      --fg-color: rgb(0, 255, 38);
+      --color1: rgb(255, 0, 170);
+      --color2: rgb(0, 208, 255);
+      --color3: rgb(246, 255, 0);          
+      --on-color1: #000000;
+      --on-color2: #000000;
+      --on-color3: #000000;
+      --fg-color-active: rgb(0, 255, 38);;
+      --correct: rgb(0, 255, 38);
+      --incorrect: rgb(255, 0, 0);
+      --close-enough: rgb(251, 255, 0);
+      --half-correct: rgb(251, 255, 0);
+      --on-correct: #000000;
+      --on-incorrect: #000000;
+    }
 
     body {
       font-family: ShareTech;
@@ -472,7 +494,7 @@
       background-color: var(--bg-color);
       background-size:contain;
       color: var(--fg-color);
-      border-radius: 7px;
+      border-radius: var(--border-radius);
       text-align: center;
       vertical-align: top;
       padding: 2px;
@@ -583,7 +605,7 @@
       padding: 0.25em;
       font-size: 0.75em;
       border: solid var(--bg-color) 2px;
-      border-radius: 7px;
+      border-radius: var(--border-radius);
       background-color: var(--fg-color);
       color: var(--bg-color);
       z-index: 999;
@@ -677,7 +699,7 @@
       z-index: 999;
       background-color: var(--fg-color);
       color: var(--bg-color);
-      border-radius: 7px;
+      border-radius: var(--border-radius);
       padding: 0.5em;
       margin: 0;
       position: absolute;
@@ -754,6 +776,20 @@
       margin-top: 8px;
       font-size: 0.75em;
       cursor: pointer;
+      stroke: var(--fg-color);
+      stroke-width: 10px;
+      border: none;
+      opacity: 0.5;
+      z-index: 99999;
+    }
+
+    #abandon:hover{
+      opacity: 1;
+    }
+
+    #abandon svg{
+      width: 3vh;
+      height: 3vh;
     }
 
     #scrollingBackground {
@@ -896,10 +932,16 @@
     }
 
     function pageLoad() {
+              if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }
+
+
       incorrectColor = getComputedStyle(document.documentElement).getPropertyValue('--incorrect').trim();
       correctColor = getComputedStyle(document.documentElement).getPropertyValue('--correct').trim();
       halfCorrectColor = getComputedStyle(document.documentElement).getPropertyValue('--half-correct').trim();
       setColorTheme(gameSettings.color.toLowerCase())
+      setBorderRadius(gameSettings.borderRadius)
 
       if (gameSettings.difficulty == 'Very easy') {
         // speed = speed * 1
@@ -1088,6 +1130,10 @@
       if (theme != 'default') {
         document.documentElement.setAttribute('data-theme', theme)
       }
+    }
+
+    function setBorderRadius(radius){
+      document.documentElement.style.setProperty('--border-radius', radius + 'px');
     }
 
     // TO DO: To remove??
@@ -1450,8 +1496,10 @@ function animationExists(animationName) {
         numButtons = uniqueAnswers.length
       }
       for (let i = 0; i < numButtons; i++) {
-        btn = document.getElementById('mc_button_' + i)
-        btn.parentElement.classList.add('disabled')
+        let btn = document.getElementById('mc_button_' + i)
+        if(btn){
+          btn.parentElement.classList.add('disabled')
+        }
       }
     }
 
@@ -1741,8 +1789,12 @@ function animationExists(animationName) {
       // if they click this button, word falls quicker because otherwise it's too easy to use this button to cheat!
       let fallingCard = document.getElementById('item_' + (numItems - 1));
       extraSpeed = 800;
-      fallingCard.classList.add('fallingQuicker')
-      disableMultipleChoiceButtons()
+      if (fallingCard){
+        fallingCard.classList.add('fallingQuicker')
+      }
+        if(MultiChoiceMode){
+          disableMultipleChoiceButtons()
+        }
       if (confirm(gameSettings.abandonText) == true) {
         showLoseOnceFallen()
         currentFalling = words.length
@@ -2521,7 +2573,8 @@ function animationExists(animationName) {
       class="notransition"></input>
     <button id="guessButton" class="notransition">Guess</button>
   </div>
-  <div id="abandon" onclick="abandon()">✖️</div>
+  <button id="abandon" onclick="abandon()"><svg class="icon cross" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;"> <g transform="rotate(45 50 50)"> <g transform="matrix(1.00921,0,0,1.07529,4.6257,-9.15356)"> <path d="M44.96,94.233L44.96,15.389" style="fill:none;stroke:inherit;stroke-width:inherit;"/> </g> <g transform="matrix(6.17965e-17,1.00921,-1.07529,6.58427e-17,108.938,4.40986)"> <path d="M44.96,94.233L44.96,15.389" style="fill:none;stroke:inherit;stroke-width:inherit;"/> </g> </g> </svg></button>
+</div>
 </body>
 <!-- Module for finding colors between colors. From: https://github.com/anomal/RainbowVis-JS -->
 <script>

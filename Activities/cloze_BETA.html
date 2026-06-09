@@ -337,6 +337,10 @@
     const timeOfPageLoad = Date.now()     
 
     function pageLoad() {      
+                if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }
+
         
             setColorTheme(gameSettings.color.toLowerCase())
 

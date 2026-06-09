@@ -1135,6 +1135,10 @@
       }
 
       function pageLoad(){
+        if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }
+
         soundsEnabled = gameSettings.soundsEnabled
         if (gameSettings.color.toLowerCase() != 'default'){
             document.documentElement.setAttribute('data-theme', gameSettings.color.toLowerCase());

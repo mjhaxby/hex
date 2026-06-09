@@ -905,6 +905,11 @@
         var gameStarted
 
         function pageLoad() {
+                    if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }
+
+        
             if(gameSettings.scorm){
                 doLMSInitialize()
             }

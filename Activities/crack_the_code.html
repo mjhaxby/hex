@@ -534,6 +534,7 @@
       right: 0;
       border: none;
       transition: 0.3s;
+      z-index: 9999;
     }
 
     #codeButton:hover {
@@ -936,7 +937,7 @@
     <script charset="utf-8">      
 
       var alphabetRegex = /[A-z]/
-      var alphabetExtensionRegex = /[^\s,.?/:;"“”\\{}()\[\]!£\$%*…«»？！、。「」¡¿≥≤<>~A-z]/
+      var alphabetExtensionRegex = /[^\s,.?/:;‘’"“”'\\{}()\[\]!£\$%*…«»？！、。「」¡¿≥≤<>~A-z]/
       var cipher = new Array(); // we'll put our Codes in here
       var dictionary = new Array(); // we'll put our Phrases in here
       var stats = new Array(); // we'll record number of times a letter is used here
@@ -1005,6 +1006,7 @@
                 innerLetterEl.setAttribute('id', `key_letter_input_${+numExistingKeys}`)
                 this.keyInput.push(innerLetterEl)
                 innerLetterEl.setAttribute('tabindex', 0) 
+                innerLetterEl.classList.add('key_letter_input')
             } else if (!dummy){
               letterEl.setAttribute('id', `phrase_letter_${phraseNum}_${letterNum}`)
                 innerLetterEl.setAttribute('id', `phrase_letter_input_${phraseLetterCount}`)
@@ -1663,7 +1665,7 @@
         let keyLetterInputs = Array.from(document.getElementsByClassName('key_letter_input'))      
         keyLetterInputs.forEach(input => {
           if(input.value.length > 0){
-            let char = {id: parseInt(input.id.replace('key_letter_input_','')), char: input.value}
+            let char = {id: parseInt(input.getAttribute('data-symbol')), char: input.value}
             output.push(char)
           }
         })
@@ -1672,8 +1674,10 @@
 
       function fillChars(chars){
         chars.forEach(char => {
-          let keyLetterInput = document.getElementById('key_letter_input_'+char.id)
-          keyLetterInput.value = char.char
+          // let keyLetterInputs = document.getElementsByClassName('key_letter_input_'+char.id)
+          // for (i=0; i<keyLetterInputs.length; i++){
+          //   keyLetterInputs[i].value = char.char
+          // }
 
           let phraseLetterInputs = document.getElementsByClassName('phrase_letter_input_'+char.id)
 
@@ -1743,6 +1747,12 @@
       }
 
       function pageLoad(){
+
+                if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }
+
+        
         if (gameSettings.color.toLowerCase() != 'default'){
           setColorTheme(gameSettings.color.toLowerCase())
         }
@@ -1837,13 +1847,13 @@
 
       function showHideCode() {
         codeBox = document.getElementById('codeBox')
-        gridEl = document.getElementById('grid')
+        // gridEl = document.getElementById('grid')
         if (codeBox.style.display == 'block') {
           codeBox.style.display = 'none'
-          gridEl.style.display = 'block'
+          // gridEl.style.display = 'block'
         } else {
           codeBox.style.display = 'block'
-          gridEl.style.display = 'none'
+          // gridEl.style.display = 'none'
         }
       }
 

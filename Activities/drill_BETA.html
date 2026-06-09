@@ -401,6 +401,11 @@
         }
 
         function pageLoad() {
+                    if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }
+
+        
             voiceSelect = document.getElementById('voiceSelect')
             populateVoiceList()
             if (speechSynthesis.onvoiceschanged !== undefined) {

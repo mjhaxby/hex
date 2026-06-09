@@ -58,6 +58,11 @@
 
         function pageLoad() {
 
+                    if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }
+
+
             // set color
             setColorTheme(gameSettings.color.toLowerCase());
 
