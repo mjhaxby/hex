@@ -29,6 +29,7 @@
       {"name":"startMessage","label":"Start instruction","type":"text","default":"Click anywhere to start.","category":"language"},
       {"name":"winMessage","label":"Winning message","type":"text","default":"Champion!","category":"language"},
       {"name":"loseMessage","label":"Losing message","type":"text","default":"GAME OVER","category":"language"},
+      {"name":"abandonBtnText","label":"Abandon game","type":"text","default":"Abandon game","category":"language","info":"For screen readers only"},
       {"name":"abandonText","label":"Abandon game confirmation","type":"text","default":"Do you want to end the game?","category":"language"},
       {"name":"resetButton","label":"Reset button","type":"text","default":"Reset","category":"language"},
       {"name":"showAnswersInstruction","label":"Show answers instruction","type":"text","default":"Click on the fallen words to reveal the answer","category":"language"},
@@ -662,11 +663,12 @@
       }
 
       function pageLoad(){
-                if(gameSettings.activityName != ''){
+        if(gameSettings.activityName != ''){
           window.document.title = gameSettings.activityName + ' – ' + window.document.title
         }
 
-
+        document.getElementById('abandon').ariaLabel = gameSettings.abandonBtnText
+        document.getElementById('abandon').title = gameSettings.abandonBtnText
         
         incorrectColor = getComputedStyle(document.documentElement).getPropertyValue('--incorrect').trim();
         correctColor = getComputedStyle(document.documentElement).getPropertyValue('--correct').trim();
@@ -1264,6 +1266,7 @@
         newWord.setAttribute('data-answer',word.answers[0])
         newWord.innerHTML = word.drop
         newWord.setAttribute('title',word.drop) // add hover text so we can see it before it finishes appearing
+        announce(word.drop) // for screen readers
         // new words go in the card holder
         // the drop area dictates their position, but it isn't their parent element because it needs to have position: relative
         // for some reason relative position messes up the function to move fallen cards around
@@ -1496,6 +1499,7 @@
           guessInput.style = 'background-color: var(--correct)'          
           // guessButton.style = 'border: 2px solid var(--correct);'
           guessButton.innerHTML = gameSettings.correctMessage
+          announce(gameSettings.correctMessage)
           guessInput.disabled = true;
         }
         // for all modes
@@ -1584,6 +1588,7 @@
           disableMultipleChoiceButtons()
         } else { // if typing mode
           guessButton.innerHTML = gameSettings.incorrectMessage
+          announce(gameSettings.incorrectMessage)
           guessInput.disabled = true
         }        
       
@@ -1605,6 +1610,17 @@
           badSound.play()
         }
       }
+
+          function announce(text){
+      const announcer = document.getElementById('announcements')
+      if (!announcer) {
+        return
+      }
+      announcer.textContent = ''
+      window.requestAnimationFrame(() => {
+        announcer.textContent = text
+      })
+    }
 
       // from https://stackoverflow.com/questions/10473745/compare-strings-javascript-return-of-likely
       function similarity(s1, s2) {
@@ -1651,6 +1667,7 @@
   </script>
   <!-- notransition is removed after applying the theme -->
   <body class="notransition">
+      <div id="announcements" role="status" aria-live="polite" aria-atomic="true" style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;"></div>
     <div id="score" class="odometer"></div>
     <div id="wordsLeftContainer"><div id="wordsLeft" class="odometer"></div><div id="wordsLeftLabel"></div></div>
     <div id="dropArea">
@@ -1661,7 +1678,7 @@
       <input type="text" id="guessInput"  oninput="autoGiveGuess(this.value)" placeholder="Type your answer here" class="notransition"></input>
       <button id="guessButton" class="notransition">Guess</button>
     </div>
-    <button id="abandon" onclick="abandon()"><svg class="icon cross" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;"> <g transform="rotate(45 50 50)"> <g transform="matrix(1.00921,0,0,1.07529,4.6257,-9.15356)"> <path d="M44.96,94.233L44.96,15.389" style="fill:none;stroke:inherit;stroke-width:inherit;"/> </g> <g transform="matrix(6.17965e-17,1.00921,-1.07529,6.58427e-17,108.938,4.40986)"> <path d="M44.96,94.233L44.96,15.389" style="fill:none;stroke:inherit;stroke-width:inherit;"/> </g> </g> </svg></button>
+    <button id="abandon" onclick="abandon()" aria-label="Skip"><svg class="icon cross" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;"> <g transform="rotate(45 50 50)"> <g transform="matrix(1.00921,0,0,1.07529,4.6257,-9.15356)"> <path d="M44.96,94.233L44.96,15.389" style="fill:none;stroke:inherit;stroke-width:inherit;"/> </g> <g transform="matrix(6.17965e-17,1.00921,-1.07529,6.58427e-17,108.938,4.40986)"> <path d="M44.96,94.233L44.96,15.389" style="fill:none;stroke:inherit;stroke-width:inherit;"/> </g> </g> </svg></button>
   </body>
   <!-- Module for finding colors between colors. From: https://github.com/anomal/RainbowVis-JS -->
   <script>

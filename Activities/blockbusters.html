@@ -90,6 +90,7 @@
       --on-team2: white;
       --off-team2: #A69736;
       --unowned: #EBEBEB;
+      --current-team: var(--team1);
     }
 
     [data-theme="magnet"] {
@@ -236,7 +237,7 @@
     }
 
     .hexagon.unowned,
-    .hexagon.newGame {
+    .newGame .hexagon {
       cursor: pointer;
     }
 
@@ -245,7 +246,7 @@
       transform: scale(0.9);
     }
 
-    .hexagon.newGame:hover {
+    .newGame .hexagon:hover {
       transform: scale(-0.9) !important;
     }
 
@@ -311,6 +312,21 @@
       width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
+      padding: 5px;
+      /* border-radius: 100px;       */
+    }
+
+    .clue:focus{
+      outline: none;
+      color: var(--current-team);
+      -webkit-text-stroke: 1px var(--fg-color);
+      text-stroke: 1px var(--fg-color);
+      transform: scale(1.2);
+    }
+
+    .newGame .clue:focus{
+      text-stroke: none;
+      text-decoration: underline;
     }
 
     button {
@@ -1463,7 +1479,7 @@
               }
             }
             if (gameSettings.showClues) {
-              clue = getInitials(data[count].a)
+              clue = getInitials(data[count].a)              
             } else {
               clue = alphabet[clueCounter]
               clueCounter++
@@ -1472,7 +1488,9 @@
             answer = data[count].a;
             id = data[count].id;
             clueDivId = 'clue' + x + '' + y;
-            document.getElementById(clueDivId).innerHTML = clue;
+            let clueDiv = document.getElementById(clueDivId)
+            clueDiv.innerHTML = clue;
+            clueDiv.setAttribute('aria-label',`Column ${x} Row ${(y+1)}`)
             count++
           } else {
             clue = '';
@@ -1562,7 +1580,8 @@
 
     function updateBoardColors() {
       console.log('Update board colors')
-      var edges = document.querySelectorAll('.edgeCell');
+      var edges = document.querySelectorAll('.edgeCell');      
+      document.documentElement.style.setProperty('--current-team', 'var(--' + turn + ')');
       for (i = 0; i < edges.length; i++) {
         if (edges[i].classList.contains('team2')) {
           if (turn == 'team2') {
@@ -1651,6 +1670,9 @@
       }
       startConfetti(team)
       turn = team // for teamticker
+      setTimeout(() => {
+        announce(team + ' wins')
+      }, 3000)
       // if (gameSettings.scorm || gameSettings.teamBuilder){
       //   turn = team
       //   showTeamTicker(team)   
@@ -1694,12 +1716,13 @@
         }
         setTimeout(() => {
           clueDiv.innerHTML = gameSettings.text_newGame
+          clueDiv.focus()          
           clueDiv.parentElement.addEventListener('click', resetGame, { once: true }) // this will neatly get rid of the button behaviour once we've clicked it
           clueDiv.opacity = 1;
           clueDiv.style.whiteSpace = 'break-spaces'
           clueDiv.style.fontWeight = 'bold'
           cellImage.style.opacity = 0.75
-          cellImage.classList.add('newGame')
+          cellImage.parentElement.classList.add('newGame')          
           cellImage.classList.remove('team1')
           cellImage.classList.remove('team2')
           cellImage.classList.remove('dead')
@@ -1920,7 +1943,7 @@
         cellImage.style.opacity = null
         if (!cell.edgeCell) {
           cellImage.classList.add('unowned') // add unowned class back so hover animation is restored
-          cellImage.classList.remove('newGame') // remove newGame class from all cells (only one will have it)
+          cellImage.parentElement.classList.remove('newGame') // remove newGame class from all cells (only one will have it)
           cellImage.classList.remove('dead')
           var clueDiv = document.getElementById(cell.clueDivId)
           clueDiv.style = null
@@ -2074,12 +2097,13 @@
 
     function showQuestion(x, y) {
 
-      cell = cells.find(cell => (cell.x === x && cell.y === y))
+      const cell = cells.find(cell => (cell.x === x && cell.y === y))
 
       question = cell.question
+      const questionText = document.getElementById('question-text')
       document.getElementById('question').style.color = 'var(--on-' + turn + ')'
       document.getElementById('clue-text').innerHTML = cell.clue
-      document.getElementById('question-text').innerHTML = '<p>' + question + '</p>'
+      questionText.innerHTML = '<p>' + question + '</p>'
       document.getElementById('question-buttons').innerHTML = '<button onclick="showAnswer(' + x + ', ' + y + ')">' + gameSettings.text_showAnswer + '</button>'
 
       // var questionBoxSvg = cards.find(card => card.color === turn);
@@ -2091,32 +2115,51 @@
       document.getElementById('questionBoxHolder').style.zIndex = 999; //make sure we can click on stuff
       cells.forEach(cell => {
         if (!cell.edgeCell) {
-          document.getElementById(cell.cellImgId).style.transform = 'scale(0)'
-          document.getElementById(cell.clueDivId).style.transform = 'scale(0)'
+          const cellImg = document.getElementById(cell.cellImgId)
+          const cellClue = document.getElementById(cell.clueDivId)
+          cellImg.style.transform = 'scale(0)'
+          cellClue.style.transform = 'scale(0)'
+          cellClue.tabIndex = -1
+          cellClue.setAttribute('aria-hidden','true')
+          cellClue.blur
         }
       })
       shrinkTextToFit(document.getElementById('question-text-wrapper'), 0.75)
+      questionText.focus({ preventScroll: true })
     }
 
     function showAnswer(x, y) {
       document.getElementById('questionBoxHolder').style.transform = 'scaleY(-1)'
       document.getElementById('questionHolder').style.transform = 'scaleY(-1)'
-      cell = cells.find(cell => (cell.x === x && cell.y === y))
-      answer = cell.answer
-      document.getElementById('question-text').innerHTML = '<p>' + answer + '</p>'
+      const cell = cells.find(cell => (cell.x === x && cell.y === y))
+      const answer = cell.answer
+      const questionText = document.getElementById('question-text')
+      questionText.innerHTML = '<p>' + answer + '</p>'
       document.getElementById('question-buttons').innerHTML = '<button onclick="answerGiven(' + x + ', ' + y + ', true)">' + gameSettings.text_correct + '</button> <span class="translucent">⬣</span> <button onclick="answerGiven(' + x + ', ' + y + ', false)">' + gameSettings.text_wrong + '</button>'
       shrinkTextToFit(document.getElementById('question-text-wrapper'), 0.75)
+      questionText.focus({ preventScroll: true })
     }
 
     function hideQuestion() {
-      document.getElementById('questionBoxHolder').style.opacity = 0
-      document.getElementById('questionBoxHolder').style.transform = null // remove transforms
-      document.getElementById('questionHolder').style.transform = null // remove transforms
-      document.getElementById('questionBoxHolder').style.zIndex = 0 // make sure it's not hiding anything
+      const questionBoxHolder = document.getElementById('questionBoxHolder')
+      const questionHolder = document.getElementById('questionHolder')
+      
+   
+      questionBoxHolder.style.opacity = 0
+      questionBoxHolder.style.transform = null // remove transforms
+      questionHolder.style.transform = null // remove transforms
+      questionBoxHolder.style.zIndex = 0 // make sure it's not hiding anything
+
+      
+
       cells.forEach(cell => {
         if (!cell.edgeCell) {
-          document.getElementById(cell.cellImgId).style.transform = null
-          document.getElementById(cell.clueDivId).style.transform = null
+                const cellImage = document.getElementById(cell.cellImgId)
+      const cellClue = document.getElementById(cell.clueDivId)   
+          cellImage.style.transform = null
+          cellClue.style.transform = null
+          cellClue.setAttribute('aria-hidden','false')
+          cellClue.tabIndex = 0
         }
       })
     }
@@ -2142,10 +2185,12 @@
         }
       }
 
+      clueDiv.focus()
+
       // if it's correct or the default game behaviour, someone wins the cell
       if (correct || gameSettings.wrongAnsBehav != 'Destroy cell') {
         // give winner their cell
-        cell.owner = winner
+        cell.owner = winner        
         if (demo) {
           animationWait = 100 // little to no wait time required if it's in demo mode
         } else {
@@ -2173,6 +2218,7 @@
       //change turns
       if (!gameOver) {
         turn = (turn == 'team1') ? 'team2' : 'team1'
+        announce(turn) // to do: better team announcements, using colors if possible
         // if (turn=='team1'){
         //   turn = 'team2'
         // } else {
@@ -2192,6 +2238,7 @@
       cell.cellImg.classList.remove('unowned')
       cell.cellImg.classList.remove('none')
       cell.owner = 'dead'
+      announce('Cell destroyed.')
     }
 
     function checkFreeSpacesExist() {
@@ -2207,6 +2254,7 @@
     function everyoneLoses() {
       console.log('Everyone loses')
       everyoneLost = true
+      announce('Everyone loses') // to do: customise…
       resetCell = pickRandomCell('dead')
       if (resetCell == undefined) {
         resetCell = pickRandomCell(turn) // very unlikely but not impossible (whoevers turn it is, they must have a number of cells to pick from in this scenario)
@@ -2233,18 +2281,23 @@
       })
     }
 
-    function clickCell(cellImage) {
+    function clickCell(cellID) {
       if (!gameOver) {
-        cell = cells.find(cell => cell.cellImgId === cellImage.id)
+        const cell = cells.find(cell => cell.cellImgId === cellID)
+        const cellImage = document.getElementById(cell.cellImgId)
         if (cellImage.classList.contains('unowned')) {
           if (!demo) {
             showQuestion(cell.x, cell.y)
           } else {
             answerGiven(cell.x, cell.y, true) // in demo mode, just skip to giving them the answer
-          }
+          }          
+        }        
+      }
+    }
 
-        }
-
+    function handleKeyDown(event, cellImage){
+      if (event.key == ' '){
+        clickCell(cellImage)
       }
     }
 
@@ -2255,6 +2308,8 @@
         // assignSvg(cellImage,team,null)
         cellImage.classList.remove('unowned')
         cellImage.classList.add(team)
+        clueDiv.setAttribute('aria-label',clueDiv.textContent + ' ' + team + ' cell')
+        announce('Cell assigned to '+team)
         if (!gameOver && gameStarted && gameSettings.soundsEnabled) {
           if (team == 'team1') {
             flipSoundBlue.play();
@@ -2272,6 +2327,7 @@
         cellImage.classList.remove('team1')
         cellImage.classList.remove('team2')
         cellImage.classList.add('unowned')
+        clueDiv.setAttribute('aria-label','cell') // TO DO: custom aria-label?
       }
 
     }
@@ -2457,6 +2513,17 @@
       }
     }
 
+    function announce(text){
+      const announcer = document.getElementById('announcements')
+      if (!announcer) {
+        return
+      }
+      announcer.textContent = ''
+      window.requestAnimationFrame(() => {
+        announcer.textContent = text
+      })
+    }
+
     function formatDuration(milliseconds) {
       const seconds = Math.round(milliseconds / 1000)
       const hours = Math.floor(seconds / 3600);
@@ -2580,6 +2647,7 @@
 </head>
 
 <body>
+  <div id="announcements" role="status" aria-live="polite" aria-atomic="true" style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;"></div>
   <div id="board">
     <div id="questionBoxHolder">
       <svg id="questionBox" version="1.1"></svg>
@@ -2587,13 +2655,13 @@
         <div id="question">
           <div id="clue-wrapper">
             <div id="clue-text"></div>
-            <hr class="translucent">
+            <hr class="translucent" aria-hidden="true">
           </div>
           <div id="question-text-wrapper">
-            <div id="question-text"></div>
+            <div id="question-text" role="region" aria-live="polite" aria-atomic="true" tabindex="-1"></div>
           </div>
           <div id="question-buttons-wrapper">
-            <hr class="translucent">
+            <hr class="translucent" aria-hidden="true">
             <div id="question-buttons"></div>
           </div>
         </div>
@@ -2601,164 +2669,164 @@
     </div>
     <div class="column even half" id="column0">
       <div class="cellHolder">
-        <svg id="cell00" class="hexagon edgeCell team1" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell00" class="hexagon edgeCell team1" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell01" class="hexagon edgeCell team1" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell01" class="hexagon edgeCell team1" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell02" class="hexagon edgeCell team1" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell02" class="hexagon edgeCell team1" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell03" class="hexagon edgeCell team1" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell03" class="hexagon edgeCell team1" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell04" class="hexagon edgeCell team1" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell04" class="hexagon edgeCell team1" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell05" class="hexagon edgeCell team1" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell05" class="hexagon edgeCell team1" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
     </div>
     <div class="column odd" id="column1">
       <div class="cellHolder">
-        <svg id="cell10" class="hexagon edgeCell team2" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell10" class="hexagon edgeCell team2" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue11" class="clue" onclick="clickCell(document.getElementById('cell11'))"></div>
-        <svg id="cell11" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue11" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell11')" onkeydown="handleKeyDown(event,'cell11')"></div>
+        <svg id="cell11" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue12" class="clue" onclick="clickCell(document.getElementById('cell12'))"></div>
-        <svg id="cell12" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue12" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell12')" onkeydown="handleKeyDown(event,'cell12')"></div>
+        <svg id="cell12" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue13" class="clue" onclick="clickCell(document.getElementById('cell13'))"></div>
-        <svg id="cell13" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue13" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell13')" onkeydown="handleKeyDown(event,'cell13')"></div>
+        <svg id="cell13" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue14" class="clue" onclick="clickCell(document.getElementById('cell14'))"></div>
-        <svg id="cell14" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue14" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell14')" onkeydown="handleKeyDown(event,'cell14')"></div>
+        <svg id="cell14" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell15" class="hexagon edgeCell team2" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell15" class="hexagon edgeCell team2" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
     </div>
     <div class="column even" id="column2">
       <div class="cellHolder">
-        <div id="clue20" class="clue" onclick="clickCell(document.getElementById('cell20'))"></div>
-        <svg id="cell20" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue20" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell20')" onkeydown="handleKeyDown(event,'cell20')"></div>
+        <svg id="cell20" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue21" class="clue" onclick="clickCell(document.getElementById('cell21'))"></div>
-        <svg id="cell21" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue21" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell21')" onkeydown="handleKeyDown(event,'cell21')"></div>
+        <svg id="cell21" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue22" class="clue" onclick="clickCell(document.getElementById('cell22'))"></div>
-        <svg id="cell22" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue22" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell22')" onkeydown="handleKeyDown(event,'cell22')"></div>
+        <svg id="cell22" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue23" class="clue" onclick="clickCell(document.getElementById('cell23'))"></div>
-        <svg id="cell23" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue23" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell23')" onkeydown="handleKeyDown(event,'cell23')"></div>
+        <svg id="cell23" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue24" class="clue" onclick="clickCell(document.getElementById('cell24'))"></div>
-        <svg id="cell24" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue24" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell24')" onkeydown="handleKeyDown(event,'cell24')"></div>
+        <svg id="cell24" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell25" class="hexagon edgeCell team2" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell25" class="hexagon edgeCell team2" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
     </div>
     <div class="column odd" id="column3">
       <div class="cellHolder">
-        <svg id="cell30" class="hexagon edgeCell team2" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell30" class="hexagon edgeCell team2" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue31" class="clue" onclick="clickCell(document.getElementById('cell31'))"></div>
-        <svg id="cell31" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue31" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell31')" onkeydown="handleKeyDown(event,'cell31')"></div>
+        <svg id="cell31" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue32" class="clue" onclick="clickCell(document.getElementById('cell32'))"></div>
-        <svg id="cell32" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue32" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell32')" onkeydown="handleKeyDown(event,'cell32')"></div>
+        <svg id="cell32" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue33" class="clue" onclick="clickCell(document.getElementById('cell33'))"></div>
-        <svg id="cell33" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue33" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell33')" onkeydown="handleKeyDown(event,'cell33')"></div>
+        <svg id="cell33" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue34" class="clue" onclick="clickCell(document.getElementById('cell34'))"></div>
-        <svg id="cell34" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue34" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell34')" onkeydown="handleKeyDown(event,'cell34')"></div>
+        <svg id="cell34" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell35" class="hexagon edgeCell team2" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell35" class="hexagon edgeCell team2" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
     </div>
     <div class="column even" id="column4">
       <div class="cellHolder">
-        <div id="clue40" class="clue" onclick="clickCell(document.getElementById('cell40'))"></div>
-        <svg id="cell40" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue40" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell40')" onkeydown="handleKeyDown(event,'cell40')"></div>
+        <svg id="cell40" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue41" class="clue" onclick="clickCell(document.getElementById('cell41'))"></div>
-        <svg id="cell41" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue41" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell41')" onkeydown="handleKeyDown(event,'cell41')"></div>
+        <svg id="cell41" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue42" class="clue" onclick="clickCell(document.getElementById('cell42'))"></div>
-        <svg id="cell42" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue42" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell42')" onkeydown="handleKeyDown(event,'cell42')"></div>
+        <svg id="cell42" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue43" class="clue" onclick="clickCell(document.getElementById('cell43'))"></div>
-        <svg id="cell43" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue43" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell43')" onkeydown="handleKeyDown(event,'cell43')"></div>
+        <svg id="cell43" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue44" class="clue" onclick="clickCell(document.getElementById('cell44'))"></div>
-        <svg id="cell44" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue44" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell44')" onkeydown="handleKeyDown(event,'cell44')"></div>
+        <svg id="cell44" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell45" class="hexagon edgeCell team2" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell45" class="hexagon edgeCell team2" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
     </div>
     <div class="column odd" id="column5">
       <div class="cellHolder">
-        <svg id="cell50" class="hexagon edgeCell team2" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell50" class="hexagon edgeCell team2" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue51" class="clue" onclick="clickCell(document.getElementById('cell51'))"></div>
-        <svg id="cell51" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue51" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell51')" onkeydown="handleKeyDown(event,'cell51')"></div>
+        <svg id="cell51" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue52" class="clue" onclick="clickCell(document.getElementById('cell52'))"></div>
-        <svg id="cell52" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue52" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell52')" onkeydown="handleKeyDown(event,'cell52')"></div>
+        <svg id="cell52" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue53" class="clue" onclick="clickCell(document.getElementById('cell53'))"></div>
-        <svg id="cell53" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue53" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell53')" onkeydown="handleKeyDown(event,'cell53')"></div>
+        <svg id="cell53" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <div id="clue54" class="clue" onclick="clickCell(document.getElementById('cell54'))"></div>
-        <svg id="cell54" class="hexagon unowned" onclick="clickCell(this)" version="1.1"></svg>
+        <div id="clue54" class="clue" role="cell" tabIndex=0 onclick="clickCell('cell54')" onkeydown="handleKeyDown(event,'cell54')"></div>
+        <svg id="cell54" class="hexagon unowned" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell55" class="hexagon edgeCell team2" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell55" class="hexagon edgeCell team2" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
     </div>
     <div class="column even half" id="column6">
       <div class="cellHolder">
-        <svg id="cell60" class="hexagon edgeCell team1" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell60" class="hexagon edgeCell team1" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell61" class="hexagon edgeCell team1" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell61" class="hexagon edgeCell team1" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell62" class="hexagon edgeCell team1" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell62" class="hexagon edgeCell team1" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell63" class="hexagon edgeCell team1" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell63" class="hexagon edgeCell team1" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell64" class="hexagon edgeCell team1" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell64" class="hexagon edgeCell team1" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
       <div class="cellHolder">
-        <svg id="cell65" class="hexagon edgeCell team1" onclick="clickCell(this)" version="1.1"></svg>
+        <svg id="cell65" class="hexagon edgeCell team1" onclick="clickCell(this.id)" version="1.1"></svg>
       </div>
     </div>
   </div>
