@@ -531,7 +531,7 @@ Here are the possibility parameters. Apart from the column names, they are all o
 |cols_max|The maximum number of columns.|Recommended, unless the last column name can be repeated.|
 |rows_min|The minimum number of rows.|Recommended.|
 |rows_max|The maximum number of rows.||
-|cols|The names for the columns, expressed as a JSON array. Optional columns will be determined by cols_min and cols_max. If there is no cols_max, it is recommended to add `"===="` as the last column name. This will repeat the previous column name for every column thereafter.||
+|cols|The names for the columns, expressed as a JSON array OR an array of obects with the properties (see [Advanced Columns](#advanced-columns)). Optional columns will be determined by cols_min and cols_max. If there is no cols_max, it is recommended to add `"===="` as the last column name. This will repeat the previous column name for every column thereafter.||
 |scorm_support|Signal to **hex** whether the activity has been built to interface with an LMS|Default: false|
 |empty_cells_allowed|When set to true, empty cells within the range of the minimum rows and columns will not prevent the user running or exporting the activity.|Default: false|
 |settings|The activity settings as a JSON object. See [activity settings](#activity-settings)||
@@ -560,6 +560,25 @@ Finally, the activity file much include the following script. For simplicity, it
 `<script src="activityController.js"></script>`
 
 When running an activity, this passes the `gameData`, `gameSettings` and `gameFiles` to the activity. When exporting, this is replaced with that same data.
+
+#### Advanced columns
+
+For the columns, you can either use a simple array of column names like ["Question", "Answer"], or you can supply column objects. You can also mix between the two.
+
+For the column object, you can provide the following properties. Apart from the column name, they are all optional.
+
+|Parameter|Explanation|Notes|
+|---|---|---|
+|name|The name of the column.||
+|text|Enable entering text into this column.|Default true|
+|image|Enable adding images to this cilumn.|Default false|
+|datetime|Enable supplying a date and time value in this column.|Default false|
+|select|Enable a dropdown list. You should provide the options as well.|Default false|
+|options|If using a dropdown list, provide an array of choices.||
+|optionValues|You can supply a list of values that will be passed to the activity instead of the displayed item. This array should be the same lenght as the options array.||
+|defaultShowDetailButton|Always show the detail button. This is useful for columns that typically need a lot of data.|Default false|
+
+
 
 ### <a name="activity-settings">Activity settings</a>
 
