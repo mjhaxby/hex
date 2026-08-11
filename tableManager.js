@@ -1508,7 +1508,7 @@ setWysiwygContent(content) {
         })
 
         result.addEventListener('paste', (event) => {
-            this.pasteInData(event, cellID, rowID, colID)
+            this.pasteInData(event, rowID, colID)
         })
 
         result.addEventListener('focus', (event) => {         
@@ -1713,7 +1713,7 @@ setWysiwygContent(content) {
 
         let cell = this.get('cell', row, col)
 
-        if (this.colAcceptsDataType(col,'text')){
+        if (cell && this.colAcceptsDataType(col,'text')){
             cell.classList.remove('noText')
         } else {
             cell.classList.add('noText')
@@ -2045,58 +2045,76 @@ setWysiwygContent(content) {
                 }
             }
         }
-    }
-    
+    }    
 
     handleCopyWithSelection(e){
         e.preventDefault();
         var toCopy = ''
+        let cellsToCopy = []
+
+        // first collect all the cells to copy into an array of arrays (rows and columns)
+        // if a number of rows are selected, we'll copy all columns for those rows…
         if(this.selection.row.length > 0){
             for (let i=0; i<this.selection.row.length; i++){
-                for (let col=1; col<=this.numCols(); col++){
-                    let cellToCopy = this.get('text', this.selection.row[i], col)
-                    if(cellToCopy){
-                        toCopy += cellToCopy.value // TO DO: skip if not text type? (I was going to do this with 'hidden' class, but it doens't take into account mirror usage)
+                let row = []
+                for (let col=0; col<this.numCols(); col++){
+                    let cellToCopy = this.get('cell', this.selection.row[i], col)
+                    row.push(cellToCopy)
+                }                
+                cellsToCopy.push(row)
+            }
+        // …if a number of columns are selected, we'll copy all rows for those columns
+        } else if (this.selection.col.length > 0){
+            for (let i=0; i<this.numRows(); i++){
+                let row = []
+                for (let col=0; col<this.selection.col.length; col++){
+                    let cellToCopy = this.get('cell', i, this.selection.col[col])
+                    row.push(cellToCopy)
+                }                
+                cellsToCopy.push(row)
+            }
+        }
 
-                        // add on the date
-                        let dateTimeToCopy = this.get(`dateTime`, this.selection.row[i], col)
-                        if(dateTimeToCopy && !dateTimeToCopy.classList.contains('hidden') && dateTimeToCopy.value){ // if there is a date time value and it's not hidden, we'll add it to the text to copy (separated by a space so it doesn't get confused with the text value if that also has a date time in it)
-                            toCopy += cellToCopy.value + ' ' + dateTimeToCopy.value
-                        } else {
-                            toCopy += cellToCopy.value
-                        }
+        // now collect the actual data to copy
+        cellsToCopy.forEach(row => {
+            row.forEach(cellToCopy => {
+                let text = cellToCopy.querySelector('.inputCellText')
+                if(text){
+                    toCopy += text.value // TO DO: skip if not text type? (I was going to do this with 'hidden' class, but it doens't take into account mirror usage)
+                }
+                // TO DO: make more intelligent so we can copy date and time to another column (can we copy JSON and plain text at the same time? or just copy plain text and let the user paste into a date/time column and it will parse it?)
+                if(cellToCopy.classList.contains('withDateTime')){
+                    let date = cellToCopy.querySelector('.inputCellDate')
+                    let time = cellToCopy.querySelector('.inputCellTime')
+
+                    if(date && date.value){
+                        toCopy += ' ' + date.value
                     }
+                    if(time && time.value){
+                        toCopy += ' ' + time.value
+                    }
+                }
+                if (cellToCopy.classList.contains('withSelect')){
+                    let select = cellToCopy.querySelector('.inputCellSelect')
+                    if(select && select.value){
+                        toCopy += ' ' + select.value
+                    }
+                }
+                if(row.length > 1){
+                    // no point adding a tab if we only have one column, but if we have more than one column, we'll add a tab between them
                     toCopy += '\t'
                 }
+            })
+            if(row.length > 1){
+                // don't trim if there's only one column, because we need to keep spaces in the middle
                 toCopy = toCopy.trim()
-                toCopy += '\n'
             }
-            toCopy = toCopy.trim()
-            navigator.clipboard.writeText(toCopy);
-            console.log('Copy '+toCopy)
-        } else if (this.selection.col.length > 0){
-            for (let row=0; row<this.numRows(); row++){
-                for (let i=0; i<this.selection.col.length; i++){
-                    let cellToCopy = this.get('text', row, this.selection.col[i])
-                    if(cellToCopy){
-                        toCopy += cellToCopy.value // TO DO: skip if not text type? (I was going to do this with 'hidden' class, but it doens't take into account mirror usage)
-
-                        // add on the date
-                        let dateTimeToCopy = this.get(`dateTime`, row, this.selection.col[i])
-                        if(dateTimeToCopy && !dateTimeToCopy.classList.contains('hidden') && dateTimeToCopy.value){ // if there is a date time value and it's not hidden, we'll add it to the text to copy (separated by a space so it doesn't get confused with the text value if that also has a date time in it)
-                            toCopy += cellToCopy.value + ' ' + dateTimeToCopy.value
-                        } else {
-                            toCopy += cellToCopy.value
-                        }
-                    }
-                }
-                toCopy = toCopy.trim()
-                toCopy += '\n'
-            }
-            toCopy = toCopy.trim()
-            navigator.clipboard.writeText(toCopy);
-            console.log('Copy '+toCopy)
-        }
+            toCopy += '\n'
+        })
+        
+        toCopy = toCopy.trim()
+        navigator.clipboard.writeText(toCopy);
+        console.log('Copy '+toCopy)
     }
 
     handleCutWithSelection(e){
@@ -2457,10 +2475,12 @@ setWysiwygContent(content) {
         placeHolder.classList.add('hidden')
     }
 
-    pasteInData(e, row, col){  
+    pasteInData(e, rowID, colID){  
         let clipboardData = e ? e.clipboardData || window.clipboardData : window.clipboardData;
         let pastedData = clipboardData.getData('Text');
         var dataAsArray = returnJSONorArray(pastedData)
+        let row = this.rowIDs.indexOf(rowID)
+        let col = this.colIDs.indexOf(colID)
 
         // only continue pasting in data if there is more than one row and/or more than one column. Otherwise, paste as normal (text rather than data)
         if (dataAsArray.length > 1 || (dataAsArray.length > 0 && dataAsArray[0].length > 1)){

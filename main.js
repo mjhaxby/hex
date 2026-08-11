@@ -207,7 +207,7 @@ const createEditorWindow = () => {
   newEditorWindow.loadFile('index.html')
 
   // Open the DevTools.
-  newEditorWindow.webContents.openDevTools()
+  // newEditorWindow.webContents.openDevTools()
 
   newEditorWindow.on('focus', focusEditorWindow) // update main window when an editor is focused, and update print menu state
   newEditorWindow.on('blur', updateMenuState) // disable print when not focused

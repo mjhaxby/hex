@@ -1059,6 +1059,8 @@
     function cleanAnswer(text){
         if(text){
             text = text.toLowerCase();
+            text = text.replace(/&nbsp;/g, ' ') // replace non-breaking space with normal space
+            text = text.replace(/&amp;/g, '&') // replace &amp; with &            
             text = text.replace(/['‘’]/g, '\'') // deal with pesky apostrophes
             text = text.replace(/\([^)]+\)/g, '') // anything in brackets is ignored
             text = text.replace(/(\s)+/g, '$1') // remove duplicate whitespace (might be left over after removing brackets)

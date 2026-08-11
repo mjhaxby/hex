@@ -159,10 +159,24 @@ function setPrefs(prefs, customDefaults={}){
   let tableBody = table.tableBody
   // tableBody = document.getElementById('tableBody')
   // tableBody.removeChild(tableBody.children[0])
+    // make sure there are the minimum number of cols required
+  if (prefs.hasOwnProperty('cols_min') && table.numCols() < prefs.cols_min){
+    for (let i = table.numCols()+1; i <= prefs.cols_min; i++){
+      table.addCol()
+    }
+  }
+
+  // remove existing header row
   table.removeHeaderRow()
+
+  // TO DO: m=remove
+  // this  should no longer be necessary, since we add the columns before:
   if (prefs.hasOwnProperty('cols_min') && prefs.cols_min > table.numCols()){
+    console.warning('This should never appear. The table should have already added the minimum number of columns before adding the header row.')
     table.addNewColIDsToEnd(prefs.cols_min) // make sure the table manager knows about the new cols before we add the header row with controls, so it can add the colIDs for those cols
   }
+
+  //recreate header row with controls
   table.headerRow(table.numCols())
 
   // disable or re-enable images selector
@@ -214,13 +228,6 @@ function setPrefs(prefs, customDefaults={}){
     scormToggle.checked = false
     scormToggle.disabled = true // just in case
     exportTypeToggled()
-  }
-
-  // make sure there are the minimum number of cols required
-  if (prefs.hasOwnProperty('cols_min') && table.numCols() < prefs.cols_min){
-    for (let i = table.numCols()+1; i <= prefs.cols_min; i++){
-      table.addCol()
-    }
   }
 
   // make sure there are the minimum number of rows required
@@ -553,9 +560,9 @@ ipcRenderer.on('setActivity', (event, activity, source) => {
 ipcRenderer.on('copyToClipboard', (event, form) => {
   var copyString = ''
   if (form == 'json'){
-    copyString = convertTableDataToJSONString()
+    copyString = table.convertTableDataToJSONString()
   } else if (form == 'block'){
-    copyString = convertTableDataToBlock()
+    copyString = table.convertTableDataToBlock()
   }
   navigator.clipboard.writeText(copyString)
 })
