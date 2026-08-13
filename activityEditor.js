@@ -97,8 +97,42 @@ function addActivityTemplateData(activityTemplate, activityData, activitySetting
   outputData = activityTemplate.replace('<script src="activityController.js"></script>','<!--*HEX DATA START*-->\n'+activityDataIntegration+'\n<!--*HEX DATA END*-->')
   let regex = /<!--\*HEX SETTINGS START\*([.\s\S]+)\*HEX SETTINGS END\*-->/gm // replace hex settings…
   outputData = outputData.replace(regex,`<!--*HEX INFO START*${JSON.stringify(exportInfo)}*HEX INFO END*-->`) // …with hex info
+
+  // replace dependent content based on settings
+  // (this allows us to reduce the size of the output file by removing content that is not needed based on the settings)
+  prefsStore.settings.forEach(setting=>{
+    if (setting.hasOwnProperty('dependentContent') && setting.dependentContent){
+      let name = setting.name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') // escape special characters in the setting name for use in the regex
+      let value = activitySettings[setting.name].toString().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') // escape special characters in the setting value for use in the regex
+      // to do: allow activity templates to specify regexValues
+      let regexInclude = new RegExp(`(<!--|\/\/)\\*HEX DEPENDENT START NAME=${name} VALUE=${value}\\s*\\*[.\\s\\S]+\\*HEX DEPENDENT END NAME=${name}\\*(-->)?`,'gm') // matches the dependent content where the setting value matches
+      let regexExclude = new RegExp(`(<!--|\/\/)\\*HEX DEPENDENT START NAME=${name}[.\\s\\S]+\\*HEX DEPENDENT END NAME=${name}\\s*\\*(-->)?`,'gm') // matches all dependent content for this setting, regardless of value
+
+      console.log('regexInclude',regexInclude)
+      console.log('regexExclude',regexExclude)
+
+      let dependentContent = outputData.match(regexInclude)
+      
+        // temporarily remove dependent data
+        let outputDataTemporary = outputData.split(regexInclude)
+        outputDataTemporary.forEach((part, index) => {
+          if (typeof part !== 'string') return
+          part = part.replace(regexExclude, '')
+          outputDataTemporary[index] = part + ((dependentContent && index < dependentContent.length) ? dependentContent[0] : '')
+        })
+      
+    }
+  })
+
   return outputData
 }
+
+// Example dependent content:
+//  <!--*HEX DEPENDENT START NAME=exampleSetting VALUE=exampleValue*-->
+// Here is your dependent content!
+// <!--*HEX DEPENDENT END NAME=exampleSetting*-->
+// (This also works as a JS comment, but don't forget the asterisks!)
+
 
 let openManifestTemplate = function openManifestTemplatePromise(){
   return new Promise((resolve, reject)=>{
