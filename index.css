@@ -1256,6 +1256,16 @@ th:hover .miniBtn, th:hover .inputCellMore{
   margin-bottom: 1em;
 }
 
+.settingsSearchContainer{
+  width: 100%;
+  margin-bottom: 0.5em;
+}
+
+.settingsSearchInput{
+  width: 100%;
+  box-sizing: border-box;
+}
+
 #advancedExport{
   display: none;
   position: relative;  

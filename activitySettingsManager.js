@@ -49,6 +49,19 @@ function makeInfoHover(info,settingsAreaID = 'settingsArea') {
     return infoContainer
 }
 
+function getSettingSearchText(setting) {
+    let labelText = ''
+    if (setting.hasOwnProperty('label')) {
+        if (setting.hasOwnProperty('variables') && setting.label.includes('$')) {
+            labelText = applyVariables(setting.label, setting.variables)
+        } else {
+            labelText = setting.label
+        }
+    }
+    let infoText = setting.hasOwnProperty('info') ? setting.info : ''
+    return `${labelText} ${infoText}`.toLowerCase().trim()
+}
+
 function makeSettings(settings, activityName = '', sourceName = '', settingsArea = document.getElementById('settingsArea')) {
     var settingEls = new Array();
     var categories = new Array();
@@ -248,6 +261,7 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
             currentCategory = 'general'
         }
         newSetting.setAttribute('data-category', currentCategory)
+        newSetting.setAttribute('data-search-text', getSettingSearchText(settings[i]))
         // add category to the list if we don't already have it
         if (!categories.includes(currentCategory)) {
             categories.push(currentCategory)
@@ -261,6 +275,17 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
     }
     // so long as there's more than one category, add the category picker
     if (categories.length > 1) {
+        // hidden search input for filtering settings by label and info text
+        var settingsSearchContainer = document.createElement('div')
+        settingsSearchContainer.setAttribute('class', 'settingsSearchContainer hidden')
+        var settingsSearchInput = document.createElement('input')
+        settingsSearchInput.type = 'text'
+        settingsSearchInput.setAttribute('class', 'settingsSearchInput')
+        settingsSearchInput.placeholder = 'Search settings...'
+        settingsSearchInput.setAttribute('oninput', 'filterActivitySettingsSearch(this.value,this.closest(".settingsArea"))')
+        settingsSearchContainer.appendChild(settingsSearchInput)
+        settingsArea.appendChild(settingsSearchContainer)
+
         var categoryPicker = document.createElement('select')
         categoryPicker.id = 'categoryPicker'
         categoryPicker.setAttribute('onchange', 'changeActivitySettingsCategory(this.value,this.parentElement)')
@@ -276,6 +301,11 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
             newOption.innerHTML = categories[i]
             categoryPicker.appendChild(newOption)
         }
+        // add search option as final option
+        newOption = document.createElement('option')
+        newOption.value = '__search__'
+        newOption.innerHTML = 'search'
+        categoryPicker.appendChild(newOption)
         // add it to settings area
         settingsArea.appendChild(categoryPicker)
         // brEl = document.createElement('br')
@@ -620,6 +650,28 @@ function settingsSizeAdjustEnd(e){
 
 function changeActivitySettingsCategory(category, settingsArea = document.getElementById('settingsArea')) {
     var settingsAreaInner = settingsArea.querySelector('.settingsAreaInner')
+    var settingsSearchContainer = settingsArea.querySelector('.settingsSearchContainer')
+    var settingsSearchInput = settingsSearchContainer ? settingsSearchContainer.querySelector('.settingsSearchInput') : null
+
+    if (category == '__search__') {
+        if (settingsSearchContainer) {
+            settingsSearchContainer.classList.remove('hidden')
+        }
+        if (settingsSearchInput) {
+            settingsSearchInput.value = ''
+            filterActivitySettingsSearch('', settingsArea)
+            settingsSearchInput.focus()
+        }
+        return
+    }
+
+    if (settingsSearchContainer) {
+        settingsSearchContainer.classList.add('hidden')
+    }
+    if (settingsSearchInput) {
+        settingsSearchInput.value = ''
+    }
+
     numSettings = 0
     for (let i = 0; i < settingsAreaInner.children.length; i++) {
         if (category == 'all' || settingsAreaInner.children[i].getAttribute('data-category') == category || settingsAreaInner.children[i].getAttribute('data-category') == 'all') {
@@ -629,6 +681,24 @@ function changeActivitySettingsCategory(category, settingsArea = document.getEle
             settingsAreaInner.children[i].classList.add('hidden')
         }
     }
+    settingsAreaInner.style.columns = determineColumnSettingsForSettings(numSettings)
+}
+
+function filterActivitySettingsSearch(query, settingsArea = document.getElementById('settingsArea')) {
+    var settingsAreaInner = settingsArea.querySelector('.settingsAreaInner')
+    let searchText = query.toLowerCase().trim()
+    numSettings = 0
+
+    for (let i = 0; i < settingsAreaInner.children.length; i++) {
+        let settingSearchText = settingsAreaInner.children[i].getAttribute('data-search-text') || ''
+        if (searchText != '' && settingSearchText.includes(searchText)) {
+            settingsAreaInner.children[i].classList.remove('hidden')
+            numSettings++
+        } else {
+            settingsAreaInner.children[i].classList.add('hidden')
+        }
+    }
+
     settingsAreaInner.style.columns = determineColumnSettingsForSettings(numSettings)
 }
 
