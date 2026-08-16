@@ -171,7 +171,7 @@ function makeSettings(settings, activityName = '', sourceName = '', settingsArea
                 newSelectLabel.appendChild(makeInfoHover(settings[i].info,settingsArea.id))
             }
             if (settings[i].type == 'select' | settings[i].type == 'select-import'){
-                for (let j = 0; j < settings[i].options.length; j++) {
+                for (let j = 0; (settings[i].options && j < settings[i].options.length); j++) {
                     let newOption = document.createElement('option')                
                     if(settings[i].hasOwnProperty('variables') && settings[i].options[j].includes('$')){
                         newOption.innerHTML = applyVariables(settings[i].options[j],settings[i].variables)
