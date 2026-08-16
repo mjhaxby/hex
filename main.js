@@ -694,9 +694,9 @@ function dataSelectImport(cell,fileTypes,cellOffset = 0){
 //     dialog.showErrorBox("Error opening file", "Invalid file extension.")
 //     return;
 //   }
-//   if (file.size > (1024 * 1024 * 5)) { // for now, limit is 5MB
+//   if (file.size > (1024 * 1024 * 10)) { // for now, limit is 10MB
 //     console.log("File is too big. " + file.size + " bytes.");
-//     dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 500KB or smaller are supported.")
+//     dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 10MB or smaller are supported.")
 //     windows.main.window.webContents.send('dataCellFileImportResult', cell, false)  
 //   } else {
 //     addDataToDataCell(cell,cellOffset,file.data,file.ext,file.size,file.dimensions)
@@ -723,9 +723,9 @@ function dataSelectImportFromPath(filePath, validExtensions, cell, cellOffset){
         dialog.showErrorBox("Error opening file", "The file statistics could not be read.")
         return;
       }
-      if (stats.size > (1024 * 1024 * 5)) { // for now, limit is 5MB
+      if (stats.size > (1024 * 1024 * 10)) { // for now, limit is 10MB
         console.log("File is too big. " + stats.size + " bytes.");
-        dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 500KB or smaller are supported.")
+        dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 10MB or smaller are supported.")
         windows.main.window.webContents.send('dataCellFileImportResult', cell, false)
       } else {
         openFileForDataCell(cell,cellOffset,filePath,fileExt,stats)        
@@ -825,11 +825,11 @@ function customSelectImport(settingId,fileTypes){
         dialog.showErrorBox("Error opening file", "The file statistics could not be read.")
         return;
       }
-      if (stats.size > (1024 * 100)) { // for now, limit is 100KB
+      if (stats.size > (1024 * 1024 * 10)) { // for now, limit is 10MB
         if (debugMode) {
           console.log("File is too big. " + stats.size + " bytes.");
         }
-        dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 100KB or smaller are supported.")
+        dialog.showErrorBox("Error opening file", "This file is too large to import into an activity. Only files 10MB or smaller are supported.")
         windows.main.window.webContents.send('customSelectImportFileResult', settingId, false)
       } else {
         fs.readFile(result.filePaths[0], (err, data) => {

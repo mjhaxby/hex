@@ -1655,7 +1655,7 @@ setWysiwygContent(content) {
 
     triggerImportImage(dataCell){      
         // treat this as focusing the input and store the original value for undo purposes.  
-        this.handleCellInputFocus({currentTarget: dataCell.querySelector('.inputCellImageSelector')}, cellID, dataCell.dataset.row, dataCell.dataset.col, 'file')
+        this.handleCellInputFocus({currentTarget: dataCell.querySelector('.inputCellImageSelector')}, dataCell.dataset.dataCell, dataCell.dataset.row, dataCell.dataset.col, 'file')
         // handled in index.js
         importImage(dataCell)
     }
