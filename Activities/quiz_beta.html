@@ -3094,11 +3094,10 @@
           }        
           if (gameSettings.imageClues){
             if(this.image){
-              let existingImage = this.backEl.querySelector('.background-image')
-              if (existingImage){
-                this.backEl.removeChild(existingImage)
-              }              
-              addImageToEl(this.backEl, this.image)
+              this.backEl.style.backgroundImage = null // remove existing background       
+              this.backEl.style.backgroundSize = null // remove existing background       
+              this.backEl.style.backgroundRepeat = null // remove existing background       
+              addImageToEl(this.backEl, this.image, 'contain')
               this.backEl.classList.add('image-clue')
             }          
           }
@@ -5867,6 +5866,7 @@
       } else {
         el.style.backgroundRepeat = 'no-repeat'
       }
+      
 
       el.title = text
     }
