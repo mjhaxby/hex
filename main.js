@@ -290,7 +290,7 @@ const createActivityWindow = (activityType, data, settings, source, importedFile
 
   newWindow.windowId = newWindow.window.id
 
-  newWindow.window.loadFile(findActivityPath(activityType, source))
+  newWindow.window.loadFile(activityEditor.findActivityPath(activityType, source))
 
   // store the window with the others in an array
   windows.activities.push(newWindow)
@@ -1028,7 +1028,7 @@ function readActivitySettings(activity, source) {
     if (debugMode) {
       console.log(source)
     }
-    const activityPath = findActivityPath(activity, source);
+    const activityPath = activityEditor.findActivityPath(activity, source);
 
     activityEditor.openActivityTemplate(activityPath)
       .then(activityTemplate => {
@@ -1268,7 +1268,7 @@ ipcMain.on('readActivityPrefs', function (event, activity, source) {
   window.currentSource = source
 
   if (activityOK) {
-    let activityPath = findActivityPath(activity, source)
+    let activityPath = activityEditor.findActivityPath(activity, source)
     let customDefaults = {}
     activityEditor.openActivityTemplate(activityPath).then(activityTemplate => {
       window.prefsStore = readPreferences(activityTemplate)
@@ -1712,18 +1712,6 @@ const exportFromActivity = () => {
   exportActivity(activityWindow.data, activityWindow.activityType, activityWindow.settings, activityWindow.importedFiles, activityWindow.source, 'html', '') // TO DO: possible to export scorm from window
 }
 
-const findActivityPath = (activity, source) => {
-  if (source == 'prebuilt') {
-    let activityPath = path.resolve(__dirname, 'Activities/' + activity + '.html')
-    return activityPath
-  } else if (source == 'user') {
-    let activityPath = config.userActivitiesDir + '/' + activity + '.html'
-    return activityPath
-  } else {
-    dialog.showErrorBox('Activity source not found.', 'Source of activity file cannot be determined. Please file a bug report on https://github.com/mjhaxby/hex')
-  }
-}
-
 const exportActivity = (data, activity, settings, files, source, type = 'html', packageIdentifier = '') => {
   var activityTemplate
   var exportData
@@ -1739,7 +1727,7 @@ const exportActivity = (data, activity, settings, files, source, type = 'html', 
       defaultPath: 'New_' + activity.charAt(0).toUpperCase() + activity.slice(1) + '.html' // when saving files added, can use saved name if given
     }
 
-    let activityPath = findActivityPath(activity, source)
+    let activityPath = activityEditor.findActivityPath(activity, source)
 
     activityEditor.openActivityTemplate(activityPath).then(activityTemplate => {
       activityEditor.openFonts(settings).then ( fontData => {
@@ -1821,7 +1809,7 @@ const exportActivity = (data, activity, settings, files, source, type = 'html', 
       defaultPath: 'New_' + activity.charAt(0).toUpperCase() + activity.slice(1) + '.zip' // when saving files added, can use saved name if given
     }
 
-    let activityPath = findActivityPath(activity, source)
+    let activityPath = activityEditor.findActivityPath(activity, source)
 
     activityEditor.openActivityTemplate(activityPath).then(activityTemplate => {
       activityEditor.openManifestTemplate().then(manifestTemplate => {

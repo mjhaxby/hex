@@ -8,14 +8,62 @@ let openActivityTemplate = function openTemplatePromise(file){
     fs.readFile(file, 'utf-8', (err, data) => {
       if(err){
         console.log("An error ocurred reading the file:" + err.message);
-        reject("Error");
+        return reject("Error");
       }
       // console.log(data)
       template = data.toString()
-      resolve(template);
+      const includeRegex = /<!--\*\s*HEX INCLUDE START\s*\*-->[\s\S]*?<script[^>]*\ssrc="([^"]+)"[^>]*><\/script>[\s\S]*?<!--\*\s*HEX INCLUDE END\s*\*-->/g
+      const includeMatches = Array.from(template.matchAll(includeRegex))
+      const includeFiles = includeMatches.map((match) => ({
+        includeBlock: match[0],
+        includeFileName: match[1]
+      }))
+
+      if (includeFiles && includeFiles.length > 0){
+        addIncludeFiles(template, includeFiles).then((templateWithIncludes)=>{
+          resolve(templateWithIncludes)
+        }).catch((err)=>{
+          reject(err)
+        })
+      } else {
+        resolve(template);
+      } 
     });
   })
 
+}
+
+let addIncludeFiles = function addIncludeFilesPromise(activityTemplate, activityFileNames){
+  return new Promise((resolve, reject)=>{
+    const includeFileReadPromises = activityFileNames.map((includeInfo) => {
+      return new Promise((resolveRead, rejectRead) => {
+        if (!includeInfo || !includeInfo.includeFileName || !includeInfo.includeBlock) {
+          return rejectRead('Error parsing include file path from include block')
+        }
+
+        const includeFileName = includeInfo.includeFileName
+        const includeFilePath = findActivityPath(includeFileName, 'prebuilt', true)
+
+        fs.readFile(includeFilePath, 'utf-8', (err, data) => {
+          if(err){
+            console.log("An error ocurred reading the file:" + err.message)
+            return rejectRead("Error adding included file " + includeFileName)
+          }
+
+          resolveRead({ includeBlock: includeInfo.includeBlock, includeData: data.toString() })
+        })
+      })
+    })
+
+    Promise.all(includeFileReadPromises)
+      .then((includeContents) => {
+        includeContents.forEach((includeContent) => {
+          activityTemplate = activityTemplate.replace(includeContent.includeBlock, `<script>${includeContent.includeData}</script>`)
+        })
+        resolve(activityTemplate)
+      })
+      .catch((err) => reject(err))
+  })
 }
 
 let openFonts = function openFontsPromise(settings){
@@ -171,12 +219,27 @@ function extractFontSettings(settings,websafe=false){
   return fontSettings
 }
 
+// the following function is used to find the path to an activity file, but can also be used to find paths of extra files to be included for export
+const findActivityPath = (name, source, extraFile = false) => {
+  if (source == 'prebuilt') {
+    // extra files are provided with the full file name, whereas activities without extra files are provided with just the name (without the .html extension)
+    let activityPath = path.resolve(__dirname, extraFile ? 'Activities/' + name : 'Activities/' + name + '.html')
+    return activityPath
+  } else if (source == 'user') {
+    let activityPath = config.userActivitiesDir + '/' + (extraFile ? 'Activities/' + name : 'Activities/' + name + '.html')
+    return activityPath
+  } else {
+    dialog.showErrorBox('Activity source not found.', 'Source of activity file cannot be determined. Please file a bug report on https://github.com/mjhaxby/hex')
+  }
+}
+
 module.exports = {
   openActivityTemplate,
   addActivityTemplateData,
   openManifestTemplate,
   openFonts,
   createManifestFile,
+  findActivityPath,
   applyMarkdown: markdownUtils.applyMarkdown,
   convertHTMLToMarkdown: markdownUtils.convertHTMLToMarkdown
 };
