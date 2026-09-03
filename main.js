@@ -10,8 +10,9 @@ const activityEditor = require('./activityEditor.js')
 const importer = require('./importer.js')
 const info = require('./info.js')
 const tools = require('./tools.js')
+const exporter = require('./exporter.js')
+const bulk = require('./bulkExporter.js')
 const octokit = require('@octokit/request')
-const AdmZip = require('adm-zip');
 const sizeOfImage = require("buffer-image-size");
 const { create } = require('domain');
 // const { act } = require('react');
@@ -354,6 +355,30 @@ const createDocumentationWindow = () => {
 
   windows.documentation.on('closed', () => {
     windows.documentation = null
+  })
+
+  // Open the DevTools.
+  // windows.main.window.webContents.openDevTools()
+}
+
+function createBulkImportExportWindow(){
+  windows['bulkImportExport'] = new BrowserWindow({ 
+    title: "Hex Bulk Import/Export",
+    width: 800,
+    height: 600,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      devTools: debugMode,
+      sandbox: app.isPackaged
+    }
+  })
+  // and load the html of the app.
+  windows.bulkImportExport.loadFile('bulk.html')
+
+  windows.bulkImportExport.on('closed', () => {
+    windows.bulkImportExport = null
   })
 
   // Open the DevTools.
@@ -1141,7 +1166,7 @@ function processSaveExport(event,data,purpose='export',path=''){
   // settingErrors = findSettingAnomolies(data.settings)
   if (settingErrors.length == 0 && dataOK && activityOK) {
     if (purpose == 'export'){
-      exportActivity(data.input, data.activity, data.settings, exportFileStore, data.source, data.type, data.packageIdentifier)
+      exporter.activity(data.input, data.activity, data.settings, exportFileStore, data.source, data.type, data.packageIdentifier)
     } else if (purpose == 'save'){
       saveTable(data,path,exportFileStore)
 
@@ -1499,6 +1524,41 @@ ipcMain.on("tableModified", function (event){
   windows.main.virgin = false
 })
 
+ipcMain.on('openFilesForBulk', function (event) {
+  // to do: open files for bulk processing
+  bulk.openFiles(event.sender)
+})
+
+ipcMain.on('removeFileFromBulk', function (event, selectedFiles) {
+  // to do: remove selected files from bulk processing
+  bulk.removeFiles(selectedFiles, event.sender)
+})
+
+ipcMain.on('addCurrentProfileToBulk', function (event) {
+  // to do: add the current profile to bulk processing
+  windows.main().webContents.send('getActivitySettingsForBulk')  
+})
+
+ipcMain.on('settingsToBulk', function (event, activity, source, settings) {
+  // to do: add the current profile to bulk processing
+  bulk.addProfile(activity, source, settings, event.sender)
+})
+
+ipcMain.on('openProfileFromFile', function (event) {
+  // to do: open a profile file for bulk processing
+  bulk.openProfileFromFile(event.sender)
+})
+
+ipcMain.on('removeProfileFromBulk', function (event, selectedProfiles) {
+  // to do: remove selected profiles from bulk processing
+  bulk.removeProfiles(selectedProfiles, event.sender)
+})
+
+ipcMain.on('bulkExport', function (event, option="html") {
+  // to do: export the selected files and profiles in bulk
+  bulk.export({option: option}, event.sender)
+})
+
 
 
 const importTableDialog = () => {
@@ -1709,141 +1769,8 @@ const getReadyToExport = (type) => {
 
 const exportFromActivity = () => {
   activityWindow = activityFocused()
-  exportActivity(activityWindow.data, activityWindow.activityType, activityWindow.settings, activityWindow.importedFiles, activityWindow.source, 'html', '') // TO DO: possible to export scorm from window
+  exporter.activity(activityWindow.data, activityWindow.activityType, activityWindow.settings, activityWindow.importedFiles, activityWindow.source, 'html', '') // TO DO: possible to export scorm from window
 }
-
-const exportActivity = (data, activity, settings, files, source, type = 'html', packageIdentifier = '') => {
-  var activityTemplate
-  var exportData
-
-  if (type == 'html') {
-    var dialogOptions = {
-      title: 'Export activity',
-      properties: ['createDirectory'],
-      filters: [{
-        name: 'HTML file',
-        extension: 'html'
-      }],
-      defaultPath: 'New_' + activity.charAt(0).toUpperCase() + activity.slice(1) + '.html' // when saving files added, can use saved name if given
-    }
-
-    let activityPath = activityEditor.findActivityPath(activity, source)
-
-    activityEditor.openActivityTemplate(activityPath).then(activityTemplate => {
-      activityEditor.openFonts(settings).then ( fontData => {
-        if(debugMode){console.log(fontData)}
-        settings.scorm = false // add scorm (false) tag to the  settings
-        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, windows.main.prefsStore, fontData)
-        dialog.showSaveDialog(dialogOptions).then(result => {
-          if (result.canceled) {
-            if(debugMode){console.log("Cancelled")}
-            return
-          }
-          fs.writeFile(result.filePath, exportData, { encoding: 'utf8' }, (err) => {
-            if (err) {
-              if(debugMode){console.log(err)};
-            } else {
-              if(debugMode){console.log("File written successfully.")}
-            }
-          })
-        })
-      })
-    });
-  } else if (type == 'scorm') {
-
-    var dialogOptions = {
-      title: 'SCORM Package Identifier',
-      detail: 'SCORM packages have a unique identifier to be distinguished by the LMS (Learning Management System, e.g. Moodle). \
-      \nYou may wish to update this package later, in which case you should keep a copy of this identifier and paste it in the ID box before exporting again.\
-      \nIf you export with a new identifier, the LMS will consider this a new package and learner information associated with this package may be lost.\
-      \nYou should not reuse the same identifier for two packages on the same course, as the LMS will not be able to distinguish them.\
-      \nThe package identifier is "' + packageIdentifier + '". If you prefer, you can cancel and input your own.',
-      type: 'info',
-      checkboxLabel: 'Do not remind me again',
-      buttons: ['Proceed', 'Copy identifier to clipboard and proceed', 'Cancel'],
-      defaultId: 1, // Copy selected by default
-    }
-
-    if (config.showScormInfo) { // if user has not said they don't want to see this anymore, we'll show the message with the above settings
-      dialog.showMessageBox(dialogOptions).then(result => {
-
-        if(debugMode){console.log(result.response)}
-        if(debugMode){console.log(result.canceled)}
-
-        if (result.response == 2) { // This should be result.cancelled, but that's not working for whatever reason
-          if(debugMode){console.log("Cancelled")}
-          return
-        }
-
-        if (result.checkboxChecked) {
-          config.showScormInfo = false
-          saveConfigFile()
-        }
-
-        // default action: copy the package id to the clipboard then continue
-        if (result.response == 1) {
-          clipboard.writeText(packageIdentifier)
-        }
-
-        if (result.response == 1 || result.response == 0) {
-          exportActivityAsScorm(activity, source, data, settings, packageIdentifier)
-        }
-
-      })
-    } else {
-      exportActivityAsScorm(activity, source, data, settings, packageIdentifier)
-    }
-
-  }
-
-  // if you are adding in a new way to export scorms, you probably want to do this through the regular exportActivity function (specifying type='scorm')
-  function exportActivityAsScorm(activity, source, data, settings, files, packageIdentifier) {
-    const zip = new AdmZip();
-    var dialogOptions = {
-      title: 'Export activity as SCORM',
-      properties: ['createDirectory'],
-      filters: [{
-        name: 'ZIP file',
-        extension: 'zip'
-      }],
-      defaultPath: 'New_' + activity.charAt(0).toUpperCase() + activity.slice(1) + '.zip' // when saving files added, can use saved name if given
-    }
-
-    let activityPath = activityEditor.findActivityPath(activity, source)
-
-    activityEditor.openActivityTemplate(activityPath).then(activityTemplate => {
-      activityEditor.openManifestTemplate().then(manifestTemplate => {
-      activityEditor.openFonts(settings).then ( fontData => {
-        if(debugMode){console.log(fontData)}
-        settings.scorm = true // add scorm tag to the  settings
-        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, windows.main.prefsStore, fontData)
-
-        dialog.showSaveDialog(dialogOptions).then(result => {
-          if (result.canceled) {
-            if(debugMode){console.log("Cancelled")}
-            return
-          }
-          let activityDetails = {
-            packageIdentifier: packageIdentifier,
-            saveName: result.filePath.substring(result.filePath.lastIndexOf('/') + 1).split('.')[0], // strip off everything else from the path and the extension
-            activity: activity
-          }
-          var manifestData = activityEditor.createManifestFile(manifestTemplate, activityDetails)
-          try {
-            zip.addFile(activity + '.html', Buffer.from(exportData, 'utf8'))
-            zip.addFile('imsmanifest.xml', Buffer.from(manifestData, 'utf8'))
-            zip.writeZip(result.filePath)
-          } catch (e) {
-            if(debugMode){console.log('Unable to create zip file: ' + e)}
-          }
-        })
-      })
-    })
-    });
-  }
-
-
-};
 
 const openTableDialog = () => {
   var dialogOptions = {
@@ -2445,6 +2372,14 @@ function openDocumentation(){
   }
 }
 
+function openBulkImportExportWindow(){
+  if(windows['bulkImportExport']){
+    windows.bulkImportExport.focus()
+  } else {
+    createBulkImportExportWindow()
+  }
+}
+
 
 function addActivityProfile() {
   windows.main.window.webContents.send('getActivitySettingsForProfile')
@@ -2538,6 +2473,9 @@ const applicationMenu = Menu.buildFromTemplate([
         label: 'Export activity',
         accelerator: process.platform === 'darwin' ? 'Cmd+Shift+S' : 'Ctrl+Shift+S',
         click: () => { if (activityFocused() == null) { getReadyToExport() } else (exportFromActivity()) } // TO DO: if activity window has focus, get data from that (make an array of objects that contains each window and its data?)
+      },
+      { label: 'Bulk import/export…',
+        click: () => { openBulkImportExportWindow() }
       },
       { type: 'separator' },
       {
