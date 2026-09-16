@@ -94,48 +94,39 @@
 		md = md.replaceAll(/<br\s*\/?>\s*/gi,'\n') 
 		// turn &lt; and &gt; back into < and >
 		md = md.replaceAll(/&lt;/g, '<').replaceAll(/&gt;/g, '>')
+		// showdown always wraps link/image destinations in <>; unwrap simple (space-free) ones so the later
+		// mandatory HTML-entity sanitization on export can't corrupt the < > into a broken href
+		md = md.replace(/\]\(<([^<>\s]+)>(?=[ )])/g, ']($1')
+		// contenteditable/Quill can silently turn regular spaces into non-breaking spaces; undo that on save
+		md = md.replace(/&nbsp;/gi, ' ').replace(/\u00A0/g, ' ')
+		// makeMarkdown always appends a trailing blank line; left in, it reads as an intentional extra paragraph later
+		md = md.trim()
 
 		return md
 	}
 
 	function convertMarkdownToHTMLWithLineBreaks(string,linksInNewWindow=true){
-		// TO DO: modify regex if necessary AND OR change how \n are treated
 		let converter = new showdown.Converter()
 		converter.setOption('openLinksInNewWindow', linksInNewWindow)
 		converter.setOption('strikethrough', true)
-		let headersOrListsRegex = /^\s*(#+|- )/gm
-		let result
-		const splitLines = string.split(/(^|[^\\])(\\n)/)
+		// let showdown's own block parser (lists/headers) consume the newlines it needs;
+		// any newline left over after that is a plain line break, rendered as <br>
+		converter.setOption('simpleLineBreaks', true)
 
-		// console.log(string)
-		// console.log(`${splitLines.length} lines`)
-		// console.log(`${splitLines.length} is > 1? ${splitLines.length > 1}`)
-		// console.log(`test result is ${headersOrListsRegex.test(string)}`)
-		let normalized = string.replace(/\\n/g, '\n')
-		let matches = normalized.match(headersOrListsRegex)
-		// console.log('matches are', matches)
-		// console.log('string is ' + string)
-		// console.log(`matches are ${matches}`)
-		if(matches && matches.length > 0 && splitLines.length > 1){
-			// if we have headers (#) or bullet point lists AND more than one line, we probably want to include <p> tags
-			// also, if we use the other method ("else" below), everything will get lumped under the first heading or list item
-			// so simple convert with no fiddling about
-			// console.log(`exporting regular html (lines ${string.split(/(^|[^\\])(\\n)/).length})`)
-			result = string.replaceAll(/(^|[^\\])(\\n)/g,'$1\n').replaceAll(/(^|[^\\])(\\n)/g,'$1\n') // turn \n back into real \n characters (do it twice to get them all)
-			result = converter.makeHtml(result)
-		} else {
-			// console.log('exporting html with no <p>')
-			// best method for single line or multiline without headers (#) or bullet point lists (-)
-			// since we don't want to introduce <p> to simple strings, which clutter the final code and result in unexpected css
+		// protect literal (escaped) \n text the user actually typed, so it isn't mistaken for our line-break marker
+		let protectedString = string.replaceAll('\\\\n','\\<span></span>n')
+		// turn our \n line-break markers into real newlines (twice, to catch overlapping matches)
+		let normalized = protectedString.replaceAll(/(^|[^\\])(\\n)/g,'$1\n').replaceAll(/(^|[^\\])(\\n)/g,'$1\n').trim()
 
-			// first protect \\n (this seems over the top, but it doesn't work another way). We're using <span></span> because any < and > will have already been removed, so nothing can break this way
-			result = string.replaceAll('\\\\n','\\<span></span>n')
-			// apply markdown
-			result = converter.makeHtml(result)
-			result = result.replaceAll('<span></span>','') // remove this just in case (not that it should affect anything)
-			// remove <p> tags and replace \n with <br>
-			result = result.replaceAll(/<\/?p>/g,'').replaceAll(/(^|[^\\])(\\n)/g,'$1<br>').replaceAll(/(^|[^\\])(\\n)/g,'$1<br>') // replace \n twice in a row because otherwise some can get orphanned
+		let result = converter.makeHtml(normalized).replaceAll('<span></span>','')
+
+		// a single simple paragraph (no headers/lists, no blank-line paragraph break) shouldn't be wrapped in <p>,
+		// since that clutters the output and can trigger unwanted css; anything more structured keeps its <p>/<h#>/<ul> as-is
+		let hasParagraphBreakOrStructure = /\n\s*\n/.test(normalized) || /^\s*(#+|- )/m.test(normalized)
+		if (!hasParagraphBreakOrStructure){
+			result = result.replaceAll(/<\/?p>/g,'')
 		}
+
 		return result
 
 	}
