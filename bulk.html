@@ -1,0 +1,40 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Hex: Bulk Import/Export</title>
+        <script src="utilities.js"></script>
+        <script src="bulk.js"></script>        
+        <link rel="stylesheet" href="toggle-switch.css"> <!--Only works in its own style sheet-->
+        <link rel="stylesheet" href="index.css">
+        <link rel="stylesheet" href="bulk.css">
+    </head>
+    <body onload="pageLoad()">
+        <h1>Bulk Import/Export</h1>
+        <div id="content">
+        <div id="filesPane">
+            <div class="files-list" id="filesIn"></div>
+            <div class="files-list" id="profilesOut"></div>
+        </div>
+        <div id="controls">
+            <div class="button-group">
+            <button id="openFiles" onclick="openFiles()">Open Files to Import</button>
+                <button id="removeFile" onclick="removeFile()">Remove File</button>
+            </div>
+            <div class="button-group">
+                <button id="addCurrentProfile" onclick="addCurrentProfile()">Add Current Profile</button>
+                <button id="addProfile" onclick="addProfileFromFile()">Add Profile from File</button>
+                <button id="removeProfile" onclick="removeProfile()">Remove Profile</button>
+            </div>
+            <div class="button-group">
+                <button id="exportHext" onclick="bulkExport('hext')">Export Hext Files</button>
+                <button id="exportHtml" onclick="bulkExport('html')">Export HTML Files</button>
+                <button id="exportScorm" onclick="bulkExport('scorm')">Export SCORM Files</button>
+            </div>
+            <div class="settings">
+                <label for="ignoreProfiles">Ignore profiles and update only</label>
+                <input type="checkbox" id="ignoreProfiles" name="ignoreProfiles">
+            </div>
+        </div>
+        </div>
+    </body>
+</html>
