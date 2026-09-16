@@ -33,7 +33,8 @@
         ]},
         {"name":"autoAdvanceDelay","label":"Auto advance delay (s)","type":"number","default":5,"min":1},
         {"name":"openLink","label":"Back is hyperlink","type":"checkbox","default":false,"info":"When enabled, instead if showing the back of an item, this will open a URL given in the ‘Back’ column. If no URL is provided, the back will be shown as set."},
-        {"name":"category","label":"Category filter","type":"text","info":"Only show items that match the category name in the fifth column. If the category column is not filled, it will always be shown."}
+        {"name":"category","label":"Category filter","type":"text","info":"Only show items that match the category name in the fifth column. If the category column is not filled, it will always be shown."},
+        {"name":"textNothingToShow","label":"Text to show when no items match","type":"text","default":"No items to show."}
     ]
 }
 *HEX SETTINGS END*-->
@@ -280,6 +281,20 @@
     .fade-right {
       right: 0;
       background: linear-gradient(to left, var(--bg-color) 0%, rgba(255, 255, 255, 0) 100%);
+    }
+
+    #noItemsMessage {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2em;
+      color: var(--fg-color);
+      text-align: center;
+    }
+
+    #noItemsMessage.hidden {
+      display: none;
     }
 
 
@@ -4137,6 +4152,13 @@
           splideList.appendChild(el)
           displayItems.push({ el: el, card: card, index: displayItems.length, isURL: amURL, href: itemURL, hasBack: hasBack, zIndexDelay: null })
         }        
+
+        if (displayItems.length == 0) {
+          document.getElementById('noItemsMessage').innerHTML = gameSettings.textNothingToShow
+          document.getElementById('noItemsMessage').classList.remove('hidden')
+        } else {
+          document.getElementById('noItemsMessage').classList.add('hidden')
+        }
       })
 
       // make it possible to click on links and also on code
@@ -4622,6 +4644,7 @@
 
 <body>
   <a id="logo" class="logo"></a>
+  <div class="hidden" id="noItemsMessage">No items to show.</div>
   <div class="fade fade-left"></div>
   <div class="fade fade-right"></div>
   <div id="header" class="header hidden"></div>
