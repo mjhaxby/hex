@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'setActivitySettingsDefaults',
       'customSelectImport',
       'settingsToProfile',
+      'settingsToBulk',
       'profileEditorReady',
       'updateProfile',
       'applyActivityProfile',
@@ -41,7 +42,13 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'requestConfig',
       'tableModified',
       'getActivity',
-      'editorWindowReady'
+      'editorWindowReady',
+      'openFilesForBulk',
+      'removeFileFromBulk',
+      'addCurrentProfileToBulk',
+      'openProfileFromFile',
+      'removeProfileFromBulk',
+      'bulkExport'
     ];
 
     if (validChannels.includes(channel)) {
@@ -70,13 +77,16 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'loadProfile',
       'loadData',
       'getActivitySettingsForProfile',
+      'getActivitySettingsForBulk',
       'addToProfile',
       'applyActivitySettings',
       'updateAndApplyActivityProfile',
       'updateProfileToSave',
       'toCheckProfileChangesThen',
       'customSelectImportFileResult',
-      'dataCellFileImportResult'
+      'dataCellFileImportResult',
+      'updateFilesIn',
+      'updateProfilesOut'
     ];
 
     if (validChannels.includes(channel)) {
