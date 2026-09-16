@@ -10,8 +10,48 @@ const activityEditor = require('./activityEditor.js')
 
 const debugMode = info.debugMode
 
-const exportActivity = (data, activity, settings, files, source, type = 'html', packageIdentifier = '') => {
-  var activityTemplate
+function writeFile(filePath, data){
+fs.writeFile(filePath, data, { encoding: 'utf8' }, (err) => {
+            if (err) {
+              if(debugMode){console.log(err)};
+            } else {
+              if(debugMode){console.log("File written successfully.")}
+            }
+          })
+}
+
+const readPreferences = (data) => {
+  let regex = /<!--\*HEX SETTINGS START\*([.\s\S]+)\*HEX SETTINGS END\*-->/gm
+  var dataArea = data.match(regex)[0] // find the pref data with the flags
+  var jsonData = dataArea.replace(regex, '$1').trim() // remove the flags and trim
+  // if(debugMode){console.log(jsonData)}
+  if (jsonData) {
+    try {
+      obj = JSON.parse(jsonData)
+    } catch (e) {
+      obj = { error: e } // pass on error if there is a json formatting issue
+    }
+  } else {
+    obj = { error: 'Hex settings not found.' } // pass on error if we can't find the settings at all
+  }
+  return obj
+}
+
+const exportActivity = (options = {data: [[]], activity: '', settings: {}, files: [], source: 'prebuilt', type: 'html', packageIdentifier: '', path: '', prefsStore: {}}) => {
+  options = {
+    data: [[]],
+    activity: '',
+    settings: {},
+    files: [],
+    source: 'prebuilt',
+    type: 'html',
+    packageIdentifier: '',
+    path: '',
+    prefsStore: {},
+    ...options
+  }  
+  const {data, activity, settings, files, source, type, packageIdentifier, path} = options
+  var prefsStore = options.prefsStore || {}
   var exportData
 
   if (type == 'html') {
@@ -28,24 +68,33 @@ const exportActivity = (data, activity, settings, files, source, type = 'html', 
     let activityPath = activityEditor.findActivityPath(activity, source)
 
     activityEditor.openActivityTemplate(activityPath).then(activityTemplate => {
+      // if no prefsStore was passed, we'll need to read it now (this is the case when bulk exporting)
+      if (Object.keys(prefsStore).length === 0) {
+        prefsStore = readPreferences(activityTemplate)
+      }
       activityEditor.openFonts(settings).then ( fontData => {
         if(debugMode){console.log(fontData)}
         settings.scorm = false // add scorm (false) tag to the  settings
-        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, windows.main.prefsStore, fontData)
-        dialog.showSaveDialog(dialogOptions).then(result => {
+        
+        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, prefsStore, fontData)
+        if (path.length > 0){
+          writeFile(path, exportData)
+        } else {
+          dialog.showSaveDialog(dialogOptions).then(result => {
           if (result.canceled) {
             if(debugMode){console.log("Cancelled")}
             return
           }
-          fs.writeFile(result.filePath, exportData, { encoding: 'utf8' }, (err) => {
-            if (err) {
-              if(debugMode){console.log(err)};
-            } else {
-              if(debugMode){console.log("File written successfully.")}
-            }
-          })
+          writeFile(result.filePath, exportData)
         })
-      })
+        }
+        
+      }).catch(err => {
+        console.error("Error opening fonts:", err);
+      });
+    })
+    .catch(err => {
+      console.error("Error opening activity template:", err);
     });
   } else if (type == 'scorm') {
 
@@ -84,18 +133,32 @@ const exportActivity = (data, activity, settings, files, source, type = 'html', 
         }
 
         if (result.response == 1 || result.response == 0) {
-          exportActivityAsScorm(activity, source, data, settings, packageIdentifier)
+          exportActivityAsScorm({activity: activity, source: source, data: data, settings: settings, files: files, packageIdentifier: packageIdentifier, prefsStore: prefsStore})
         }
 
       })
     } else {
-      exportActivityAsScorm(activity, source, data, settings, packageIdentifier)
+      exportActivityAsScorm({activity: activity, source: source, data: data, settings: settings, files: files, packageIdentifier: packageIdentifier, prefsStore: prefsStore})
     }
 
   }
 
-  // if you are adding in a new way to export scorms, you probably want to do this through the regular exportActivity function (specifying type='scorm')
-  const exportActivityAsScorm = (activity, source, data, settings, files, packageIdentifier) => {
+
+
+  // if you are adding in a new way to export scorms, you probably want to do this through the regular exportActivity function (specifying type='scorm'), and so you don't need to export this function
+  const exportActivityAsScorm = (options = {activity: '', source: 'prebuilt', data: [[]], settings: {}, files: [], packageIdentifier: '', prefsStore: {}}) => {
+    options = {
+      activity: '',
+      source: 'prebuilt',
+      data: [[]],
+      settings: {},
+      files: [],
+      packageIdentifier: '',
+      prefsStore: {},
+      ...options
+    }    
+    const {activity, source, data, settings, files, packageIdentifier, prefsStore} = options  
+
     const zip = new AdmZip();
     var dialogOptions = {
       title: 'Export activity as SCORM',
@@ -114,8 +177,8 @@ const exportActivity = (data, activity, settings, files, source, type = 'html', 
       activityEditor.openFonts(settings).then ( fontData => {
         if(debugMode){console.log(fontData)}
         settings.scorm = true // add scorm tag to the  settings
-        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, windows.main.prefsStore, fontData)
-
+        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, prefsStore, fontData)
+        if(debugMode){console.log(exportData)}
         dialog.showSaveDialog(dialogOptions).then(result => {
           if (result.canceled) {
             if(debugMode){console.log("Cancelled")}
@@ -144,5 +207,6 @@ const exportActivity = (data, activity, settings, files, source, type = 'html', 
 };
 
 module.exports = {
-  activity: exportActivity
+  activity: exportActivity,
+  readPreferences: readPreferences
 }
