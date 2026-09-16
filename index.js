@@ -606,6 +606,17 @@ ipcRenderer.on('getActivitySettingsForProfile', (event) => {
   ipcRenderer.send('settingsToProfile', activity, source, activitySettings)
 })
 
+ipcRenderer.on('getActivitySettingsForBulk', (event) => {
+  let activitySettings = getSettings(prefsStore.settings)
+  const selector = document.getElementById('activitySlct')
+  var activity = selector.value
+  var source = selector.options[selector.selectedIndex].getAttribute('data-source')
+  console.log('sending settings to bulk')
+  console.log(activitySettings)
+  ipcRenderer.send('settingsToBulk', activity, source, activitySettings)
+})
+
+
 ipcRenderer.on('applyActivitySettings', (event, settings) => {
   console.log(settings)
   setSettings(settings,prefsStore.settings,false) // later change to false
