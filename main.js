@@ -1057,7 +1057,7 @@ function readActivitySettings(activity, source) {
 
     activityEditor.openActivityTemplate(activityPath)
       .then(activityTemplate => {
-        const prefs = readPreferences(activityTemplate);
+        const prefs = exporter.readPreferences(activityTemplate);
         if (prefs.hasOwnProperty('settings')) {
           resolve(prefs.settings);
         } else {
@@ -1166,7 +1166,7 @@ function processSaveExport(event,data,purpose='export',path=''){
   // settingErrors = findSettingAnomolies(data.settings)
   if (settingErrors.length == 0 && dataOK && activityOK) {
     if (purpose == 'export'){
-      exporter.activity(data.input, data.activity, data.settings, exportFileStore, data.source, data.type, data.packageIdentifier)
+      exporter.activity({data: data.input, activity: data.activity, settings: data.settings, files: exportFileStore, source: data.source, type: data.type, packageIdentifier: data.packageIdentifier, prefsStore: windows.main.prefsStore})
     } else if (purpose == 'save'){
       saveTable(data,path,exportFileStore)
 
@@ -1296,7 +1296,7 @@ ipcMain.on('readActivityPrefs', function (event, activity, source) {
     let activityPath = activityEditor.findActivityPath(activity, source)
     let customDefaults = {}
     activityEditor.openActivityTemplate(activityPath).then(activityTemplate => {
-      window.prefsStore = readPreferences(activityTemplate)
+      window.prefsStore = exporter.readPreferences(activityTemplate)
       if (config.activities && config.activities[source+'_'+activity] && config.activities[source+'_'+activity].default_settings){
         customDefaults = config.activities[source+'_'+activity].default_settings
         if (debugMode) {
@@ -1525,7 +1525,7 @@ ipcMain.on("tableModified", function (event){
 })
 
 ipcMain.on('openFilesForBulk', function (event) {
-  // to do: open files for bulk processing
+  // open files for bulk processing
   bulk.openFiles(event.sender)
 })
 
@@ -1540,12 +1540,12 @@ ipcMain.on('addCurrentProfileToBulk', function (event) {
 })
 
 ipcMain.on('settingsToBulk', function (event, activity, source, settings) {
-  // to do: add the current profile to bulk processing
+  // to do? or remove?
   bulk.addProfile(activity, source, settings, event.sender)
 })
 
 ipcMain.on('openProfileFromFile', function (event) {
-  // to do: open a profile file for bulk processing
+  // open a profile file for bulk processing
   bulk.openProfileFromFile(event.sender)
 })
 
@@ -1554,9 +1554,9 @@ ipcMain.on('removeProfileFromBulk', function (event, selectedProfiles) {
   bulk.removeProfiles(selectedProfiles, event.sender)
 })
 
-ipcMain.on('bulkExport', function (event, option="html") {
-  // to do: export the selected files and profiles in bulk
-  bulk.export({option: option}, event.sender)
+ipcMain.on('bulkExport', function (event, selectedFiles, selectedProfiles, option="html") {
+  // export the selected files and profiles in bulk
+  bulk.export(selectedFiles, selectedProfiles, option, event.sender)
 })
 
 
@@ -1769,7 +1769,7 @@ const getReadyToExport = (type) => {
 
 const exportFromActivity = () => {
   activityWindow = activityFocused()
-  exporter.activity(activityWindow.data, activityWindow.activityType, activityWindow.settings, activityWindow.importedFiles, activityWindow.source, 'html', '') // TO DO: possible to export scorm from window
+  exporter.activity({data: activityWindow.data, activity: activityWindow.activityType, settings: activityWindow.settings, files: activityWindow.importedFiles, source: activityWindow.source, type: 'html', packageIdentifier: '', prefsStore: windows.main.prefsStore}) // TO DO: possible to export scorm from window
 }
 
 const openTableDialog = () => {
@@ -2249,22 +2249,7 @@ function saveTable(inputData,path,fileData){
   })
 }
 
-function readPreferences(data) {
-  let regex = /<!--\*HEX SETTINGS START\*([.\s\S]+)\*HEX SETTINGS END\*-->/gm
-  var dataArea = data.match(regex)[0] // find the pref data with the flags
-  var jsonData = dataArea.replace(regex, '$1').trim() // remove the flags and trim
-  // if(debugMode){console.log(jsonData)}
-  if (jsonData) {
-    try {
-      obj = JSON.parse(jsonData)
-    } catch (e) {
-      obj = { error: e } // pass on error if there is a json formatting issue
-    }
-  } else {
-    obj = { error: 'Hex settings not found.' } // pass on error if we can't find the settings at all
-  }
-  return obj
-}
+
 
 function unrollTemplates(settings){
   let unrolledSettings = []
