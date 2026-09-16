@@ -11,6 +11,7 @@ function importExportedActivity(string){
     if(!hexInfo){
         console.log('Malformed activity file or activty file from old version. Attempting to parse anyway.')
         activityData = extractActivityDataFromOldVersion(string)
+        console.log('Activity data from old version: ', activityData)
         if (activityData == null){
             console.log('Failed to parse activity data from old version. Please check the file format.')
             return null    
@@ -32,6 +33,7 @@ function importExportedActivity(string){
 
     // Restore markdown from HTML
     activityData.gameData.forEach(r => {
+        if (!r) return 
         r.forEach(c=>{
             if (c && c.hasOwnProperty('text')) {
                 c.text = activityEditor.convertHTMLToMarkdown(c.text)
@@ -59,8 +61,9 @@ function importExportedActivity(string){
 }
 
 function extractActivityInfo(string){
-    const hexInfoRex = /<!--\*HEX INFO START\*({.+})\*HEX INFO END\*-->/
-    let hexInfoString = string.match(hexInfoRex)[1]
+    const hexInfoRegex = /<!--\*HEX INFO START\*({.+})\*HEX INFO END\*-->/
+    let searchResult = string.match(hexInfoRegex)
+    let hexInfoString = searchResult ? searchResult[1] : null
     let hexInfo = null
     if (hexInfoString != null) {
         hexInfo = JSON.parse(hexInfoString)
@@ -134,10 +137,17 @@ function extractActivityDataFromOldVersion(string){
     }
     try {
         const data = JSON.parse(dataString)
-        return {
-            gameData: data,
-            gameSettings: {},
-            gameFiles: {}
+        if (data){
+            for (let i = 0; i < data.length; i++){
+                if (typeof data[i] != 'object'){
+                    data[i] = [data[i]] // wrap in array if not already an array
+                }
+            }
+            return {
+                gameData: data,
+                gameSettings: {},
+                gameFiles: {}
+            }
         }
     } catch (error) {
         console.error('Error parsing JSON:', error)
