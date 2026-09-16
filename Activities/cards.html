@@ -98,11 +98,19 @@
             if(gameSettings.activityName != ''){
                 window.document.title = gameSettings.activityName + ' – ' + window.document.title
             }
+
+            for (let i = 0; i < gameData.length; i++){
+                for (let j = 0; j < gameData[i].length; j++){
+                    if (typeof gameData[i][j] == 'object' && gameData[i][j] !== null && gameData[i][j].hasOwnProperty('text')){ 
+                        gameData[i][j] = gameData[i][j].text
+                    }
+                }
+            }
             
             const discardAll = document.getElementById('discardAll')
             const returnAll = document.getElementById('returnAll')
             const deal = document.getElementById('deal')
-            const deck = document.getElementById('deck')
+            const deckEl = document.getElementById('deck')
             const more = document.getElementById('more')
             const undiscard = document.getElementById('undiscard')
             const revealAll = document.getElementById('revealAll')
@@ -110,8 +118,8 @@
             
             // set button text from settings
             deal.innerHTML = gameSettings.textDeal
-            deck.setAttribute('aria-label', gameSettings.textDeck)
-            deck.setAttribute('title', gameSettings.textDeck)            
+            deckEl.setAttribute('aria-label', gameSettings.textDeck)
+            deckEl.setAttribute('title', gameSettings.textDeck)            
             more.setAttribute('aria-label', gameSettings.textMore)
             more.setAttribute('title', gameSettings.textMore)
             returnAll.setAttribute('aria-label', gameSettings.textReturn.replaceAll(/[()]/g, '')) // remove brackets 
@@ -323,12 +331,13 @@
                 if (dealingCards) { // if already dealing, wait a moment before continuing
                     console.log('Wait a second…')
                     forcedToWaitToDeal++ // to prevent crashing due to unexpected loop
-                    if (forcedToWaitToDeal < 1000) {
+                    if (forcedToWaitToDeal < 10) {
                         setTimeout(function () {
                             dealCards(num)
                         }, 500)
                     } else {
                         console.error('Unexpectedly waited too long before dealing a card')
+                        dealCards(num) // try again anyway
                     }
                 }
                 else {
