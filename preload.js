@@ -48,7 +48,9 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'addCurrentProfileToBulk',
       'openProfileFromFile',
       'removeProfileFromBulk',
-      'bulkExport'
+      'bulkExport',
+      'undoRequested',
+      'redoRequested',
     ];
 
     if (validChannels.includes(channel)) {
@@ -81,6 +83,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'addToProfile',
       'applyActivitySettings',
       'updateAndApplyActivityProfile',
+      'undoRequested',
       'updateProfileToSave',
       'toCheckProfileChangesThen',
       'customSelectImportFileResult',

@@ -2517,7 +2517,21 @@ const applicationMenu = Menu.buildFromTemplate([
   {
     label: 'Edit',
     submenu: [
-      { role: 'undo' },
+            {
+          label:       'Undo',
+          accelerator: 'CmdOrCtrl+Z',
+          click:       function (menuItem, focusedWin) {
+            if (!focusedWin || !focusedWin.webContents) {
+              return
+            }
+
+            if (windows.editors.some(editor => editor.window.id === focusedWin.id)) {
+              focusedWin.webContents.send('undoRequested')
+            } else {
+              focusedWin.webContents.undo()
+            }
+          }
+      },
       { role: 'redo' },
       { type: 'separator' },
       { role: 'cut' },

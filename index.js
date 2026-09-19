@@ -698,3 +698,10 @@ ipcRenderer.on('requestActivitySettingDefaults', (event) => {
 })
 
 
+ipcRenderer.on('undoRequested', (event) => {
+  if (document.queryCommandEnabled('undo')) {
+    document.execCommand('undo')
+  } else {
+    table.undo()
+  }
+})
