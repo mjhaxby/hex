@@ -1043,7 +1043,7 @@ class TableManager {
     }
 
     disconnectDetailEditorFromCell(updatePreview = true){
-                let cell = document.getElementById(`${this.tableId}_${this.detailEditorCell}_dataCell`)
+        let cell = document.getElementById(`${this.tableId}_${this.detailEditorCell}_dataCell`)
 
         this.saveTextFromDetailEditor()
 
@@ -1148,7 +1148,10 @@ class TableManager {
         let currentText = this.getWysiwygContent()        
         let cell = document.getElementById(`${this.tableId}_${this.detailEditorCell}_dataCell`)
         let textEl = cell.querySelector('.inputCellText')
-        textEl.value = currentText
+        let oValueObject = {text: textEl.value}
+        let nValueObject = {text: currentText}
+        textEl.value = currentText        
+        this.do('storeCellEdit', {cellID: cell.dataset.cell, oValue: oValueObject, nValue: nValueObject}) // save the change to the cell's text value in the undo stack
     }
 
     saveAndMoveDetailEditor(direction){
@@ -1457,18 +1460,22 @@ setWysiwygContent(content) {
             const controller = new AbortController();
             this.pendingCellEditCapture = controller;
 
-            // Fires once, after the first real input event (for text) or change event (for select, date, time)
-            if (type != 'file'){
-                el.addEventListener('change', () => {
-                    let oValueObject = {}
+            function saveCellEdit(tableManagerInstance = this) {
+                let oValueObject = {}
                     let nValueObject = {}
                     oValueObject[type] = this.holdCellOriginalValue // Store the original value in an object, with the type as the key ('text', 'select', 'date', 'time', 'file'). 
                     nValueObject[type] = el.value // Store the new value in a similar object.
 
                     // This could be modified later to allow for multiple types to be stored at once (pass an array of types as the type?).
                     if (el.value !== this.holdCellOriginalValue) {
-                        this.do('storeCellEdit', { cellID: cellID, oValue: oValueObject, nValue: nValueObject });
+                        tableManagerInstance.do('storeCellEdit', { cellID: cellID, oValue: oValueObject, nValue: nValueObject });
                     }
+            }
+
+            // Fires once, after the first real input event (for text) or change event (for select, date, time)
+            if (type != 'file'){
+                el.addEventListener('change', () => {
+                    saveCellEdit.call(this);
     
                     if (this.pendingCellEditCapture === controller) {
                         this.pendingCellEditCapture = null;
@@ -1476,17 +1483,33 @@ setWysiwygContent(content) {
                 }, { once: true, signal: controller.signal });
 
                 el.addEventListener('blur', () => {
+
                     if (this.pendingCellEditCapture === controller) {
                         controller.abort();
                         this.pendingCellEditCapture = null;
                     }
+
+                    this.handleCellInputBlur(event, cellID, type);
+
                 }, { once: true, signal: controller.signal });
             } else {
-                // to do: (or do nothing for file? we just need to run storeCellEdit when a file is added or removed)
+                // for files, trigger immediately
+                saveCellEdit.call(this);
             }
 
+    }
 
+    handleCellInputBlur(event, cellID, type){
+        let lastAction = this.undoStack[this.undoStack.length - 1]
+        if(lastAction && lastAction.action == 'revertCell' && lastAction.cellID == cellID && lastAction.oValue[type] != event.target.value){
+            // this will only run if the cell has already been changed once, but not blurred (so will probably never run, since change usually fires before blur, but just in case)
+            // if the cell has changed since the last saved undo action, we need to store the new value in the undo stack
+            let nValueObject = {}
+            nValueObject[type] = event.target.value;
+            this.do('storeCellEdit', { cellID: cellID, oValue: lastAction.oValue, nValue: nValueObject });
+            console.log('Saved new value for cell ' + cellID + ' on blur: ' + event.target.value);
         }
+    }
 
     // inputCellText element
     inputCellText(rowID, colID, cellID){
@@ -1639,12 +1662,15 @@ setWysiwygContent(content) {
         mirror.addEventListener('change', (event) => {
             this.updateTextFromMirror(event.currentTarget)
         })
+        mirror.addEventListener('focus', (event) => {
+            this.handleCellInputFocus(event, cellID, row, col, 'text')
+        })
         return mirror
     }
 
     inputCellImageSelector(rowID, colID, cellID){    
         let result = newElement('button',{id: `${this.tableId}_${cellID}_inputCellImageSelector`, class:'inputCellImageSelector cellBtn'},icons.image)
-        result.addEventListener('click', (event) => {
+        result.addEventListener('click', (event) => {            
             this.triggerImportImage(result.closest('.data'))
         })
         if(!this.colAcceptsDataType(this.colIDs.indexOf(colID),'image')){
@@ -2315,6 +2341,13 @@ setWysiwygContent(content) {
                 if (selectInput){
                     selectInput.value = value.select
                 }
+             }
+             if (cell.classList.contains('expanded')){
+                this.updateMirrorFromText(cell)
+             }
+             if (this.tableElement.parentElement.classList.contains('detail-mode') ){
+                // if the table is in detail mode, we need to update the detail editor to match the reverted value
+                this.openDetailEditor(cell.dataset.row, cell.dataset.col, cell.dataset.cell)
              }
         }
     }
