@@ -1842,10 +1842,10 @@ function handleTableFileOpen(data, path){
     } else {
       const newEditorWindow = createEditorWindow()
       newEditorWindow.openTablePath = path
-      newEditorWindow.dataWaiting = data
-      
+      newEditorWindow.dataWaiting = data      
     }
-    windows.main.openTablePath = path
+    windows.main.openTablePath = path    
+    app.addRecentDocument(path)
   } else {
     dialog.showErrorBox("Error opening file", "Invalid file format. Please used JSON format.")
     return;
@@ -2236,6 +2236,7 @@ function saveTable(inputData,path,fileData){
       if(debugMode){console.log(err)};
     } else {
       if(debugMode){console.log("File written successfully.")}
+      app.addRecentDocument(path)
       // lastSavedProfile = profileStore
 
       // we may be saving in anticipation of opening or closing the file, in which case this variable will have been set
@@ -2417,20 +2418,29 @@ const applicationMenu = Menu.buildFromTemplate([
       isMac ? { role: 'close' } : { role: 'quit' }
     ],
     submenu: [
-      { label: 'New table', 
+      { label: 'New Table', 
         role: 'new',
         accelerator: process.platform === 'darwin' ? 'Cmd+N' : 'Ctrl+N',
         click: () => { createEditorWindow() }
       },
       {
-        label: 'Open table and settings…',
+        label: 'Open Table and Settings…',
         role: 'open', 
         accelerator: process.platform === 'darwin' ? 'Cmd+O' : 'Ctrl+O',
         click: () => { openTableDialog() }
-      },
-      // TO DO!
+      },   
       {
-        label: 'Save table and settings',
+        label: 'Open Recent',
+        role: 'recentDocuments',
+        submenu: [
+          {
+            label: 'Clear Recent',
+            role: 'clearRecentDocuments'
+          }
+        ]
+      },
+      {
+        label: 'Save Table and Settings',
         role: 'save',
         accelerator: process.platform === 'darwin' ? 'Cmd+S' : 'Ctrl+S',
         click: () => { initiateSaveTable(windows.main.openTablePath) }
@@ -2444,47 +2454,47 @@ const applicationMenu = Menu.buildFromTemplate([
       // {
       //   label: 'Close table file',
       //   click: () => { requestCheckTableChangesThen('close') }
-      // },
+      // },      
       {
-        label: 'Import table…',        
+        label: 'Import Table…',        
         click: () => { importTableDialog() }
       },
       {
-        label: 'Import activity…',        
+        label: 'Import Activity…',        
         click: () => { importActivityDialog() }
       },
       { type: 'separator' },
       {
-        label: 'Export activity',
+        label: 'Export Activity…',
         accelerator: process.platform === 'darwin' ? 'Cmd+Shift+S' : 'Ctrl+Shift+S',
         click: () => { if (activityFocused() == null) { getReadyToExport() } else (exportFromActivity()) } // TO DO: if activity window has focus, get data from that (make an array of objects that contains each window and its data?)
       },
-      { label: 'Bulk import/export…',
+      { label: 'Bulk Import/Export…',
         click: () => { openBulkImportExportWindow() }
       },
       { type: 'separator' },
       {
-        label: 'Open profile…',
+        label: 'Open Profile…',
         click: () => { requestCheckProfileChangesThen('open') },
         accelerator: 'Alt+O'
       },
       {
-        label: 'Save profile',
+        label: 'Save Profile',
         click: () => { initiateSaveProfile() },
         accelerator: 'Alt+S'
       },
       {
-        label: 'Save profile as…',
+        label: 'Save Profile As…',
         click: () => { saveProfileDialog() },
         accelerator: 'Alt+Shift+S'
       },
       {
-        label: 'Close profile',
+        label: 'Close Profile',
         click: () => { requestCheckProfileChangesThen('close') }
       },
       { type: 'separator' },
       {
-        label: 'Select user activities folder…',
+        label: 'Select User Activities Folder…',
         click: () => { openUserActivitiesDirDialog() }
       },
       { type: 'separator' },
@@ -2517,7 +2527,7 @@ const applicationMenu = Menu.buildFromTemplate([
   {
     label: 'Edit',
     submenu: [
-            {
+          {
           label:       'Undo',
           accelerator: 'CmdOrCtrl+Z',
           click:       function (menuItem, focusedWin) {
@@ -2531,8 +2541,22 @@ const applicationMenu = Menu.buildFromTemplate([
               focusedWin.webContents.undo()
             }
           }
-      },
-      { role: 'redo' },
+      },     
+      {
+          label:       'Redo',
+          accelerator: 'CmdOrCtrl+Shift+Z',
+          click:       function (menuItem, focusedWin) {
+            if (!focusedWin || !focusedWin.webContents) {
+              return
+            }
+
+            if (windows.editors.some(editor => editor.window.id === focusedWin.id)) {
+              focusedWin.webContents.send('redoRequested')
+            } else {
+              focusedWin.webContents.redo()
+            }
+          }
+      },      
       { type: 'separator' },
       { role: 'cut' },
       { role: 'copy' },
@@ -2582,53 +2606,53 @@ const applicationMenu = Menu.buildFromTemplate([
     id: 'tools',
     submenu: [
       {
-        label: 'Copy table as tabbed text',
+        label: 'Copy Table as Tabbed Text',
         accelerator: process.platform === 'darwin' ? 'Cmd+Shift+C' : 'Ctrl+Shift+C',
         click: () => { getTableDataForClipboard('block') }
       },
       {
-        label: 'Copy table as JSON',
+        label: 'Copy Table as JSON',
         accelerator: process.platform === 'darwin' ? 'Cmd+Shift+Alt+C' : 'Ctrl+Shift+Alt+C',
         click: () => { getTableDataForClipboard('json') }
       },
       {
-        label: 'Empty table',
+        label: 'Empty Table',
         accelerator: process.platform === 'darwin' ? 'Cmd+Shift+Delete' : 'Ctrl+Shift+Delete',
         click: () => { askToClearTable() }
       },
       {
-        label: 'Delete unused rows from end',
+        label: 'Delete Unused Rows from End',
         click: () => { askToDeleteUnusedRows() }
       },
       {
-        label: 'Delete unused columns from end',
+        label: 'Delete Unused Columns from End',
         click: () => { askToDeleteUnusedCols() }
       },
       { type: 'separator' },
       {
-        label: 'Set current activity settings as default',
+        label: 'Set Current Activity Settings as Default',
         click: () => { windows.main.window.webContents.send('requestActivitySettingDefaults') }
       },
       {
-        label: 'Reset current activity settings to factory',
+        label: 'Reset Current Activity Settings to Factory',
         click: () => { resetCurrentActivitySettingDefaults() }
       },
       { type: 'separator' },
       {
-        label: 'Open profile editor',
+        label: 'Open Profile Editor',
         click: () => { openProfileEditor() }
       },
       {
-        label: 'Add/Update current activity to profile',
+        label: 'Add/Update Current Activity to Profile',
         click: () => { addActivityProfile() }
       },
       { type: 'separator' },
       {
-        label: 'Reset message before SCORM export',
+        label: 'Reset Message Before SCORM Export',
         click: () => { config.showScormInfo = true; saveConfigFile(); }
       },
       {
-        label: 'Hot Potatoes importer',
+        label: 'Hot Potatoes Importer',
         click: () => { config.showScormInfo = true; tools.openHotPotatoesDialog(); }
       },
     ]
