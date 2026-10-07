@@ -214,7 +214,7 @@ class TableTester extends TableManager {
         let clipboardText = JSON.stringify(data)
         let targetCell = this.tableElement.querySelector('.inputCellText')
         targetCell.focus()
-        this.pasteInData({clipboardData: {getData: () => clipboardText}, stopPropagation: () => {}, preventDefault: () => {}},0,0)
+        this.pasteInData({clipboardData: {getData: () => clipboardText}, stopPropagation: () => {}, preventDefault: () => {}},this.rowIDs[0],this.colIDs[0])
 
         let errors = false
 
@@ -453,6 +453,20 @@ class TableTester extends TableManager {
                  }
                 }
             })
+
+            //  also check all IDs are unique
+            let uniqueRowIDs = new Set(this.rowIDs)
+            if (uniqueRowIDs.size != this.rowIDs.length){
+                console.warn('Duplicate row IDs found in table.rowIDs')
+            }
+            let uniqueColIDs = new Set(this.colIDs)
+            if (uniqueColIDs.size != this.colIDs.length){
+                console.warn('Duplicate col IDs found in table.colIDs')
+            }
+            let uniqueCellIDs = new Set(this.cellIDs.flat())
+            if (uniqueCellIDs.size != this.cellIDs.flat().length){
+                console.warn('Duplicate cell IDs found in table.cellIDs')
+            }
         })
         console.log('ID consistency check completed')
     }
