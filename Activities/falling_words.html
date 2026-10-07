@@ -3,7 +3,7 @@
     "markdown_support":true,
     "cols_min":2,
     "rows_min":1,
-    "cols":["Question","Answer","Alternative Answer","===="],
+    "cols":[{"title":"Question","text":true,"image":true},{"title":"Answer","text":true,"image":false},{"title":"Alternative Answer","text":true,"image":false},"===="],
     "description":"Type in the falling words before they hit the ground. When the pile reach the top, you lose. If you press enter, your response may be accepted if it's similar enough to the actual answer. Turn loop mode ‘off’ or ‘missed words only’ to make it possible for the player to win, otherwise the game continues until they lose.",
     "settings":[
       {"name":"color","label":"Color","type":"select","options":["Default","Lille","university","B5 4eva","bridge of wood","Rose garden","Black and white","Dark mode","Magnet","Rexby","Blorange","Liberty","Swedish furniture company","Café au lait","Neon"],"category":"look and feel"},
@@ -376,6 +376,7 @@
         font-size: 5vh;
         border: 2px solid var(--fg-color);
         background-color: var(--bg-color);
+        background-size: contain;
         color: var(--fg-color);
         border-radius: var(--border-radius);
         text-align: center;
@@ -388,6 +389,12 @@
         -ms-user-select: none;
         transition: top 0.05s, left 0.05s, background-color 30s, color 20s, border-color 30s, opacity 1s;
         /* transition: 1s; // not enough to actually animate when adding in a div, what might work is to save where everything is, add in the new div, then temporarily make everything absolute in position and back where it was originally, then transform to the new positions, then remove the absolute positioning */
+      }
+
+      .card.image {
+        height: 100px;
+        aspect-ratio: 1/1;
+        background-repeat: no-repeat;
       }
 
       .falling{
@@ -715,7 +722,7 @@
               answers.push(data[i]) // add all the possible answers to an array
             }
           }
-          words.push({drop: data[0], answers: answers, correctLastRound: false})
+          words.push({drop: data[0], dropIsImage: (data[0] && typeof data[0] == 'object' && data[0].hasOwnProperty('image') && data[0].image), answers: answers, correctLastRound: false})
         })
         if (gameSettings.mode == 'Multiple choice'){
           MultiChoiceMode = true
@@ -1254,9 +1261,31 @@
         guessButton.innerHTML = gameSettings.resetButton
       }
 
+      function addImageToEl(el, image, text = '') {
+        if (image.ext == 'svg') {
+          el.style.backgroundImage = modern_SVG2CSS(atob(image.data))
+        } else {
+          el.style.backgroundImage = 'url("data:image/' + image.ext + ';base64,' + image.data + '")'
+        }
+        el.title = text
+      }
+
+      function modern_SVG2CSS(SVG_input) {
+        var safe_svg = SVG_input.replace('width="100%"', '')
+          .replace(/#/g, "%23")
+          .replace(/\?/g, "%3F")
+          .replace(/[\t\n\r]/gm, '')
+          .replace(/\s\s+/g, ' ')
+          .replace(/'/g, '"')
+          .replace(/> </g, '><');
+
+        return "url('data:image/svg+xml," + safe_svg + "')";
+      }
+
       function dropWord(word){
         var newWord = document.createElement('div')
         let containerPosition = document.getElementById('dropArea').getBoundingClientRect();
+        let dropText = typeof word.drop == 'string' ? word.drop : word.drop.text
         if (MultiChoiceMode){
           enableMultipleChoiceButtons()
         }        
@@ -1264,9 +1293,14 @@
         newWord.setAttribute('class','card falling')
         newWord.setAttribute('data-order',numWords)
         newWord.setAttribute('data-answer',word.answers[0])
-        newWord.innerHTML = word.drop
-        newWord.setAttribute('title',word.drop) // add hover text so we can see it before it finishes appearing
-        announce(word.drop) // for screen readers
+        if (word.dropIsImage) {
+          addImageToEl(newWord, word.drop.image, dropText)
+          newWord.classList.add('image')
+        } else {
+          newWord.innerHTML = dropText
+        }
+        newWord.setAttribute('title',dropText) // add hover text so we can see it before it finishes appearing
+        announce(dropText) // for screen readers
         // new words go in the card holder
         // the drop area dictates their position, but it isn't their parent element because it needs to have position: relative
         // for some reason relative position messes up the function to move fallen cards around
