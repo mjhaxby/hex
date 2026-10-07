@@ -5,7 +5,7 @@ https://github.com/mjhaxby/hex/assets/47946283/f41d81ae-9ae5-403a-ab48-aa40efc49
 ## What is this?
 **hex** is an application designed to create learning activities, similar to Hot Potatoes, but much simpler to use. In fact, **hex** has the capability to turn any table of data into activities that you can run on the spot or export to a website or learning environment. The most common use case would be turning a list of vocabulary items into a game to finish a class or a revision activity online for homework.
 
-So far there are twenty activity templates available: Anagram, Backs to the Board, Blockbusters, Cards, Carroussel, Climb, Cloze, Crack the code, Crossword, Decisions, Drill, Escape Game, Falling Words, Four In A Row, List Order, Match, Maze, Times Up, Treasure Hunt and Word Order. It's also possible to create your own activity templates.
+So far there are twenty-one activity templates available: Anagram, Backs to the Board, Blockbusters, Cards, Carrousel, Climb, Cloze, Crack the Code, Crossword, Decisions, Drill, Escape Game, Falling Words, Four In A Row, List Order, Match, Maze, Quiz, Times Up, Treasure Hunt and Word Order. It's also possible to create your own activity templates.
 
 ## How do I use it?
 The simplest way is to simply copy and paste a list of vocabulary (with translation or definitions) from a Word or Excel document into **hex**. You can press *run* to open the activity, probably for use in the classroom, or you can press *export* to create an HTML file (or SCORM file). You can then put this HTML file on a Learning Management System, like Moodle, so that your students can use them individually. Some activities work best in the classroom, like *Backs to the board*. Others, you’re more likely to use as individual activities, like *Match*, either in a computer lab or at home. Some activities (notably *Decisions* and *Escape Game*) require a little more construction to get up and running. The easiest way to see how any of the activities work is to try the examples which can be found in the settings.
@@ -26,8 +26,7 @@ Download the latest version on the [releases](https://github.com/mjhaxby/hex/rel
 - Improved custom activities support.
 - Explanations on how to use each activity.
 - SCORM support for all activities.
-- Import data from previously exported activities.
-- New activities: Double Puzzle, Quiz, Magnet Board, Codenames, Spinner, Odd One Out…
+- New activities: Double Puzzle, Magnet Board, Codenames, Odd One Out…
 
 ## Disclaimer
-I am not a software developer, I am an English teacher. A huge part of this project is copy and pasted code (that I try to remember to give my source for, but often forget in the folly of trying out new things – I will try to add more attributes in future versions) and pure guess work.
+I am not a software developer, I am an English teacher. A huge part of this project is copy and pasted code (that I try to remember to give my source for, but often forget in the folly of trying out new things – I will try to add more attributes in future versions) and pure guess work. More recently, there are bits that are done with the help of Co-Pilot, but I am taking care not to let it do too much work so that I still understand how my own code works. 
