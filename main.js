@@ -135,11 +135,27 @@ const editorWindowPrototype = {
     currentActivity: null,
     currentSource: null,
     openTablePath: '',
+    activityName: '',
     importFileStore: {},
     dataWaiting: null,    
     prefsWaiting: null,
     profileStore: { name: '', activities: [] },
-    virgin: true
+    ready: false, // renderer has finished loading
+    dirty: false, // unsaved changes, as reported by the renderer
+    untouched: true, // nothing loaded or edited yet, so safe to reuse
+    cleanLoadPending: false, // next activity prefs read completes a file/import load, so the document is clean afterwards
+    importWaiting: null,
+    closeAfterSave: false,
+    closeConfirmed: false
+}
+
+const editorWindowFromEvent = (event) => {
+  const browserWindow = event.sender.getOwnerBrowserWindow()
+  return windows.editors.find(w => w.window.id === browserWindow.id)
+}
+
+const isReusableEditorWindow = (editorWindow) => {
+  return !!(editorWindow && editorWindow.window && editorWindow.untouched && !editorWindow.dirty && editorWindow.openTablePath == '')
 }
 
 const activityWindowPrototype = {
@@ -195,6 +211,8 @@ const createEditorWindow = () => {
     }
   })
 
+  newEditorWindow.on('page-title-updated', (e) => e.preventDefault()) // keep the document name as the title
+
   const newWindow = Object.create(editorWindowPrototype)
   newWindow.window = newEditorWindow
 
@@ -214,16 +232,25 @@ const createEditorWindow = () => {
   newEditorWindow.on('blur', updateMenuState) // disable print when not focused
 
   newEditorWindow.on('close', (e) => {
-    if (!windows.main.virgin) {
-      const choice = dialog.showMessageBoxSync(newEditorWindow, {
-        type: 'question',
-        buttons: ['Yes', 'No'],
-        title: 'Confirm',
-        message: 'Are you sure you want to close this window? Any unsaved changes will be lost.'
-      }); 
-      if (choice === 1) {
-        e.preventDefault();
-      }
+    if (newWindow.closeConfirmed || !newWindow.dirty) return
+    e.preventDefault()
+    const choice = dialog.showMessageBoxSync(newEditorWindow, {
+      type: 'question',
+      buttons: ['Save', "Don't Save", 'Cancel'],
+      defaultId: 0,
+      cancelId: 2,
+      title: 'Unsaved changes',
+      message: 'Do you want to save the changes to this table before closing?',
+      detail: "Your changes will be lost if you don't save them."
+    })
+    if (choice === 0) {
+      windows.main = newWindow // the save functions work on the main window
+      newWindow.closeAfterSave = true
+      initiateSaveTable(newWindow.openTablePath)
+      updateEditorTitle(newWindow)
+    } else if (choice === 1) {
+      newWindow.closeConfirmed = true
+      newEditorWindow.close()
     }
   })
 
@@ -475,6 +502,11 @@ app.whenReady().then(() => {
     checkForUpdate();
   }, 2000) // check for updates after a delay, to give the app a chance to load first and not cause any slowdowns or freezes on startup
 })
+
+const updateEditorTitle = (editorWindow) => {
+  const name = editorWindow.openTablePath ? path.parse(editorWindow.openTablePath).name : 'hex'
+  editorWindow.window.setTitle(name)
+}
 
 
 
@@ -1147,6 +1179,7 @@ function processSaveExport(event,data,purpose='export',path=''){
     return null
   }  
   let settingErrors = findSettingAnomolies(data.settings)
+  const sourceWindow = editorWindowFromEvent(event)
   let dataOK
   let fileStoreOK = true
   let stringsOnlyActivity = activityTemplateOnlyRequiresStrings()
@@ -1164,11 +1197,14 @@ function processSaveExport(event,data,purpose='export',path=''){
   let packageIdOK = (typeof data.packageIdentifier == 'string')
   let exportFileStore = deleteUnusedFileStoreItems(windows.main.importFileStore,data.settings)
   // settingErrors = findSettingAnomolies(data.settings)
+  if ((settingErrors.length > 0 || !dataOK || !activityOK) && sourceWindow) {
+    sourceWindow.closeAfterSave = false // saving failed, so don't close the window
+  }
   if (settingErrors.length == 0 && dataOK && activityOK) {
     if (purpose == 'export'){
       exporter.activity({data: data.input, activity: data.activity, settings: data.settings, files: exportFileStore, source: data.source, type: data.type, packageIdentifier: data.packageIdentifier, prefsStore: windows.main.prefsStore})
     } else if (purpose == 'save'){
-      saveTable(data,path,exportFileStore)
+      saveTable(data,path,exportFileStore,sourceWindow)
 
       // after saving, remember the file path
       let browserWindow = event.sender.getOwnerBrowserWindow()
@@ -1181,9 +1217,10 @@ function processSaveExport(event,data,purpose='export',path=''){
         console.log(editorWindow)        
       }
 
-      if (editorWindow) {
-        editorWindow.openTablePath = path        
-      }
+      // set elsewhere
+      // if (editorWindow) {    
+      //   editorWindow.openTablePath = path        
+      // }
     }
   } else if (settingErrors.length > 0) {
     reportSettingErrors(settingErrors)
@@ -1291,6 +1328,8 @@ ipcMain.on('readActivityPrefs', function (event, activity, source) {
   // save to refer to these later
   window.currentActivity = activity
   window.currentSource = source
+  const cleanLoad = window.cleanLoadPending // this request is the one that completes a file/import load
+  window.cleanLoadPending = false
 
   if (activityOK) {
     let activityPath = activityEditor.findActivityPath(activity, source)
@@ -1351,6 +1390,10 @@ ipcMain.on('readActivityPrefs', function (event, activity, source) {
         windows.main.window.webContents.send('applyActivitySettings',activityProfile.settings)
       }
 
+      if (cleanLoad) {
+        window.window.webContents.send('markClean')
+      }
+
     })
   } else {
     dialog.showErrorBox('Error reading activity preferences', 'There was an error with the activity name or activity source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
@@ -1368,7 +1411,10 @@ ipcMain.on('editorWindowReady', function(event){
   let browserWindow = event.sender.getOwnerBrowserWindow()
   let window = windows.editors.find(window => window.window.id === browserWindow.id)
   console.log(window)
-  if(window && window.dataWaiting){    
+  if(window) window.ready = true
+  if(window && window.importWaiting){
+    deliverImportedActivity(window)
+  } else if(window && window.dataWaiting){    
     if(typeof window.dataWaiting == 'string'){
       openTable(window.dataWaiting, window)
       window.dataWaiting = null
@@ -1377,6 +1423,7 @@ ipcMain.on('editorWindowReady', function(event){
       window.dataWaiting = null
     }
   }
+
 })
 
 ipcMain.on('getActivity', function(event){
@@ -1517,11 +1564,14 @@ ipcMain.on("requestConfig", function (event) {
   windows.main.window.webContents.send('configStore', config)
 })
 
-ipcMain.on("tableModified", function (event){
+ipcMain.on("tableModified", function (event, dirty = true){
   if (debugMode) {
-    console.log('Table modified')
+    console.log('Table modified: ' + dirty)
   }
-  windows.main.virgin = false
+  const editorWindow = editorWindowFromEvent(event)
+  if (!editorWindow) return
+  editorWindow.dirty = dirty
+  if (dirty) editorWindow.untouched = false
 })
 
 ipcMain.on('openFilesForBulk', function (event) {
@@ -1559,6 +1609,11 @@ ipcMain.on('bulkExport', function (event, selectedFiles, selectedProfiles, optio
   bulk.export(selectedFiles, selectedProfiles, option, event.sender)
 })
 
+ipcMain.on('activityNameUpdated', function (event, name){
+  const editorWindow = editorWindowFromEvent(event)
+  if (!editorWindow) return
+  editorWindow.activityName = name
+})
 
 
 const importTableDialog = () => {
@@ -1672,11 +1727,8 @@ const importActivityDialog = () => {
         dialog.showErrorBox("Error opening file", "The file could not be read.")
         return;
       } 
-      const newEditorWindow = createEditorWindow()
-      newEditorWindow.window.webContents.on('did-finish-load', () => {
-
-        importActivity(data, newEditorWindow) // this will put the activity data in the table and set the activity settings, but it won't select the activity as the current one (as this is just for previewing the activity, not editing it);
-      })
+      const targetWindow = isReusableEditorWindow(windows.main) ? windows.main : createEditorWindow()
+      importActivity(data, targetWindow) // puts the activity data in the table and sets the activity settings once the window is ready
     });
   });
 }
@@ -1689,19 +1741,35 @@ const importActivity = (data, editorWindow) => {
   }
   editorWindow.importFileStore = importedData.gameFiles ? importedData.gameFiles : {} // use gameFiles from the activity data, or an empty object if not present
 
-  
-  if (importedData.gameData){
-    editorWindow.dataWaiting = importedData.gameData // in case the window isn't ready yet to receive the data
+  editorWindow.importWaiting = {
+    gameData: importedData.gameData || null,
+    gameSettings: importedData.gameSettings || null,
+    activity: (importedData.info && importedData.info.hasOwnProperty('activity')) ? importedData.info.activity : null,
+    source: (importedData.info && importedData.info.source) ? importedData.info.source : 'prebuilt'
   }
 
-  if(importedData.gameSettings){ 
-      editorWindow.prefsWaiting = importedData.gameSettings // remember the settings to load later   
-  }    
-  if (importedData.info && importedData.info.hasOwnProperty('activity')) {
-      editorWindow.window.webContents.send('setActivity',importedData.info.activity,importedData.info.source ? importedData.info.source : 'prebuilt') // select the relevant activity (this will also apply the settings)
+  if (editorWindow.ready) {
+    deliverImportedActivity(editorWindow)
+  } // otherwise it's delivered when the window reports it is ready
+}
+
+// loads an imported activity into a window that is ready, as a clean (unmodified) document
+const deliverImportedActivity = (editorWindow) => {
+  const pending = editorWindow.importWaiting
+  editorWindow.importWaiting = null
+  editorWindow.untouched = false
+  editorWindow.dirty = false
+  if (pending.gameSettings) {
+    editorWindow.prefsWaiting = pending.gameSettings // remember the settings to load later
   }
-  if (importedData) {
-    sendCustomSettingFilesInStore(editorWindow.importFileStore)
+  if (pending.gameData) {
+    importTable(pending.gameData, editorWindow)
+  }
+  if (pending.activity) {
+    editorWindow.cleanLoadPending = true // the renderer is told it's clean once the prefs for this activity have been applied
+    editorWindow.window.webContents.send('setActivity', pending.activity, pending.source) // select the relevant activity (this will also apply the settings)
+  } else {
+    editorWindow.window.webContents.send('markClean')
   }
 }
 
@@ -1837,14 +1905,16 @@ const openTableDialog = () => {
 function handleTableFileOpen(data, path){
   const isJson = isValidJson(data)
   if (isJson) {    
-    if (windows.main && windows.main.window && windows.main.virgin) {
+    if (isReusableEditorWindow(windows.main)) {
+      windows.main.openTablePath = path  // must be set before opening the table      
       openTable(data, windows.main)
     } else {
       const newEditorWindow = createEditorWindow()
       newEditorWindow.openTablePath = path
       newEditorWindow.dataWaiting = data      
-    }
-    windows.main.openTablePath = path    
+    }    
+    updateEditorTitle(windows.main)
+    // windows.main.window.setRepresentedFilename(path) // this is for macOS, to show the file name in the title bar and in the dock menu
     app.addRecentDocument(path)
   } else {
     dialog.showErrorBox("Error opening file", "Invalid file format. Please used JSON format.")
@@ -1928,13 +1998,15 @@ const openProfileDialog = () => {
   });
 }
 
-const saveTableDialog = (data) => {  
+const saveTableDialog = () => {  
 
   var fileName = ''
   let defaultPath = windows.main.openTablePath
 
   if (defaultPath == ''){
-    if (windows.main.profileStore.name != ''){
+    if (windows.main.activityName != ''){
+      fileName = windows.main.activityName.replaceAll(' ','_') + '_'
+    } else if (windows.main.profileStore.name != ''){
       fileName = windows.main.profileStore.name.replaceAll(' ','_') + '_'
     } else {
       fileName = 'New_'
@@ -1961,6 +2033,7 @@ const saveTableDialog = (data) => {
     dialog.showSaveDialog(dialogOptions).then(result => {
       if (result.canceled) {
         if(debugMode){console.log("Cancelled")}
+        if (windows.main) windows.main.closeAfterSave = false
         return
       }
       initiateSaveTable(result.filePath)
@@ -2036,11 +2109,20 @@ function openTable(data, editorWindow = windows.main){
     // could potentially delete gameData from editorWindow.importFileStore here?
     editorWindow.currentActivity = inputData.activity // we will send this when ready
     editorWindow.currentSource = inputData.source // we will send this when ready
+    editorWindow.untouched = false
+    editorWindow.dirty = false
+    editorWindow.cleanLoadPending = true // the renderer is told it's clean once the prefs for this activity have been applied
     editorWindow.prefsWaiting = inputData.settings // remember the settings to load later       
+
+     if(editorWindow.window && editorWindow.openTablePath){
+       editorWindow.window.setRepresentedFilename(editorWindow.openTablePath) // this is for macOS, to show the file name in the title bar and in the dock menu
+       editorWindow.window.setDocumentEdited(true)
+    } else {
+      console.warn('No window or openTablePath to set represented filename for.', editorWindow.window, editorWindow.openTablePath)
+    }
     
     if(debugMode) console.log('Prefs waiting:\n', editorWindow.prefsWaiting)
-  }
-  catch (error) {
+  } catch (error) {
     dialog.showErrorBox("Error opening file","JSON data in file could not be parsed.")
     console.error(error)
     return
@@ -2217,7 +2299,7 @@ function saveProfile(profile,path){
   })
 }
 
-function saveTable(inputData,path,fileData){
+function saveTable(inputData,path,fileData,sourceWindow = null){
   
   // add extra info
   inputData.app_version = v
@@ -2230,13 +2312,27 @@ function saveTable(inputData,path,fileData){
   if(!/.hext$|\.json$/.test(path)){
     path += '.hext'
   }
+    if (sourceWindow) sourceWindow.openTablePath = path // the real path, with extension
+
+  const closeAfterSave = !!(sourceWindow && sourceWindow.closeAfterSave)
+  if (sourceWindow) sourceWindow.closeAfterSave = false // consumed here so a failed write doesn't leave it set
 
   fs.writeFile(path, data, { encoding: 'utf8' }, (err) => {
     if (err) {
       if(debugMode){console.log(err)};
     } else {
-      if(debugMode){console.log("File written successfully.")}
+      if(debugMode){console.log("File written successfully.")}      
       app.addRecentDocument(path)
+      if (sourceWindow && !sourceWindow.window.isDestroyed()) {
+        sourceWindow.window.webContents.send('tableSaved')
+        sourceWindow.window.setRepresentedFilename(path)
+        sourceWindow.window.setDocumentEdited(true)
+        if (closeAfterSave) {
+          sourceWindow.closeConfirmed = true
+          sourceWindow.window.close()
+        }
+      }
+      updateEditorTitle(sourceWindow)
       // lastSavedProfile = profileStore
 
       // we may be saving in anticipation of opening or closing the file, in which case this variable will have been set

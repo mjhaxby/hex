@@ -14,11 +14,14 @@ var pageLoaded = false
 var lastExportedScormID = ''
 var appVersion
 
-var virgin = true
-var tableObserver
+var savedSignature = null // state of the document when it was last loaded or saved (null until the first prefs are applied)
+var lastReportedDirty = false
+var dirtyCheckTimer = null
+var pendingSaveSignature = null
 
 // const table = new TableManager('table0')
 const table = new TableTester('table0') // for testing purposes - this will replace the normal table manager with one that has testing functions, but is otherwise the same
+table.onChange = () => scheduleDirtyCheck()
 
 // PAGE FUNCTIONS
 
@@ -45,11 +48,13 @@ function pageLoad(){
   // if it hasn't happened (maybe the page was reloaded), it will request the config which will retrigger the same function
 
   document.body.addEventListener('pointerdown', (e) => table.deselectAll(e), true)
-  setTimeout(function(){ // add the table observer after a delay, so as not to trigger it with the initial preparation of the table
-    tableObserver = new MutationObserver(markTableModified)
-    tableObserver.observe(table.tableBody, {subtree: true, childList: true, attributes: true, characterData: true})
-    table.tableBody.addEventListener('input', markTableModified)
-  },1000)
+  document.body.addEventListener('input', scheduleDirtyCheck, true) // covers the table, the settings and the activity name
+  document.body.addEventListener('change', scheduleDirtyCheck, true)  
+  
+  let activityNameElement = document.getElementById('activityName')
+  if(activityNameElement){
+    activityNameElement.addEventListener('input', sendUpdatedNameToMain)
+  }
 
   table.enableTableRowSorting()
   
@@ -57,14 +62,43 @@ function pageLoad(){
 
 
 
-// to do – move into table manager? have a new general function that will look for other changes in the document, rather than just the table?
-function markTableModified(e) {
-  if (!virgin) return
-  if (!tableObserver) return // if the table observer isn't ready yet, we don't want to mark the table as modified because of the changes that are being made to set it up
-  virgin = false
-  tableObserver.disconnect()
-  table.tableBody.removeEventListener('input', markTableModified)
-  ipcRenderer.send('tableModified') // tell main process that the table has been modified
+// cheap non-cryptographic hash (cyrb53), so we don't hold on to a second copy of any embedded images
+function hashString(str, seed = 0) {
+  let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i)
+    h1 = Math.imul(h1 ^ ch, 2654435761)
+    h2 = Math.imul(h2 ^ ch, 1597334677)
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36)
+}
+
+// everything that gets saved: the table, the activity and the settings (read straight from the controls)
+function currentSignature() {
+  const controls = document.querySelectorAll('#settingsArea input, #settingsArea select, #settingsArea textarea, #activityName, #activitySlct')
+  const controlValues = Array.from(controls, el => el.type == 'checkbox' ? el.checked : el.value)
+  return hashString(JSON.stringify([table.convertTableDataToArray(), controlValues]))
+}
+
+function checkDirty() {
+  if (savedSignature === null) return
+  const dirty = currentSignature() !== savedSignature
+  if (dirty !== lastReportedDirty) {
+    lastReportedDirty = dirty
+    ipcRenderer.send('tableModified', dirty)
+  }
+}
+
+function scheduleDirtyCheck() {
+  clearTimeout(dirtyCheckTimer)
+  dirtyCheckTimer = setTimeout(checkDirty, 300)
+}
+
+function markClean(signature = currentSignature()) {
+  savedSignature = signature
+  checkDirty()
 }
 
 // apply preferences set by the app
@@ -238,6 +272,8 @@ function setPrefs(prefs, customDefaults={}){
   }
   // reduce opacity on unused columns and rows if there are any
   table.updateAppearanceForUnused()
+
+  if (savedSignature === null) markClean() // the first prefs to load make up the baseline of a new document
 }
 
 function exampleButton(number = 0,includesSettings = false, title = '') {
@@ -436,12 +472,12 @@ ipcRenderer.on('loadInput', (event, data, fileStore, waitingForActivity=false) =
   // empty the table
   if(table.isEmpty()){    
     table.convertArrayToTableData(dataAsArray)
-    markTableModified()
+    scheduleDirtyCheck()
   } else {
     if (confirm('This will erase all data currently in the table and cannot be undone. Are you sure you want to continue?')){
       table.clearTable()
       table.convertArrayToTableData(dataAsArray)
-      markTableModified()
+      scheduleDirtyCheck()
     }
   }
 
@@ -459,6 +495,14 @@ ipcRenderer.on('getInputForSave', (event,path) => { // main.js requests the data
   sendInput('save',path)
 })
 
+ipcRenderer.on('tableSaved', (event) => {
+  markClean(pendingSaveSignature || currentSignature())
+})
+
+ipcRenderer.on('markClean', (event) => { // sent by main once a file or imported activity has finished loading
+  markClean()
+})
+
 function importImage(cell,file=false,cellOffset=0){
   let cellID = cell.classList.contains('detailEditor') ? table.detailEditorCell : cell.dataset.cell  
 
@@ -474,7 +518,6 @@ ipcRenderer.on('dataCellFileImportResult', (event,cellID,fileStoreItem) => {
   // console.log(cellID)
   // console.log(fileStoreItem)
   table.addImageToCell(cellID,fileStoreItem)
-  markTableModified()
 })
 
 function sendInput(purpose='export',path=''){
@@ -504,6 +547,7 @@ function sendInput(purpose='export',path=''){
   if (purpose == 'export'){
     ipcRenderer.send('sentInputForExport', data)
   } else if (purpose == 'save') {
+    pendingSaveSignature = currentSignature()
     ipcRenderer.send('sentInputForSave', data, path)
   }
   
@@ -533,6 +577,10 @@ function changeSelectedActivity(activity, source){
     selector.selectedIndex = selectIndex // this will trigger loading the saved activity settings if there are any
     selectActivity() // not triggered by the change, so we'll trigger it here
   }
+}
+
+function sendUpdatedNameToMain(e){
+  ipcRenderer.send('activityNameUpdated', e.target.value)
 }
 
 

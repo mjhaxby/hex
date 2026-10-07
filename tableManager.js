@@ -27,6 +27,7 @@ class TableManager {
 
         this.undoStack = []
         this.redoStack = []
+        this.onChange = null // called after any change made through do(), or to a cell's file
 
         this.detailEditor = !this.textOnly ? this.makeDetailEditor() : null
         this.wysiwyg = {}
@@ -192,6 +193,7 @@ class TableManager {
         if (this.undoStack.length > 100){
             this.undoStack.shift() // limit undo stack to 100 actions
         }
+        if (this.onChange) this.onChange()
     }
 
     undo(){
@@ -2451,6 +2453,7 @@ setWysiwygContent(content) {
             if (inputBox && inputBox.classList.contains('detail-mode')){
                 this.showFilesInDetail(document.getElementById(this.tableId+'_detailEditor'), fileHolder)
             }
+            if (this.onChange) this.onChange()
         } else {
             console.error('File holder element missing')
         }
@@ -2481,6 +2484,7 @@ setWysiwygContent(content) {
         if(mirror){
             mirror.classList.remove('hidden')
         }
+        if (this.onChange) this.onChange()
     }
 
     dropHandler(cell, e){        
