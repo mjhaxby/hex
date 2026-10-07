@@ -51,6 +51,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'bulkExport',
       'undoRequested',
       'redoRequested',
+      'activityNameUpdated'
     ];
 
     if (validChannels.includes(channel)) {
@@ -89,7 +90,9 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'customSelectImportFileResult',
       'dataCellFileImportResult',
       'updateFilesIn',
-      'updateProfilesOut'
+      'updateProfilesOut',
+      'tableSaved',
+      'markClean'
     ];
 
     if (validChannels.includes(channel)) {
