@@ -1313,6 +1313,11 @@
 
 
     function pageLoad() {
+
+      if(gameSettings.activityName != ''){
+          window.document.title = gameSettings.activityName + ' – ' + window.document.title
+        }        
+
       loadingAnimation()
       code = getcodefromURL();
       if (code == "demo") {
