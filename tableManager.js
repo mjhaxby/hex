@@ -150,20 +150,35 @@ class TableManager {
                 this.swapCols(args.colID1, args.colID2) // to do: adapt swapCols to return the two colIDs that were swapped
                 reverse = {action: 'swapCols', args: {colID1: args.colID2, colID2: args.colID1}} // swapping the colIDs will swap them back            
                 break;
+            case 'reorderRows':
+                let moveElements = args.hasOwnProperty('moveElements') ? args.moveElements : false
+                this.reorderRows(args.oldIndex, args.newIndex, moveElements)
+                reverse = {action: 'reorderRows', args: {oldIndex: args.newIndex, newIndex: args.oldIndex, moveElements: true}} // when undoing, we will need to move the HTML elements too
+                break;
             case 'clearTable':
                 let clearedTable = this.clearTable(true) 
                 reverse = {action: 'restoreTable', args: {table: clearedTable}}
                 break;
-            case 'restoreTable':
-                this.clearTable() 
-                this.colIDs = [...args.table.colIDs] // to do: make sure we already have the right number of cols
+            case 'restoreTable': // unlike restoreTableState, the reverse is to clear the table again
+                this.deleteTable(true)  
+                this.setColIDs(args.table.colIDs)
                 args.table.rows.forEach(row => {
                     this.insertRow(row)
                 });
                 reverse = {action: 'clearTable'}
+                break            
             case 'storeTableState':
                 reverse = {action: 'restoreTableState', args: {state: args.state}}
-            // also: move row, move col, store table state (for big changes like import), restore table state            
+                break            
+            case 'restoreTableState': // unlike restoreTable, the reverse is to re-restore the table state
+                let tableState = this.getTableState()
+                this.deleteTable(false)
+                this.setColIDs(args.state.colIDs)
+                args.state.rows.forEach(row => {
+                    this.insertRow(row)
+                });
+                reverse = {action: 'restoreTableState', args: {state: tableState}}
+                break
         }
         if (type == 'doing'){
             this.redoStack = [] // clear redo stack whenever a new action is taken, unless redoing or undoing
@@ -196,6 +211,12 @@ class TableManager {
 
     get(what, val1, val2){
         // what = row, col, rowCells, colCells, cell, text, datetime, file, extension, rowCheck, imageSelector, colName, rowNumber, rowSelectArea, colSelectArea, textMirror, select
+
+        if (val1 < 0 || val2 < 0){
+            console.error('Row and column numbers must be positive number')
+            return null
+        }
+
         let row, col
         if (what.match(/^row/)){
             row = val1            
@@ -204,6 +225,11 @@ class TableManager {
         } else {
             row = val1
             col = val2
+        }
+
+        if ((row && row >= this.numRows()) || (col && col >= this.numCols())){
+            console.error('Row or column number exceeds table size') 
+            return null
         }
 
         // console.log(`Getting ${what} for row ${row} and col ${col}`) // TO DO: remove
@@ -255,15 +281,7 @@ class TableManager {
             case 'textMirror':
                 return document.getElementById(`${this.tableId}_${this.cellIDs[row][col]}_inputCellTextMirror`)
             default:
-                if (typeof row === 'number' && typeof col === 'number'){
-                    console.warn('Get request type not recognised. Returning null.')
-                    // return document.getElementById(`${this.tableId}_${this.cellIDs[row][col]}_dataCell`) 
-                } else if (typeof row === 'number'){
-                    console.warn('Get request type not recognised. Returning null.')
-                    // return  Array.from(this.tableElement.querySelector(`tr[data-row="${this.rowIDs[row]}"]`))
-                } else {
-                    console.error('Get request type not recognised and insufficient information to return a default. Returning null.')
-                }
+                console.warn('Get request type not recognised. Returning null.')
         }
             
     }
@@ -383,21 +401,31 @@ class TableManager {
         //     this.cellIDs[args.rowIndex] = args.cellIDs // replace cellIDs with the old ones from the deleted row
         // }
         if (args.rowData){
-            let cells = this.get('rowCells', args.rowIndex)
-            cells.forEach((cell, index) => {
-                let cellData = args.rowData[index]
-                let text = cell.querySelector('.inputCellText')
-                let date = cell.querySelector('.inputCellDate')
-                let time = cell.querySelector('.inputCellTime')
-                let file = cell.querySelector('.inputCellFile') 
-                let select = cell.querySelector('.inputCellSelect')               
-                if (text) text.value = cellData.text
-                if (date) date.value = cellData.date
-                if (time) time.value = cellData.time
-                if (file) file.value = cellData.file
-                if (select) select.value = cellData.select
-            })
+            args.rowData.forEach((cellData, col) => this.applyCellData(args.rowIndex, col, cellData))
         }
+    }
+
+    // cellData as returned by getCellData()
+    applyCellData(row, col, cellData){
+        if (!cellData) return
+        let text = this.get('text', row, col)
+        let date = this.get('date', row, col)
+        let time = this.get('time', row, col)
+        let select = this.get('select', row, col)
+        let fileHolder = this.get('file', row, col)
+        let [dateValue = '', timeValue = ''] = (cellData.datetime || '').split('T')
+        if (text) text.value = cellData.text
+        if (date) date.value = dateValue
+        if (time) time.value = timeValue
+        if (select && cellData.select != null) select.value = cellData.select
+        if (fileHolder){
+            if (cellData.file){
+                Object.values(cellData.file).forEach(fileItem => this.addImageToCell(this.cellIDs[row][col], fileItem))
+            } else if (fileHolder.children.length > 0){
+                this.deleteFile(fileHolder)
+            }
+        }
+        if (text) this.updateHoverAndView(text)
     }
 
     toggleEnableRow(rowCheck){
@@ -424,7 +452,7 @@ class TableManager {
         })        
     }
 
-    deleteRow(rowID, saveForUndo = false){
+    deleteRow(rowID, saveForUndo = false, deleteFirst = false){
 
         console.log(`Deleting row with ID ${rowID}. Number of childnodes on tableBody: ${document.getElementById(this.tableId+'_tableBody').childNodes.length}`) // TO DO: remove
 
@@ -436,7 +464,7 @@ class TableManager {
             return // do nothing if add/remove cells disabled
         }
 
-        if (this.numRows() > 1){
+        if (this.numRows() > 1 || deleteFirst){ // if there's more than one row, delete the row, otherwise just clear it
             let tableBody = document.getElementById(this.tableId+'_tableBody')
             let currentFocus = document.activeElement
             if (currentFocus.getAttribute('class') == 'inputCellText'){
@@ -462,10 +490,10 @@ class TableManager {
         return deletedRowData
     }
 
-    deleteRows(rowIDs, saveForUndo = false){
+    deleteRows(rowIDs, saveForUndo = false, deleteFirst = false){
         let deletedRowsData = []
         for (let i = rowIDs.length-1; i >= 0; i--){ // go backwards so when we delete a row it doesn't change the numbering
-                deletedRowsData.push(this.deleteRow(rowIDs[i], saveForUndo))
+                deletedRowsData.push(this.deleteRow(rowIDs[i], saveForUndo, deleteFirst))
             }        
         return deletedRowsData;
     }
@@ -491,7 +519,7 @@ class TableManager {
             // let focusRegex = new RegExp('inputCellText_\\d+_'+position)
             // if (currentFocus && focusRegex.test(currentFocus.id)){
                 let currentCoordinates = this.coordinatesOf(currentFocus.dataset.cell)                     
-                let newFocus = this.get('text', currentCoordinates.row, position-1) // TO DO: adapt if text is not in this column (might be worth making a seperate focus function)
+                let newFocus = this.get('text', currentCoordinates.row, position > 0 ? position-1 : 0) // TO DO: adapt if text is not in this column (might be worth making a seperate focus function)
                 if(newFocus) newFocus.focus()
             }
             // remove column cells, including header and add button 
@@ -525,6 +553,12 @@ class TableManager {
         }
         return deletedColsData;
     }
+
+    deleteTable(saveForUndo = false){
+        let colIDs = saveForUndo ? [...this.colIDs] : null // save the colIDs before clearing them, so we can restore them later if needed
+        let deletedTableData = {rows: this.deleteRows(this.rowIDs, saveForUndo, true), colIDs: colIDs} // to use for undo, we need to save the colIDs as well in case columns were cleared instead of deleted, otherwise we won't know which columns to restore the data to
+        return deletedTableData;
+    }   
 
     clearRow(rowID,saveForUndo = false){
         const position = this.rowIDs.indexOf(rowID)
@@ -564,7 +598,8 @@ class TableManager {
     }
 
     clearTable(saveForUndo = false){        
-        let clearedTableData = {rows: this.clearRows(this.rowIDs, saveForUndo), colIDs: [...this.colIDs]} // to use for undo, we need to save the colIDs as well in case columns were cleared instead of deleted, otherwise we won't know which columns to restore the data to
+        let colIDs = saveForUndo ? [...this.colIDs] : null // save the colIDs before clearing them, so we can restore them later if needed
+        let clearedTableData = {rows: this.clearRows(this.rowIDs, saveForUndo), colIDs: colIDs} // to use for undo, we need to save the colIDs as well in case columns were cleared instead of deleted, otherwise we won't know which columns to restore the data to
         return clearedTableData;
     }
 
@@ -592,7 +627,7 @@ class TableManager {
     }
 
     clearUnusedRowsFromEnd(noUndo = false){
-        for (let row=this.numRows()-1; row>1; row--){ // go backwards, leave the first row
+        for (let row=this.numRows()-1; row>0; row--){ // go backwards, leave the first row
             if(this.isEmptyRow(row)){
                 this.deleteRow(this.rowIDs[row],true)
             } else {
@@ -602,7 +637,7 @@ class TableManager {
     }
 
     clearUnusedColsFromEnd(noUndo = false){
-        for (let col=this.numCols()-1; col>1; col--){ // go backwards, leave the first row
+        for (let col=this.numCols()-1; col>0; col--){ // go backwards, leave the first row
             if(this.isEmptyCol(col)){
                 this.deleteCol(this.colIDs[col],true)
             } else {
@@ -611,14 +646,35 @@ class TableManager {
         }
     }
 
-    storeTableState(){
+    getTableState(){
         let rows = []
-        for (let row=0; row<this.numRows(); row++){
-            let rowData = this.getRowData(row)
-            rows.push({rowID: this.rowIDs[row], cellIDs: this.cellIDs[row], rowData: rowData})
-        }        
-        let tableState = {rows: rows, colIDs: [...this.colIDs]}
+                for (let row=0; row<this.numRows(); row++){
+                    let rowData = this.getRowData(row)
+                    rows.push({rowID: this.rowIDs[row], cellIDs: [...this.cellIDs[row]], rowIndex: row, rowData: rowData})
+                }        
+        return {rows: rows, colIDs: [...this.colIDs]}
+    }
+
+    storeTableState(){
+        let tableState = this.getTableState()
         this.do('storeTableState', {state: tableState})
+    }
+
+    // replaces colIDs and rebuilds the header and bottom add-buttons to match; rows must already be deleted
+    setColIDs(colIDs){
+        const oldNumCols = this.colIDs.length
+        this.colIDs = [...colIDs]
+        this.removeHeaderRow()
+        this.headerRow(this.numCols())
+        const lastRow = document.getElementById(this.tableId+'_lastRow')
+        if (lastRow && this.addRemoveCellsAllowed){
+            for (let i=oldNumCols; i<this.numCols(); i++){
+                lastRow.appendChild(this.addRowCell())
+            }
+            for (let i=oldNumCols; i>this.numCols(); i--){
+                lastRow.removeChild(lastRow.lastElementChild)
+            }
+        }
     }
 
     redoRowNumbers(){
@@ -687,17 +743,7 @@ class TableManager {
         // }
         if (args.colData){
             for (let i=0; i<this.numRows(); i++){
-                let cellData = args.colData[i]
-                let text = this.get('text', i, args.colIndex)
-                let date = this.get('date', i, args.colIndex)
-                let time = this.get('time', i, args.colIndex)
-                let file = this.get('file', i, args.colIndex)
-                let select = this.get('select', i, args.colIndex)
-                if (text) text.value = cellData.text
-                if (date) date.value = cellData.date
-                if (time) time.value = cellData.time
-                if (file) file.value = cellData.file
-                if (select) select.value = cellData.select
+                this.applyCellData(i, args.colIndex, args.colData[i])
             }
         }
     }
@@ -1797,7 +1843,7 @@ setWysiwygContent(content) {
 
         if(date && time){
             // if there's a date but no time, we'll assume they meant midnight, but if there's a time but no date, we'll assume they meant today's date 
-            let dateValue = date ? (/\d\d\d\d-\d\d-\d\d/.test(date.value) ? date.value : Date.now().toISOString().slice(0,10)) : ''
+            let dateValue = date ? (/\d\d\d\d-\d\d-\d\d/.test(date.value) ? date.value : new Date().toISOString().slice(0,10)) : ''
             let timeValue = time ? (/\d\d:\d\d/.test(time.value) ? time.value : '00:00') : ''
 
             let dateTimeValue = dateValue + 'T' + timeValue
@@ -2146,11 +2192,11 @@ setWysiwygContent(content) {
     handleCutWithSelection(e){
         this.handleCopyWithSelection(e);
         if(this.selection.row.length > 0){
-            for (let row=this.selection.row[0]; row<=this.selection.row.slice(-1); row++){
+            for (let row=this.selection.row[0]; row<=this.selection.row.at(-1); row++){
                 this.do('clearRow', {rowID: this.rowIDs[row]})
             }
         } else if (this.selection.col.length > 0){
-            for (let col=this.selection.col[0]; col<=this.selection.col.slice(-1); col++){
+            for (let col=this.selection.col[0]; col<=this.selection.col.at(-1); col++){
                 this.do('clearCol', {colID: this.colIDs[col]})
             }
         }
@@ -2515,10 +2561,16 @@ setWysiwygContent(content) {
         let row = this.rowIDs.indexOf(rowID)
         let col = this.colIDs.indexOf(colID)
 
+        if (row < 0 || col < 0){
+            console.error('Could not find row or column for rowID '+rowID+' and colID '+colID)
+            return
+        }
+
         // only continue pasting in data if there is more than one row and/or more than one column. Otherwise, paste as normal (text rather than data)
         if (dataAsArray.length > 1 || (dataAsArray.length > 0 && dataAsArray[0].length > 1)){
             e.stopPropagation();
             e.preventDefault();
+            this.storeTableState() // store table state before pasting in case we need to undo
             this.convertArrayToTableData(dataAsArray,row,col)
         }
     }
@@ -2553,7 +2605,7 @@ setWysiwygContent(content) {
                 }
             } else if (e.key == 'Enter' || e.key == 'ArrowDown' || (e.key == 'Tab' && row == this.numRows() && col == this.numCols())){ // tab only when in the last cell
                 e.preventDefault();
-                if (row < this.numRows()){
+                if (row < this.numRows()-1){
                     if (e.key == 'Enter' || e.key == 'Tab'){
                         colToChoose = 0 // always go back to first col with enter or tab
                     } else {
@@ -2562,7 +2614,7 @@ setWysiwygContent(content) {
                     newFocus = this.get('text', row+1, colToChoose)
                 } else if ((e.key == 'Enter' || e.key == 'Tab') && this.addRemoveCellsAllowed) {
                     this.do('addRow')                
-                    newFocus = this.get('text', row+1, 1)
+                    newFocus = this.get('text', row+1, 0)
                 }
             } else if (e.key == 'ArrowUp' && row > 0){                
                 newFocus = this.get('text', row-1, col)                
@@ -2696,7 +2748,7 @@ setWysiwygContent(content) {
         let cellDateTimeValue = this.getCellDateTimeValue(row, col)
         let fileValue = this.getFilesFromCell(row, col)
 
-        return {text: cellValue, datetime: cellDateTimeValue, file: fileValue}
+        return {text: cellValue, datetime: cellDateTimeValue, select: this.getCellSelectValue(row, col), file: fileValue}
     }
 
     convertTableDataToArray(startRow = 0, startCol = 0, endRow = this.numRows()-1, endCol = this.numCols()-1, santizeHTML=false, includeAllDataTypes = true, skippedDisabled = false){
@@ -2771,14 +2823,14 @@ setWysiwygContent(content) {
         var furthestCol = this.determineFurthestCol()
         var furthestRow = this.determineFurthestRow()
         var textBlock = ''
-        if (prefsStore.hasOwnProperty('cols_max') && furthestCol > prefsStore.cols_max){
-            furthestCol = prefsStore.cols_max
+        if (prefsStore.hasOwnProperty('cols_max') && furthestCol >= prefsStore.cols_max){
+            furthestCol = prefsStore.cols_max-1
         }
-        if (prefsStore.hasOwnProperty('rows_max') && furthestRow > prefsStore.rows_max){
-            furthestRow = prefsStore.rows_max
+        if (prefsStore.hasOwnProperty('rows_max') && furthestRow >= prefsStore.rows_max){
+            furthestRow = prefsStore.rows_max-1
         }
-        for (let row=0; row<<furthestRow; row++){
-            for (let col=1; col<=furthestCol; col++){
+        for (let row=0; row<=furthestRow; row++){
+            for (let col=0; col<=furthestCol; col++){
                 let cellElement = this.get('text', row, col)
                 if (cellElement){
                     
@@ -2806,7 +2858,7 @@ setWysiwygContent(content) {
 
 
     determineFurthestCol(){
-        for (let i=this.numCols(); i>=1; i--){
+        for (let i=this.numCols()-1; i>=0; i--){
             if (!this.isEmptyCol(i)){
                 return i
             }
@@ -2815,7 +2867,7 @@ setWysiwygContent(content) {
     }
 
     determineFurthestRow(){
-        for (let i=this.numRows(); i>=1; i--){
+        for (let i=this.numRows()-1; i>=0; i--){
             if (!this.isEmptyRow(i)){
                 return i
             }
@@ -2939,6 +2991,21 @@ setWysiwygContent(content) {
         }
     }
 
+    reorderRows(oldIndex, newIndex, moveElements=false){
+        this.rowIDs.splice(newIndex, 0, this.rowIDs.splice(oldIndex, 1)[0]) // move the rowID in the array to match the new order of the rows
+        this.cellIDs.splice(newIndex, 0, this.cellIDs.splice(oldIndex, 1)[0]) // move the cellIDs in the array to match the new order of the rows
+        if (moveElements){
+            let tbody = this.tableElement.querySelector('tbody')
+            let rowToMove = tbody.children[oldIndex+1] // +1 to account for header row
+            if (newIndex < oldIndex){
+                tbody.insertBefore(rowToMove, tbody.children[newIndex+1]) // +1 to account for header row
+            } else {
+                tbody.insertBefore(rowToMove, tbody.children[newIndex+2]) // +2 to account for header row and the fact that the row has been removed from its original position
+            }
+        }
+        this.renumberRows()
+    }
+
     enableTableRowSorting(){
         if (!window.Sortable){
             console.warn('SortableJS not found, cannot enable row sorting')
@@ -2954,10 +3021,8 @@ setWysiwygContent(content) {
             onEnd: (e) => {
                 let oldIndex = e.oldIndex -1
                 let newIndex = e.newIndex -1 // -1 on both to account for header row (which isn't in the rowIDs array)
-                this.rowIDs.splice(newIndex, 0, this.rowIDs.splice(oldIndex, 1)[0]) // move the rowID in the array to match the new order of the rows
-                this.cellIDs.splice(newIndex, 0, this.cellIDs.splice(oldIndex, 1)[0]) // move the cellIDs in the array to match the new order of the rows
-                this.draggingTableRow = false
-                this.renumberRows()
+                this.do('reorderRows', {oldIndex: oldIndex, newIndex: newIndex})                
+                this.draggingTableRow = false                
             }
         })
 

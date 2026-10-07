@@ -2446,7 +2446,7 @@ const applicationMenu = Menu.buildFromTemplate([
         click: () => { initiateSaveTable(windows.main.openTablePath) }
       },
       {
-        label: 'Save table and settings as…',
+        label: 'Save Table and Settings As…',
         role: 'save',
         accelerator: process.platform === 'darwin' ? 'Cmd+Alt+S' : 'Ctrl+Alt+S',
         click: () => { saveTableDialog() }
@@ -2467,7 +2467,7 @@ const applicationMenu = Menu.buildFromTemplate([
       {
         label: 'Export Activity…',
         accelerator: process.platform === 'darwin' ? 'Cmd+Shift+S' : 'Ctrl+Shift+S',
-        click: () => { if (activityFocused() == null) { getReadyToExport() } else (exportFromActivity()) } // TO DO: if activity window has focus, get data from that (make an array of objects that contains each window and its data?)
+        click: () => { if (activityFocused() == null) { getReadyToExport() } else (exportFromActivity()) } 
       },
       { label: 'Bulk Import/Export…',
         click: () => { openBulkImportExportWindow() }

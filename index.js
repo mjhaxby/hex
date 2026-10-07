@@ -568,9 +568,9 @@ ipcRenderer.on('copyToClipboard', (event, form) => {
 })
 
 ipcRenderer.on('clearTable', (event) => {
-  if (confirm('This will erase all data in the table and cannot be undone. Are you sure you want to continue?')){
-    table.clearTable();
-  }
+  // if (confirm('Are you sure you want to clear the table?')){
+    table.do('clearTable')
+  // }
 })
 
 ipcRenderer.on('deleteUnusedRows', (event) => {
@@ -699,7 +699,7 @@ ipcRenderer.on('requestActivitySettingDefaults', (event) => {
 
 
 ipcRenderer.on('undoRequested', (event) => {
-  if (document.queryCommandEnabled('undo')) {
+  if (document.queryCommandEnabled('undo') && document.activeElement && (document.activeElement.tagName == 'TEXTAREA' || document.activeElement.tagName == 'INPUT')) {
     document.execCommand('undo')
   } else {
     table.undo()
