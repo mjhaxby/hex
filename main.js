@@ -1408,6 +1408,13 @@ ipcMain.on('editorWindowReady', function(event){
   if (debugMode) {
     console.log('Editor window is ready. Sender ID is ' + event.sender.id)
   }  
+})
+
+ipcMain.on('editorWindowReadyForData', function(event){
+  if (!validateSender(event.senderFrame)) {
+    dialog.showErrorBox('Security error!', 'A renderer sent a signal from a non-local source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
+    return null
+  }
   let browserWindow = event.sender.getOwnerBrowserWindow()
   let window = windows.editors.find(window => window.window.id === browserWindow.id)
   console.log(window)
@@ -1423,8 +1430,7 @@ ipcMain.on('editorWindowReady', function(event){
       window.dataWaiting = null
     }
   }
-
-})
+  })
 
 ipcMain.on('getActivity', function(event){
   if (!validateSender(event.senderFrame)) {

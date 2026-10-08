@@ -19,6 +19,8 @@ var lastReportedDirty = false
 var dirtyCheckTimer = null
 var pendingSaveSignature = null
 
+var pendingTableOpen = false
+
 // const table = new TableManager('table0')
 const table = new TableTester('table0') // for testing purposes - this will replace the normal table manager with one that has testing functions, but is otherwise the same
 table.onChange = () => scheduleDirtyCheck()
@@ -273,6 +275,8 @@ function setPrefs(prefs, customDefaults={}){
   // reduce opacity on unused columns and rows if there are any
   table.updateAppearanceForUnused()
 
+  ipcRenderer.send('editorWindowReadyForData')
+
   if (savedSignature === null) markClean() // the first prefs to load make up the baseline of a new document
 }
 
@@ -472,8 +476,9 @@ ipcRenderer.on('loadInput', (event, data, fileStore, waitingForActivity=false) =
   // empty the table
   if(table.isEmpty()){    
     table.convertArrayToTableData(dataAsArray)
-    scheduleDirtyCheck()
+    // scheduleDirtyCheck() // shouldn't need to do this here because we're opening in a fresh new window
   } else {
+    // in theory this is now dead code as now everything opens in a new window
     if (confirm('This will erase all data currently in the table and cannot be undone. Are you sure you want to continue?')){
       table.clearTable()
       table.convertArrayToTableData(dataAsArray)

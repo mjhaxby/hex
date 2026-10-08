@@ -51,7 +51,8 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'bulkExport',
       'undoRequested',
       'redoRequested',
-      'activityNameUpdated'
+      'activityNameUpdated',
+      'editorWindowReadyForData'
     ];
 
     if (validChannels.includes(channel)) {
