@@ -806,9 +806,7 @@ class TableManager {
 
     headerRow(cols){
         var tableBody = document.getElementById(this.tableId+'_tableBody')
-        var firstRow = document.createElement('tr')
-        firstRow.setAttribute('id',this.tableId+'_headerRow')
-        firstRow.innerHTML = '<th class="numCol"></th>'
+        let firstRow = newElement('tr', {id: this.tableId+'_headerRow', class: 'header-row'}, '<th class="numCol"></th>')                
         for (let i=0;i<cols;i++){
             firstRow.appendChild(this.colControlsCell(i))
         }

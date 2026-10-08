@@ -388,7 +388,7 @@ td{
   padding: 10px 10px;
 }
 
-#headerRow {
+.header-row {
   position: sticky;
   top: 0;
   z-index: 900;
@@ -397,7 +397,7 @@ td{
 }
 
 /* header row background (to stretch across the whole thing) */
-#headerRow th:last-child::after{
+.header-row th:last-child::after{
     content: '';
     position: absolute;
     top: -1px;
@@ -410,7 +410,7 @@ td{
     z-index: -1;
 }
 
-#headerRow th{
+.header-row th{
   margin-top: 0;
   position: relative;
 }
