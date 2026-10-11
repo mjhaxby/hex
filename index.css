@@ -10,7 +10,21 @@
   --bg-color-shade3: #d5d6cf;
   --controls-height: 200px;
   --open-settings-height: 220px;
-  --rest-of-ui-height: 250px;
+  --rest-of-ui-height: 230px;
+}
+
+@media(prefers-color-scheme: dark){
+  :root{
+    --bg-color: #1E1E1E;
+    --fg-color: #CFCFCF;
+    --fg-color-shade2: #B0B0B0;
+    --fg-color-shade3: #A0A0A0;
+    --fg-color-shade4: #8A8A8A;
+
+    --bg-color-shade1: #2D2D2D;
+    --bg-color-shade2: #3C3C3C;
+    --bg-color-shade3: #4B4B4B;
+  }
 }
 
 @font-face{
@@ -84,7 +98,8 @@ body{
   background: var(--bg-color);
   height: 100vh;
   overflow-y: hidden;
-  user-select: none
+  user-select: none;
+  color: var(--fg-color);
 }
 
 strong{
@@ -205,7 +220,7 @@ input[type='number']{
 
 input[type='checkbox']{
   appearance: none;
-  background-color: #ddded7;
+  background-color: var(--bg-color-shade2);
   margin: 0.5em;
   font: inherit;
   /* color: var(--fg-color-shade2); */
@@ -643,7 +658,7 @@ th .inputCellMore{
 }
 
 .inputCellImageSelector svg{
-  fill: rgb(71,69,68);
+  fill: var(--fg-color-shade2);
   /* width: 1em;
   height: 1em; */
 }
@@ -1065,7 +1080,7 @@ th:hover .miniBtn, th:hover .inputCellMore{
 } */
 
 .arrow {
-  border: solid black;
+  border: solid var(--fg-color-shade2);
   border-width: 0 2px 2px 0;
   display: inline-block;
   padding: 4px;
@@ -1172,6 +1187,12 @@ th:hover .miniBtn, th:hover .inputCellMore{
   height: 80px;
   margin: auto;
   float: left;
+}
+
+@media (prefers-color-scheme: dark) {
+  #hex-logo{
+    filter: invert(100%);
+  }
 }
 
 #topArea{
