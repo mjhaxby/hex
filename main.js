@@ -1400,6 +1400,7 @@ ipcMain.on('readActivityPrefs', function (event, activity, source) {
   }
 })
 
+// TO DO: remove this function which is now dead code (except for debugging?)
 ipcMain.on('editorWindowReady', function(event){
   if (!validateSender(event.senderFrame)) {
     dialog.showErrorBox('Security error!', 'A renderer sent a signal from a non-local source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')

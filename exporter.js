@@ -62,7 +62,7 @@ const exportActivity = (options = {data: [[]], activity: '', settings: {}, files
         name: 'HTML file',
         extension: 'html'
       }],
-      defaultPath: 'New_' + activity.charAt(0).toUpperCase() + activity.slice(1) + '.html' // when saving files added, can use saved name if given
+      defaultPath: settings.activityName ? settings.activityName + '.html' : 'New_' + activity.charAt(0).toUpperCase() + activity.slice(1) + '.html' // when saving files added, can use saved name if given
     }
 
     let activityPath = activityEditor.findActivityPath(activity, source)
@@ -167,7 +167,7 @@ const exportActivity = (options = {data: [[]], activity: '', settings: {}, files
         name: 'ZIP file',
         extension: 'zip'
       }],
-      defaultPath: 'New_' + activity.charAt(0).toUpperCase() + activity.slice(1) + '.zip' // when saving files added, can use saved name if given
+      defaultPath: settings.activityName ? settings.activityName + '.zip' : 'New_' + activity.charAt(0).toUpperCase() + activity.slice(1) + '.zip' // when saving files added, can use saved name if given
     }
 
     let activityPath = activityEditor.findActivityPath(activity, source)
