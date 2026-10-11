@@ -2490,7 +2490,7 @@ function askToDeleteUnusedCols() {
 }
 
 const aboutOptions = {
-  credits: 'Confetti animation by Patrik Svensson.',
+  credits: 'Confetti animation by Patrik Svensson. Node.js version ${process.versions.node}, Chromium version ${process.versions.chrome}, Electron version ${process.versions.electron}',
   website: 'https://github.com/mjhaxby/hex',
   iconPath: 'icon.png',
   authors: 'Morgan Haxby'
