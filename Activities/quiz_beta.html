@@ -2175,7 +2175,9 @@
       opacity: 1;
       position: absolute;
       pointer-events: none;
-      width: 100%;
+      width: max-content;
+      min-width: 100%;
+      white-space: nowrap;
       height: 3vh;
       font-size: 2vh;
       line-height: 3vh;
@@ -3407,7 +3409,7 @@
           }
           inner.classList.remove('face-down', 'left', 'right')                 
           inner.classList.add('face-up') // in free question order or same category mode, show the front
-          if (newCategory) { // in sequential mode, check if category has changed
+          if (gameSettings.questionOrder == 'sequential' && newCategory) { // in sequential mode, check if category has changed
             inner.classList.add('face-down') // if category has changed, show back first
           }
         }, 1)
@@ -3458,7 +3460,7 @@
           skipToList.value = this.id // update skip to question selector to current question
         }
 
-        if(gameSettings.timePerQuestion > 0 && !newCategory){
+        if(gameSettings.timePerQuestion > 0 && (!newCategory || gameSettings.questionOrder == 'free')){ // if time per question is set, start countdown (unless sequential mode and category hasn't changed)
           let delay = gameSettings.questionOrder == 'sequential' ? 2000 : 0; // slight delay before starting countdown in sequential mode
           setTimeout(() => {            
             startCountdown(gameSettings.timePerQuestion)
@@ -5280,7 +5282,6 @@
 
       const tickerTime = 3 // time in seconds it should take a ticker item to move across
       const duplicatetickerItem = 100
-      var tickerWidth = 0      
       var tickers = Array.from(document.getElementsByClassName('ticker'))
 
       if(teams && !Array.isArray(teams)){
@@ -5308,8 +5309,6 @@
           var tickerItemClone = tickerItem.cloneNode(true)
           tickers[j].appendChild(tickerItemClone)
         }
-        tickerItemPos = tickerItem.getBoundingClientRect()
-        tickerWidth += (tickerItemPos.width)
 
         // if later we add in players support, could adapt to include something like this:
 
@@ -5323,10 +5322,15 @@
         // })
       }
 
-      updateTickerAnimation(tickerWidth / 2)
+      // Shift by exactly half the copies so the loop jump is seamless; re-measure once the display font loads.
+      const measureAndAnimate = () => {
+        const unit = tickers[0].firstElementChild.getBoundingClientRect().width
+        if (unit > 0) updateTickerAnimation(unit * (duplicatetickerItem / 2))
+      }
+      measureAndAnimate()
+      document.fonts.ready.then(measureAndAnimate)
       tickers.forEach(ticker =>{
         ticker.style.animationDuration = tickerTime * (1 * (duplicatetickerItem / 2)) + 's' // where 1 is, replace with the number of different items on the ticker if this is changed in future (e.g. adding players)
-        ticker.style.width = tickerWidth + 'px'
         ticker.classList.remove('color1', 'color2', 'color3', 'color4', 'color5') // remove all colors
         if(teams.length == 1){
           ticker.classList.add(`color${teams[0].color}`)
