@@ -1,7 +1,7 @@
 // main.js
 
 // Modules to control application life and create native browser window
-const { app, BrowserWindow, Menu, MenuItem, ipcMain, dialog, shell, clipboard, remote } = require('electron')
+const { app, BrowserWindow, Menu, MenuItem, ipcMain, dialog, shell, nativeTheme } = require('electron')
 const crypto = require('crypto'); // for hashing
 const contextMenu = require('electron-context-menu');
 const fs = require('fs')
@@ -37,41 +37,60 @@ var userActivitiesList
 var activitySettingControlsStore = {}
 
   // Check if we opened a file with our app
-const checkForFileOpen = () => {
+let appIsReady = false
+let pendingOpenPaths = [] // files opened before the app (and its first window) was ready
 
-        // fs is used to open a file stream.
-        const _fs = require('fs');
+app.on('open-file', (event, filePath) => {
+  event.preventDefault()
+  if (!appIsReady) {
+    pendingOpenPaths.push(filePath)
+    return
+  }
+  openFileFromPath(filePath)
+})
 
-        // Get an array of all arguments. First argument is the path to our app.
-        const args = remote.process.argv;
-        let data = null;
-
-        // No need to try opening if no arguments were passed
-        if (args.length > 1) {
-            // Surround in try / catch in case file is invalid.
-            try {
-                data = _fs.readFileSync(args[1]);
-                data = data.toString();
-            } catch (e) {
-                console.log(e.message);
-                return null;
-            }
-        }
-
-        // Return file contents if successful.
-        return {data: data, path: args[1]};
-    }
-
-app.on ('open-file', (event, path) => {
-  event.preventDefault();
-  fs.readFile(path, 'utf8', (err, data) => {
+function openFileFromPath(filePath) {
+  fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
-      console.error(err);
-      return;
+      console.error(err)
+      if (windows.main) hideLoadingScreen(windows.main)
+      return
     }
-    handleTableFileOpen(data, path);
-  });
-});
+    handleTableFileOpen(data, filePath)
+  })
+}
+
+const loadingScreenId = 'hexLoadingScreen'
+
+// shows a simple full-window loading overlay (injected, so it appears as soon as the page's DOM exists)
+const showLoadingScreen = (editorWindow) => {
+  editorWindow.loading = true
+  const darkMode = nativeTheme.shouldUseDarkColors
+  const inject = () => {
+    if (!editorWindow.loading || editorWindow.window.isDestroyed()) return
+    editorWindow.window.webContents.executeJavaScript(`
+      if (!document.getElementById('${loadingScreenId}')) {
+        const el = document.createElement('div')
+        el.id = '${loadingScreenId}'
+        el.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:${darkMode ? '#5A5A5A' : '#F2F3EB'};color:${darkMode ? '#F2F3EB' : '#5A5A5A'};font:600 20px -apple-system,system-ui,sans-serif'
+        el.textContent = 'Loading…'
+        document.body.appendChild(el)
+      }
+    `).catch(() => {})
+  }
+  if (editorWindow.window.webContents.isLoading()) {
+    editorWindow.window.webContents.once('dom-ready', inject)
+  } else {
+    inject()
+  }
+}
+
+const hideLoadingScreen = (editorWindow) => {
+  if (!editorWindow.loading) return
+  editorWindow.loading = false
+  if (editorWindow.window.isDestroyed()) return
+  editorWindow.window.webContents.executeJavaScript(`document.getElementById('${loadingScreenId}')?.remove()`).catch(() => {})
+}
 
 
 async function checkForUpdate() {  
@@ -140,6 +159,7 @@ const editorWindowPrototype = {
     dataWaiting: null,    
     prefsWaiting: null,
     profileStore: { name: '', activities: [] },
+    loading: false, // showing the loading screen while a file is being opened
     ready: false, // renderer has finished loading
     dirty: false, // unsaved changes, as reported by the renderer
     untouched: true, // nothing loaded or edited yet, so safe to reuse
@@ -195,7 +215,7 @@ const activityWindowPrototype = {
 //   windows.main.on('blur', updateMenuState)
 // }
 
-const createEditorWindow = () => {
+const createEditorWindow = (showLoading = false) => {
     // Create the browser window.
   const newEditorWindow = new BrowserWindow({
     title: "Hex",
@@ -269,6 +289,8 @@ const createEditorWindow = () => {
     newEditorWindow.send('configStore', config)
   }
 
+
+  if (showLoading) showLoadingScreen(newWindow)
 
   return newWindow
 }
@@ -475,7 +497,7 @@ app.whenReady().then(() => {
         if(debugMode){console.log('marking menu item as true')}
       }
 
-      createEditorWindow();
+      createEditorWindow(pendingOpenPaths.length > 0);
       // windows.main.window.webContents.send('configStore', config) // should happen inside above function
 
       // if we're debugging, add the dev
@@ -484,18 +506,22 @@ app.whenReady().then(() => {
         menuItem.submenu.append(new MenuItem({ role: 'toggleDevTools' }))
       }
       Menu.setApplicationMenu(applicationMenu) // set menu AFTER config is loaded
+      appIsReady = true
+      pendingOpenPaths.forEach(openFileFromPath)
+      pendingOpenPaths = []
     })
     .catch((error) => {
       console.error(error)
       Menu.setApplicationMenu(applicationMenu) // set menu anyway 
+      if (!windows.main) createEditorWindow()
+      appIsReady = true
+      pendingOpenPaths.forEach(openFileFromPath)
+      pendingOpenPaths = []
     });
 
-  const fileOpened = checkForFileOpen() // check if we opened a file with our app, and if so, open it
-
-  if (fileOpened) {
-    windows.main.window.webContents.once('did-finish-load', () => {
-      handleTableFileOpen(fileOpened.data, fileOpened.path)
-    })
+  // on Windows/Linux the file is passed as a command line argument (macOS uses open-file)
+  if (process.platform !== 'darwin' && app.isPackaged && process.argv.length > 1) {
+    pendingOpenPaths.push(process.argv[1])
   }
 
   setTimeout(() => {
@@ -1418,10 +1444,10 @@ ipcMain.on('editorWindowReadyForData', function(event){
   }
   let browserWindow = event.sender.getOwnerBrowserWindow()
   let window = windows.editors.find(window => window.window.id === browserWindow.id)
-  console.log(window)
   if(window) window.ready = true
   if(window && window.importWaiting){
     deliverImportedActivity(window)
+    hideLoadingScreen(window)
   } else if(window && window.dataWaiting){    
     if(typeof window.dataWaiting == 'string'){
       openTable(window.dataWaiting, window)
@@ -1430,8 +1456,9 @@ ipcMain.on('editorWindowReadyForData', function(event){
       importTable(window.dataWaiting, window)
       window.dataWaiting = null
     }
+    hideLoadingScreen(window)
   }
-  })
+})
 
 ipcMain.on('getActivity', function(event){
   if (!validateSender(event.senderFrame)) {
@@ -1914,9 +1941,15 @@ function handleTableFileOpen(data, path){
   if (isJson) {    
     if (isReusableEditorWindow(windows.main)) {
       windows.main.openTablePath = path  // must be set before opening the table      
-      openTable(data, windows.main)
+      if (windows.main.ready) {
+        openTable(data, windows.main)
+        hideLoadingScreen(windows.main)
+      } else {
+        windows.main.dataWaiting = data // delivered when the renderer reports it is ready
+        showLoadingScreen(windows.main)
+      }
     } else {
-      const newEditorWindow = createEditorWindow()
+      const newEditorWindow = createEditorWindow(true)
       newEditorWindow.openTablePath = path
       newEditorWindow.dataWaiting = data      
     }    
@@ -1924,6 +1957,7 @@ function handleTableFileOpen(data, path){
     // windows.main.window.setRepresentedFilename(path) // this is for macOS, to show the file name in the title bar and in the dock menu
     app.addRecentDocument(path)
   } else {
+    if (windows.main) hideLoadingScreen(windows.main)
     dialog.showErrorBox("Error opening file", "Invalid file format. Please used JSON format.")
     return;
   }
