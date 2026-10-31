@@ -83,7 +83,7 @@ class TableManager {
                 break;
             case 'deleteRow':
                 let deletedRow = this.deleteRow(args.rowID, true) // to do: adapt delete row to return the an object containing the deleted row ID, the row's position, the cell IDs and the contents of the row
-                reverse = {action: 'restoreRow', args: {row: deletedRow}}             
+                reverse = {action: 'restoreRow', args: {row: deletedRow, from: 'deleteRow'}}
                 break;
             // BOOKMARK TO DO : IMPLEMENT BELOW
             case 'deleteRows':
@@ -145,11 +145,11 @@ class TableManager {
                 break;
             case 'revertCell':
                 this.revertCell(args.cellID, args.oValue)            
-                reverse = {action: 'revertCell', args: {cellID: args.cellID, oValue: args.nValue, nValue: args.oValue}} // if we're reverting a cell, then the reverse action is to revert it again (back to the new value)
+                reverse = {action: 'revertCell', args:  {cellID: args.cellID, oValue: args.nValue, nValue: args.oValue}} // if we're reverting a cell, then the reverse action is to revert it again (back to the new value)
                 break;
-            case 'swapCols':
-                this.swapCols(args.colID1, args.colID2) // to do: adapt swapCols to return the two colIDs that were swapped
-                reverse = {action: 'swapCols', args: {colID1: args.colID2, colID2: args.colID1}} // swapping the colIDs will swap them back            
+            case 'swapData':
+                this.swapData(args.colID) 
+                reverse = {action: 'swapData', args: {colID: args.colID}} // colIDs don't change, so swapping the same column again will reverse
                 break;
             case 'reorderRows':
                 let moveElements = args.hasOwnProperty('moveElements') ? args.moveElements : false
@@ -166,6 +166,7 @@ class TableManager {
                 args.table.rows.forEach(row => {
                     this.insertRow(row)
                 });
+                // this.restoreDisabledRows(args.table.disabledRows)
                 reverse = {action: 'clearTable'}
                 break            
             case 'storeTableState':
@@ -178,6 +179,7 @@ class TableManager {
                 args.state.rows.forEach(row => {
                     this.insertRow(row)
                 });
+                this.restoreDisabledRows(args.state.disabledRows)
                 reverse = {action: 'restoreTableState', args: {state: tableState}}
                 break
         }
@@ -373,7 +375,7 @@ class TableManager {
 
         // add new row to table
         let newRow = this.tableRow(position,this.numCols(), newRowID, cellIDs)         
-        console.log(`Adding row at position ${position} with ID ${newRow.id}. Number of childnodes on tableBody: ${tableBody.childNodes.length}`) // TO DO: remove        
+        // console.log(`Adding row at position ${position} with ID ${newRow.id}. Number of childnodes on tableBody: ${tableBody.childNodes.length}`) // TO DO: remove        
         tableBody.insertBefore(newRow,tableBody.childNodes[position+1]) // +1 to account for header row
         // this.numRows++
 
@@ -405,6 +407,9 @@ class TableManager {
         if (args.rowData){
             args.rowData.forEach((cellData, col) => this.applyCellData(args.rowIndex, col, cellData))
         }
+        if (typeof args.disabled === 'boolean'){
+            this.setRowDisabled(this.rowIDs.indexOf(args.rowID), args.disabled)
+        }
     }
 
     // cellData as returned by getCellData()
@@ -422,9 +427,9 @@ class TableManager {
         if (select && cellData.select != null) select.value = cellData.select
         if (fileHolder){
             if (cellData.file){
-                Object.values(cellData.file).forEach(fileItem => this.addImageToCell(this.cellIDs[row][col], fileItem))
+                Object.values(cellData.file).forEach(fileItem => this.addImageToCell(this.cellIDs[row][col], fileItem, false, false))
             } else if (fileHolder.children.length > 0){
-                this.deleteFile(fileHolder)
+                this.deleteFile(fileHolder, false, false)
             }
         }
         if (text) this.updateHoverAndView(text)
@@ -456,11 +461,11 @@ class TableManager {
 
     deleteRow(rowID, saveForUndo = false, deleteFirst = false){
 
-        console.log(`Deleting row with ID ${rowID}. Number of childnodes on tableBody: ${document.getElementById(this.tableId+'_tableBody').childNodes.length}`) // TO DO: remove
+        // console.log(`Deleting row with ID ${rowID}. Number of childnodes on tableBody: ${document.getElementById(this.tableId+'_tableBody').childNodes.length}`) // TO DO: remove
 
         const position = rowID ? this.rowIDs.indexOf(rowID) : this.numRows()-1 // if no rowID provided, delete the last row
 
-        const deletedRowData = saveForUndo ? {rowID: rowID, cellIDs: this.cellIDs[position], rowIndex: position, rowData: this.getRowData(position)} : null // to use for undo
+        const deletedRowData = saveForUndo ? {rowID: rowID, cellIDs: this.cellIDs[position], rowIndex: position, rowData: this.getRowData(position), disabled: this.isDisabledRow(position)} : null // to use for undo
 
         if (!this.addRemoveCellsAllowed){
             return // do nothing if add/remove cells disabled
@@ -502,7 +507,7 @@ class TableManager {
 
     deleteCol(colID, saveForUndo = false){
 
-        console.log(`Deleting column with ID ${colID}. Number of childnodes on tableBody: ${document.getElementById(this.tableId+'_tableBody').childNodes.length}`) // TO DO: remove
+        // console.log(`Deleting column with ID ${colID}. Number of childnodes on tableBody: ${document.getElementById(this.tableId+'_tableBody').childNodes.length}`) // TO DO: remove
 
         const position = colID ? this.colIDs.indexOf(colID) : this.numCols()-1 // if no colID provided, delete the last column
 
@@ -565,7 +570,7 @@ class TableManager {
     clearRow(rowID,saveForUndo = false){
         const position = this.rowIDs.indexOf(rowID)
         var dataCells = this.get('rowCells', position)
-        var clearedRowData = saveForUndo ? {rowID: rowID, cellIDs: this.cellIDs[position], rowIndex: position, rowData: this.getRowData(position)} : null // to use for undo
+        var clearedRowData = saveForUndo ? {rowID: rowID, cellIDs: this.cellIDs[position], rowIndex: position, rowData: this.getRowData(position), disabled: this.isDisabledRow(position)} : null // to use for undo
         for (let i=0; i<dataCells.length; i++){
             this.clearCell(dataCells[i])
         }  
@@ -617,6 +622,9 @@ class TableManager {
         if (date) date.value = '' //inputCellDate
         if (time) time.value = '' //inputCellTime
 
+        let select = dataCell.querySelector('.inputCellSelect')
+        if (select) select.value = ''
+
         if (file) {
             file.innerHTML = '' //inputCellFile
             // file.classList.add('hidden')  //inputCellFile
@@ -652,8 +660,9 @@ class TableManager {
         let rows = []
                 for (let row=0; row<this.numRows(); row++){
                     let rowData = this.getRowData(row)
-                    rows.push({rowID: this.rowIDs[row], cellIDs: [...this.cellIDs[row]], rowIndex: row, rowData: rowData})
+                    rows.push({rowID: this.rowIDs[row], cellIDs: [...this.cellIDs[row]], rowIndex: row, rowData: rowData, disabled: this.isDisabledRow(row)})
                 }        
+        // let disabledRows = this.getDisabledRows()
         return {rows: rows, colIDs: [...this.colIDs]}
     }
 
@@ -709,19 +718,19 @@ class TableManager {
         }
 
         // add new col controls in header row
-        console.log(`Adding column at position ${position}. Number of childnodes on tableBody: ${tableBody.childNodes.length}`) // TO DO: remove
+        // console.log(`Adding column at position ${position}. Number of childnodes on tableBody: ${tableBody.childNodes.length}`) // TO DO: remove
         firstRow.insertBefore(newHeader,firstRow.children[position+1]) // +1 to account for first column
 
         // add new add button at bottom
         if(this.addRemoveCellsAllowed){
-            console.log(`Adding add column button at position ${position}. Number of childnodes on tableBody: ${tableBody.childNodes.length}`) // TO DO: remove            
+            // console.log(`Adding add column button at position ${position}. Number of childnodes on tableBody: ${tableBody.childNodes.length}`) // TO DO: remove            
             lastRow.insertBefore(this.addRowCell(),lastRow.children[position+1])
         }
 
         for (let i=0;i<this.numRows();i++){
             // add new column
             let newCell = this.tableData(i,position, cellIDs ? cellIDs[i] : null)
-            console.log(`Adding cell at row ${i} and column ${position}. Number of childnodes on tableBody: ${tableBody.childNodes.length}`) // TO DO: remove
+            // console.log(`Adding cell at row ${i} and column ${position}. Number of childnodes on tableBody: ${tableBody.childNodes.length}`) // TO DO: remove
             tableBody.children[i+1].insertBefore(newCell,tableBody.children[i+1].childNodes[position+1]) // +1 to account for header row and first column
         }
         this.updateAppearanceForUnused()
@@ -817,7 +826,7 @@ class TableManager {
     }
 
     removeHeaderRow(){
-        console.log(`Removing header row. Number of childnodes on tableBody: ${document.getElementById(this.tableId+'_tableBody').childNodes.length}`) 
+        // console.log(`Removing header row. Number of childnodes on tableBody: ${document.getElementById(this.tableId+'_tableBody').childNodes.length}`) 
         var tableBody = document.getElementById(this.tableId+'_tableBody')
         var headerRow = document.getElementById(this.tableId+'_headerRow')
         if (headerRow){
@@ -859,7 +868,7 @@ class TableManager {
 
     swapButton(colID){        
         let result = newElement('button', {class: 'swapBtn miniBtn', dataCol: colID}, newElement('img',{class: 'swapIcon', src: 'swap.svg'}))
-        result.onclick = () => this.swapData(result)
+        result.onclick = () => this.do('swapData', {colID: colID})
         return result
     }
 
@@ -1553,7 +1562,7 @@ setWysiwygContent(content) {
             let nValueObject = {}
             nValueObject[type] = event.target.value;
             this.do('storeCellEdit', { cellID: cellID, oValue: lastAction.oValue, nValue: nValueObject });
-            console.log('Saved new value for cell ' + cellID + ' on blur: ' + event.target.value);
+            // console.log('Saved new value for cell ' + cellID + ' on blur: ' + event.target.value);
         }
     }
 
@@ -1726,9 +1735,6 @@ setWysiwygContent(content) {
     }
 
     triggerImportImage(dataCell){      
-        // treat this as focusing the input and store the original value for undo purposes.  
-        this.handleCellInputFocus({currentTarget: dataCell.querySelector('.inputCellImageSelector')}, dataCell.dataset.dataCell, dataCell.dataset.row, dataCell.dataset.col, 'file')
-        // handled in index.js
         importImage(dataCell)
     }
 
@@ -2186,7 +2192,7 @@ setWysiwygContent(content) {
         
         toCopy = toCopy.trim()
         navigator.clipboard.writeText(toCopy);
-        console.log('Copy '+toCopy)
+        // console.log('Copy '+toCopy)
     }
 
     handleCutWithSelection(e){
@@ -2274,11 +2280,14 @@ setWysiwygContent(content) {
         }
     }
 
-    swapData(swapBtn){ 
+    swapData(col1_ID){         
         
-        let col1_ID = swapBtn.dataset.col
         let col1 = this.colIDs.indexOf(col1_ID)
         let col2 = col1 - 1
+
+        let col2ID = this.colIDs[col2]
+
+        // console.log(`Swapping data for ${col1_ID} (index ${col1}) and ${col2ID} (index ${col2})`)
 
         for (let row = 0; row < this.numRows(); row++) {
 
@@ -2301,29 +2310,20 @@ setWysiwygContent(content) {
             // swap files
             let file1 = this.get('file', row, col1)
             let file2 = this.get('file', row, col2)
-            let cell1 = this.get('cell', row, col1)
-            let cell2 = this.get('cell', row, col2)
-            let file1Hold = file1.innerHTML
-            let file2Hold = file2.innerHTML
-            let file1Hidden = file1.classList.contains('hidden') || file1.children.length == 0
-            let file2Hidden = file2.classList.contains('hidden') || file2.children.length == 0
-            file1.innerHTML = file2Hold
-            file2.innerHTML = file1Hold
-            if(file1Hidden){
-                // file2.classList.add('hidden')
-                cell2.classList.remove('withPreview')
-            } else {
-                // file2.classList.remove('hidden')
-                cell2.classList.add('withPreview')
-            }
-            if(file2Hidden){
-                // file1.classList.add('hidden')
-                cell1.classList.remove('withPreview')
-            } else {
-                // file1.classList.remove('hidden')
-                cell1.classList.add('withPreview')
+            if (file1 && file2){
+                let file1Data = this.getFilesFromCell(row, col1)
+                let file2Data = this.getFilesFromCell(row, col2)
+                this.deleteFile(file1, false, false)
+                this.deleteFile(file2, false, false)
+                if (file2Data){
+                    Object.values(file2Data).forEach(fileItem => this.addImageToCell(this.cellIDs[row][col1], fileItem, false, false))
+                }
+                if (file1Data){
+                    Object.values(file1Data).forEach(fileItem => this.addImageToCell(this.cellIDs[row][col2], fileItem, false, false))
+                }
             }
         }
+
     }
 
     // resizeCol(event, colID){
@@ -2360,13 +2360,9 @@ setWysiwygContent(content) {
             if (value.hasOwnProperty('file')){
                 let fileHolder = cell.querySelector('.inputCellFile')
                 if (fileHolder){
-                    fileHolder.innerHTML = value.file
-                    if (value.file == '' || fileHolder.children.length == 0){
-                        fileHolder.classList.add('hidden')
-                        cell.classList.remove('withPreview')
-                    } else {
-                        fileHolder.classList.remove('hidden')
-                        cell.classList.add('withPreview')
+                    this.deleteFile(fileHolder, false, false)
+                    if (value.file){
+                        Object.values(value.file).forEach(fileItem => this.addImageToCell(cell.dataset.cell, fileItem, false, false))
                     }
                 }
             }
@@ -2398,11 +2394,12 @@ setWysiwygContent(content) {
         }
     }
 
-    addImageToCell(cellID,fileStoreItem){
+    addImageToCell(cellID,fileStoreItem, recordUndo = true, notifyChange = true){
         let row = this.cellIDs.findIndex(row => row.includes(cellID))
         let col = this.cellIDs[row].indexOf(cellID)    
 
         let fileHolder = this.get('file', row, col)
+        const oldFileData = recordUndo ? this.getCellFileData(cellID) : null
         if(fileStoreItem && !fileStoreItem.hasOwnProperty('content') && fileStoreItem.hasOwnProperty('data')){
             fileStoreItem.content = `data:image/${fileStoreItem.ext};base64, ${fileStoreItem.data}`
         } else if (fileStoreItem && fileStoreItem.hasOwnProperty('content')){
@@ -2451,7 +2448,11 @@ setWysiwygContent(content) {
             if (inputBox && inputBox.classList.contains('detail-mode')){
                 this.showFilesInDetail(document.getElementById(this.tableId+'_detailEditor'), fileHolder)
             }
-            if (this.onChange) this.onChange()
+            if (recordUndo){
+                this.recordCellFileEdit(cellID, oldFileData)
+            } else if (notifyChange && this.onChange){
+                this.onChange()
+            }
         } else {
             console.error('File holder element missing')
         }
@@ -2472,7 +2473,10 @@ setWysiwygContent(content) {
         btn.classList.remove('hidden')
     }
 
-    deleteFile(inputFileCell){
+    deleteFile(inputFileCell, recordUndo = true, notifyChange = true){
+        const cellID = inputFileCell.parentElement.dataset.cell
+        const oldFileData = recordUndo ? this.getCellFileData(cellID) : null
+
         inputFileCell.innerHTML = ''
         inputFileCell.parentElement.classList.remove('withPreview')
         inputFileCell.classList.add('hidden')
@@ -2482,7 +2486,11 @@ setWysiwygContent(content) {
         if(mirror){
             mirror.classList.remove('hidden')
         }
-        if (this.onChange) this.onChange()
+        if (recordUndo){
+            this.recordCellFileEdit(cellID, oldFileData)
+        } else if (notifyChange && this.onChange){
+            this.onChange()
+        }
     }
 
     dropHandler(cell, e){        
@@ -2626,13 +2634,13 @@ setWysiwygContent(content) {
             } else if (e.key == 'ArrowRight' && col < this.numCols() && charPos == strLength) {
                 e.preventDefault();
                 newFocus = this.get('text', row, col+1)
-            } else if (e.key == 'Tab' && e.getModifierState('Alt') && this.addAddRemoveCellsAllowed){ // alt+tab = add col
+            } else if (e.key == 'Tab' && e.getModifierState('Alt') && this.addRemoveCellsAllowed){ // alt+tab = add col
                 e.preventDefault();
                 if (e.getModifierState('Shift') && this.isEmptyCol(col)){ // alt+shift+tab = remove col if empty
-                    this.deleteCol(this.colIDs[col]) // only if empty??
+                    this.do('deleteCol', {colID: this.colIDs[col]}) // only if empty??
                     newFocus = this.get('text', row, col-1)
                 } else {
-                    this.addCol(colID)
+                    this.do('addCol', {colID: colID})
                     newFocus = this.get('text', row, col+1)
                 }
             }
@@ -2689,6 +2697,24 @@ setWysiwygContent(content) {
         }
     }
 
+    getCellFileData(cellID){
+        const row = this.cellIDs.findIndex(rowIDs => rowIDs.includes(cellID))
+        if (row < 0) return null
+        const col = this.cellIDs[row].indexOf(cellID)
+        return this.getFilesFromCell(row, col)
+    }
+
+    recordCellFileEdit(cellID, oldFileData){
+        const newFileData = this.getCellFileData(cellID)
+        if (JSON.stringify(oldFileData) !== JSON.stringify(newFileData)){
+            this.do('storeCellEdit', {
+                cellID: cellID,
+                oValue: {file: oldFileData},
+                nValue: {file: newFileData}
+            })
+        }
+    }
+
     convertArrayToTableData(array, startRow = 0, startCol = 0){
         for (let row=startRow; row<(startRow+array.length); row++){
             if (this.numRows() <= row){ // if there isn't a row
@@ -2707,7 +2733,7 @@ setWysiwygContent(content) {
                     inputCellText.value = array[row-startRow][col-startCol].text.replaceAll('\n','\\n')
                     if (array[row-startRow][col-startCol].image && 
                         Object.keys(array[row-startRow][col-startCol].image).length > 0) {
-                        this.addImageToCell(this.cellIDs[row][col], array[row-startRow][col-startCol].image) 
+                        this.addImageToCell(this.cellIDs[row][col], array[row-startRow][col-startCol].image, false)
                     }
                     if (array[row-startRow][col-startCol].hasOwnProperty('datetime') && array[row-startRow][col-startCol].datetime){
                         let inputCellDate = this.get('date', row, col)                        
@@ -2721,6 +2747,32 @@ setWysiwygContent(content) {
 
                 this.updateHoverAndView(inputCellText) // onchange won't be fired, so we'll do it manually here
             }
+        }
+    }
+
+    getDisabledRows(){
+        this.disabledRows = []
+        for (let row=0; row<this.numRows(); row++){
+            if (this.isDisabledRow(row)){
+                this.disabledRows.push(row)
+            }
+        }
+        return this.disabledRows
+    }
+
+    restoreDisabledRows(disabledRows){
+        if (!Array.isArray(disabledRows)) return
+        for (let row=0; row<this.numRows(); row++){
+            this.setRowDisabled(row, disabledRows.includes(row))
+        }
+    }
+
+    setRowDisabled(row, disabled){
+        const rowElement = this.getTableRowElement(row)
+        const rowCheck = rowElement ? rowElement.querySelector('.rowCheck') : null
+        if (rowCheck){
+            rowCheck.checked = !disabled
+            this.toggleEnableRow(rowCheck)
         }
     }
 
