@@ -1013,6 +1013,12 @@ th:hover .miniBtn, th:hover .inputCellMore{
   width: 16px;
 }
 
+@media (prefers-color-scheme: dark) {
+  .swapIcon{
+    filter: invert(100%);
+  }
+}
+
 .row-controls{
   /* position: absolute;
   right: 0; */
