@@ -25,6 +25,8 @@ const extensions = {image: ['jpg','jpeg','png','gif','svg','webp'], text: ['txt'
 
 const debugMode = info.debugMode
 
+let quittingApp = false // flag to indicate that the app is quitting, so once unsaved changes are dealt with, the app can quit without asking again
+
 var config
 
 
@@ -40,14 +42,10 @@ var activitySettingControlsStore = {}
 let appIsReady = false
 let pendingOpenPaths = [] // files opened before the app (and its first window) was ready
 
-app.on('open-file', (event, filePath) => {
-  event.preventDefault()
-  if (!appIsReady) {
-    pendingOpenPaths.push(filePath)
-    return
-  }
-  openFileFromPath(filePath)
-})
+
+
+
+
 
 function openFileFromPath(filePath) {
   fs.readFile(filePath, 'utf8', (err, data) => {
@@ -252,7 +250,7 @@ const createEditorWindow = (showLoading = false) => {
   newEditorWindow.on('blur', updateMenuState) // disable print when not focused
 
   newEditorWindow.on('close', (e) => {
-    if (newWindow.closeConfirmed || !newWindow.dirty) return
+    if (newWindow.closeConfirmed || !newWindow.dirty) return    
     e.preventDefault()
     const choice = dialog.showMessageBoxSync(newEditorWindow, {
       type: 'question',
@@ -267,10 +265,16 @@ const createEditorWindow = (showLoading = false) => {
       windows.main = newWindow // the save functions work on the main window
       newWindow.closeAfterSave = true
       initiateSaveTable(newWindow.openTablePath)
-      updateEditorTitle(newWindow)
+      updateEditorTitle(newWindow)      
     } else if (choice === 1) {
       newWindow.closeConfirmed = true
       newEditorWindow.close()
+      if (quittingApp && BrowserWindow.getAllWindows().length === 0) {
+        app.quit()
+      }
+    } else if (choice === 2) {
+      // Cancel
+      quittingApp = false
     }
   })
 
@@ -540,16 +544,25 @@ app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
 
-  // if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
-
   if (BrowserWindow.getAllWindows().length === 0) createEditorWindow()
 })
+
+app.on('open-file', (event, filePath) => {
+  event.preventDefault()
+  if (!appIsReady) {
+    pendingOpenPaths.push(filePath)
+    return
+  }
+  openFileFromPath(filePath)
+})
+
+  app.on('before-quit', () => { quittingApp = true })
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
+  if (process.platform !== 'darwin' || quittingApp) app.quit()    
 })
 
 // prevents navigation
@@ -2371,6 +2384,13 @@ function saveTable(inputData,path,fileData,sourceWindow = null){
         if (closeAfterSave) {
           sourceWindow.closeConfirmed = true
           sourceWindow.window.close()
+
+          // if the app is quitting and this was the last window, quit the app
+          if (quittingApp && BrowserWindow.getAllWindows().length === 0) {
+            app.quit()
+          } else {
+            console.log("Not quitting app, windows left: " + BrowserWindow.getAllWindows().length)
+          }
         }
       }
       updateEditorTitle(sourceWindow)
