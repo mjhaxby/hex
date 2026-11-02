@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'readActivitySettings',
       'sentInputForExport',
       'sentInputForSave',
+      'sentSettingsForActivityChange',
       'getUserActivities',
       'setActivitySettingsDefaults',
       'customSelectImport',
