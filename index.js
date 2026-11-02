@@ -158,6 +158,7 @@ function selectActivity(){
 
   table.clearUnusedRowsFromEnd(true)
   table.clearUnusedColsFromEnd(true)
+  sendSettingsForActivityChange() 
   loadPrefs()
 
   packageIDEl = document.getElementById('packageID')
@@ -174,7 +175,7 @@ function loadPrefs(){
     document.getElementById('runBtn').disabled = true
   } else {
     document.getElementById('runBtn').disabled = false
-  }
+  }  
   ipcRenderer.send('readActivityPrefs', activity, source)
 }
 
@@ -557,6 +558,11 @@ function sendInput(purpose='export',path=''){
   }
   
 }
+
+function sendSettingsForActivityChange(){
+  var settings = getSettings(prefsStore.settings)
+  ipcRenderer.send('sentSettingsForActivityChange', settings)
+}  
 
 function changeSelectedActivity(activity, source){
 
