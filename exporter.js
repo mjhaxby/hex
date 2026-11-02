@@ -9,6 +9,8 @@ const info = require('./info.js')
 const activityEditor = require('./activityEditor.js')
 
 const debugMode = info.debugMode
+const config = info.config
+
 
 function writeFile(filePath, data){
 fs.writeFile(filePath, data, { encoding: 'utf8' }, (err) => {
@@ -36,6 +38,64 @@ const readPreferences = (data) => {
   }
   return obj
 }
+
+  // if you are adding in a new way to export scorms, you probably want to do this through the regular exportActivity function (specifying type='scorm'), and so you don't need to export this function
+  const exportActivityAsScorm = (options = {activity: '', source: 'prebuilt', data: [[]], settings: {}, files: [], packageIdentifier: '', prefsStore: {}}) => {
+    options = {
+      activity: '',
+      source: 'prebuilt',
+      data: [[]],
+      settings: {},
+      files: [],
+      packageIdentifier: '',
+      prefsStore: {},
+      ...options
+    }    
+    const {activity, source, data, settings, files, packageIdentifier, prefsStore} = options  
+
+    const zip = new AdmZip();
+    var dialogOptions = {
+      title: 'Export activity as SCORM',
+      properties: ['createDirectory'],
+      filters: [{
+        name: 'ZIP file',
+        extension: 'zip'
+      }],
+      defaultPath: settings.activityName ? settings.activityName + '.zip' : 'New_' + activity.charAt(0).toUpperCase() + activity.slice(1) + '.zip' // when saving files added, can use saved name if given
+    }
+
+    let activityPath = activityEditor.findActivityPath(activity, source)
+
+    activityEditor.openActivityTemplate(activityPath).then(activityTemplate => {
+      activityEditor.openManifestTemplate().then(manifestTemplate => {
+      activityEditor.openFonts(settings).then ( fontData => {
+        if(debugMode){console.log(fontData)}
+        settings.scorm = true // add scorm tag to the  settings
+        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, prefsStore, fontData)
+        if(debugMode){console.log(exportData)}
+        dialog.showSaveDialog(dialogOptions).then(result => {
+          if (result.canceled) {
+            if(debugMode){console.log("Cancelled")}
+            return
+          }
+          let activityDetails = {
+            packageIdentifier: packageIdentifier,
+            saveName: result.filePath.substring(result.filePath.lastIndexOf('/') + 1).split('.')[0], // strip off everything else from the path and the extension
+            activity: activity
+          }
+          var manifestData = activityEditor.createManifestFile(manifestTemplate, activityDetails)
+          try {
+            zip.addFile(activity + '.html', Buffer.from(exportData, 'utf8'))
+            zip.addFile('imsmanifest.xml', Buffer.from(manifestData, 'utf8'))
+            zip.writeZip(result.filePath)
+          } catch (e) {
+            if(debugMode){console.log('Unable to create zip file: ' + e)}
+          }
+        })
+      })
+    })
+    });
+  }
 
 const exportActivity = (options = {data: [[]], activity: '', settings: {}, files: [], source: 'prebuilt', type: 'html', packageIdentifier: '', path: '', prefsStore: {}}) => {
   options = {
@@ -123,8 +183,8 @@ const exportActivity = (options = {data: [[]], activity: '', settings: {}, files
         }
 
         if (result.checkboxChecked) {
-          config.showScormInfo = false
-          saveConfigFile()
+          info.setConfig({'showScormInfo': false})
+          info.saveConfigFile()
         }
 
         // default action: copy the package id to the clipboard then continue
@@ -141,66 +201,6 @@ const exportActivity = (options = {data: [[]], activity: '', settings: {}, files
       exportActivityAsScorm({activity: activity, source: source, data: data, settings: settings, files: files, packageIdentifier: packageIdentifier, prefsStore: prefsStore})
     }
 
-  }
-
-
-
-  // if you are adding in a new way to export scorms, you probably want to do this through the regular exportActivity function (specifying type='scorm'), and so you don't need to export this function
-  const exportActivityAsScorm = (options = {activity: '', source: 'prebuilt', data: [[]], settings: {}, files: [], packageIdentifier: '', prefsStore: {}}) => {
-    options = {
-      activity: '',
-      source: 'prebuilt',
-      data: [[]],
-      settings: {},
-      files: [],
-      packageIdentifier: '',
-      prefsStore: {},
-      ...options
-    }    
-    const {activity, source, data, settings, files, packageIdentifier, prefsStore} = options  
-
-    const zip = new AdmZip();
-    var dialogOptions = {
-      title: 'Export activity as SCORM',
-      properties: ['createDirectory'],
-      filters: [{
-        name: 'ZIP file',
-        extension: 'zip'
-      }],
-      defaultPath: settings.activityName ? settings.activityName + '.zip' : 'New_' + activity.charAt(0).toUpperCase() + activity.slice(1) + '.zip' // when saving files added, can use saved name if given
-    }
-
-    let activityPath = activityEditor.findActivityPath(activity, source)
-
-    activityEditor.openActivityTemplate(activityPath).then(activityTemplate => {
-      activityEditor.openManifestTemplate().then(manifestTemplate => {
-      activityEditor.openFonts(settings).then ( fontData => {
-        if(debugMode){console.log(fontData)}
-        settings.scorm = true // add scorm tag to the  settings
-        exportData = activityEditor.addActivityTemplateData(activityTemplate, data, settings, files, prefsStore, fontData)
-        if(debugMode){console.log(exportData)}
-        dialog.showSaveDialog(dialogOptions).then(result => {
-          if (result.canceled) {
-            if(debugMode){console.log("Cancelled")}
-            return
-          }
-          let activityDetails = {
-            packageIdentifier: packageIdentifier,
-            saveName: result.filePath.substring(result.filePath.lastIndexOf('/') + 1).split('.')[0], // strip off everything else from the path and the extension
-            activity: activity
-          }
-          var manifestData = activityEditor.createManifestFile(manifestTemplate, activityDetails)
-          try {
-            zip.addFile(activity + '.html', Buffer.from(exportData, 'utf8'))
-            zip.addFile('imsmanifest.xml', Buffer.from(manifestData, 'utf8'))
-            zip.writeZip(result.filePath)
-          } catch (e) {
-            if(debugMode){console.log('Unable to create zip file: ' + e)}
-          }
-        })
-      })
-    })
-    });
   }
 
 
