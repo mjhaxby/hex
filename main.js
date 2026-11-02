@@ -27,9 +27,6 @@ const debugMode = info.debugMode
 
 let quittingApp = false // flag to indicate that the app is quitting, so once unsaved changes are dealt with, the app can quit without asking again
 
-var config
-
-
 // possibly not these? some might need to be moved!
 var openProfilePath = ''
 var lastSavedProfile = { name: '', activities: [] }
@@ -42,7 +39,7 @@ var activitySettingControlsStore = {}
 let appIsReady = false
 let pendingOpenPaths = [] // files opened before the app (and its first window) was ready
 
-
+const config = info.config || {} // initialize config from info.js, which is set in the preload script
 
 
 
@@ -90,6 +87,20 @@ const hideLoadingScreen = (editorWindow) => {
   editorWindow.window.webContents.executeJavaScript(`document.getElementById('${loadingScreenId}')?.remove()`).catch(() => {})
 }
 
+function compareVersions(v1, v2) {
+  // v1 is the current version, v2 is the latest version
+  const v1Parts = v1.split('.').map(a => a.replace(/\D/g, '')).map(Number);
+  const v2Parts = v2.split('.').map(a => a.replace(/\D/g, '')).map(Number);
+
+  for (let i = 0; i < Math.max(v1Parts.length, v2Parts.length); i++) {
+    const v1Part = v1Parts[i] || 0;
+    const v2Part = v2Parts[i] || 0;
+    if (v2Part > v1Part) return 1;
+    if (v2Part < v1Part) return -1;
+  }
+  return 0;
+}
+
 
 async function checkForUpdate() {  
   const appName = app.getName() // during dev, this will return electron instead of hex
@@ -98,8 +109,8 @@ async function checkForUpdate() {
     repo: 'HEX'
   })
   // console.log(releaseInfo)
-  var latestV = releaseInfo.data.tag_name.replace('v', '');
-  if (latestV != v && appName != 'Electron') { // don't ask this in dev testing
+  var latestV = releaseInfo.data.tag_name.replace('v', '');  
+  if (compareVersions(v, latestV) > 0 && appName != 'Electron') { // don't ask this in dev testing
     if(debugMode){console.log('Update found\nCurrent version: ' + v + '\nNew version: ' + latestV)}
     // var changeLog = releaseInfo.data.body.replace('<strong>Changelog</strong>', 'Update available. Here are the changes:\n');
     var changeLog = 'Press download now to see the changelog and download.' // Improve this later.
@@ -140,9 +151,8 @@ windows['editors'] = []
 windows['activities'] = [] // stores activity windows and later their data
 // var blockBustersWindow
 
-const configFilePath = app.getPath('userData') + '/hex_config.json'
-const defaultConfig = { userActivitiesDir: app.getPath('documents') + '/Hex/', showAdvancedExport: false, showScormInfo: true }
-config = { ...defaultConfig }
+const defaultConfig = info.defaultConfig
+info.setConfig({ userActivitiesDir: app.getPath('documents') + '/Hex/', showAdvancedExport: false, showScormInfo: true })
 
 // var dataHolder // for holding data to send to apps (TO DELETE)
 // var activityType // for remembering activity type (TO DELETE)
@@ -157,6 +167,7 @@ const editorWindowPrototype = {
     dataWaiting: null,    
     prefsWaiting: null,
     profileStore: { name: '', activities: [] },
+    editingSettingsStore: {}, // stores the settings while editing, so if the user changes activity type and then changes back, the settings are still there
     loading: false, // showing the loading screen while a file is being opened
     ready: false, // renderer has finished loading
     dirty: false, // unsaved changes, as reported by the renderer
@@ -492,9 +503,13 @@ app.whenReady().then(() => {
 
   // createMainWindow();
 
-  getConfig()
+  if (debugMode) {
+        applicationMenu.getMenuItemById('tools').submenu.append(new MenuItem({ role: 'toggleDevTools' }))
+      }
+
+  info.getConfigFromDisk()
     .then((currentConfig) => {
-      config = currentConfig
+      info.setConfig(currentConfig)
       if (config.showAdvancedExport) {
         applicationMenu.getMenuItemById('showAdvancedExport').checked = true
         // windows.main.window.webContents.send('showAdvancedExport')
@@ -502,13 +517,8 @@ app.whenReady().then(() => {
       }
 
       createEditorWindow(pendingOpenPaths.length > 0);
-      // windows.main.window.webContents.send('configStore', config) // should happen inside above function
+      // windows.main.window.webContents.send('configStore', config) // should happen inside above function      
 
-      // if we're debugging, add the dev
-      if (debugMode) {
-        let menuItem = applicationMenu.getMenuItemById('tools')
-        menuItem.submenu.append(new MenuItem({ role: 'toggleDevTools' }))
-      }
       Menu.setApplicationMenu(applicationMenu) // set menu AFTER config is loaded
       appIsReady = true
       pendingOpenPaths.forEach(openFileFromPath)
@@ -555,6 +565,7 @@ app.on('open-file', (event, filePath) => {
   }
   openFileFromPath(filePath)
 })
+
 
   app.on('before-quit', () => { quittingApp = true })
 
@@ -623,17 +634,17 @@ const dockMenu = Menu.buildFromTemplate([
 
 function setDefaultActivitySettings(settings){
   if (!config.activities) {
-    config.activities = {};
+    info.setConfig({ activities: {} });
   }
 
   const activityKey = windows.main.currentSource + '_' + windows.main.currentActivity;
 
-  if (!config.activities[activityKey]) {
-    config.activities[activityKey] = {};
+  if (!config.activities[activityKey]) {    
+    info.setConfig({ activities: { ...config.activities, [activityKey]: {} } });
   }
 
-  config.activities[activityKey].default_settings = settings;
-  saveConfigFile()
+  info.setConfig({ activities: { ...config.activities, [activityKey]: { ...config.activities[activityKey], default_settings: settings } } });
+ info.saveConfigFile()
 }
 
 ipcMain.on('profileEditorReady', function (event) {
@@ -644,19 +655,19 @@ ipcMain.on('profileEditorReady', function (event) {
 })
 
 function resetCurrentActivitySettingDefaults(){
-  if (!config.activities) {
-    config.activities = {};
+  if (!config.activities) {    
+    info.setConfig({ activities: {} });
 }
 
 const activityKey = windows.main.currentSource + '_' + windows.main.currentActivity;
 
-if (!config.activities[activityKey]) {
-    config.activities[activityKey] = {};
+if (!config.activities[activityKey]) {    
+    info.setConfig({ activities: { ...config.activities, [activityKey]: {} } });
 }
 
   delete config.activities[activityKey].default_settings;
   windows.main.window.webContents.send('setPrefs', windows.main.prefsStore)
-  saveConfigFile()
+ info.saveConfigFile()
 }
 
 function findSettingAnomolies(settings) {
@@ -1354,6 +1365,18 @@ ipcMain.on('sentInputForSave', function (event, data, path){
   processSaveExport(event,data,'save',path)
 })
 
+ipcMain.on('sentSettingsForActivityChange', function (event, settings){
+  if (!validateSender(event.senderFrame)) {
+    dialog.showErrorBox('Security error!', 'A renderer sent a signal from a non-local source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
+    return null
+  }
+  let browserWindow = event.sender.getOwnerBrowserWindow()
+  let window = windows.editors.find(window => window.window.id === browserWindow.id)
+  if (window) {
+    window.editingSettingsStore[window.currentActivity] = settings
+  }  
+})
+
 ipcMain.on('readActivityPrefs', function (event, activity, source) {
   if (!validateSender(event.senderFrame)) {
     dialog.showErrorBox('Security error!', 'A renderer sent a signal from a non-local source. This error should only occur if there is a bug in the application or a security risk. Please contact the developer.')
@@ -1416,6 +1439,8 @@ ipcMain.on('readActivityPrefs', function (event, activity, source) {
         window.prefsWaiting = null
         // send any custom files in store so the name is shown in the UI
         sendCustomSettingFilesInStore(windows.main.importFileStore)
+      } else if (window.editingSettingsStore && window.editingSettingsStore.hasOwnProperty(activity)) {
+        window.window.webContents.send('setPrefs', window.prefsStore, window.editingSettingsStore[activity]);
       } else {
         window.window.webContents.send('setPrefs', window.prefsStore, customDefaults);
         window.importFileStore = {} // purge imported file store ready for new files for use in custom settings (these are likely to be images or sounds)
@@ -1848,7 +1873,7 @@ const openUserActivitiesDirDialog = () => {
       if(debugMode){console.log(result)}
       config.userActivitiesDir = result.filePaths[0].replace(/(\s+)/g, '\$1')
       if(debugMode){console.log(config)}
-      saveConfigFile();
+     info.saveConfigFile();
       windows.main.window.webContents.send('loadActivities')
       // TODO save config file, reload activities list
     }
@@ -1857,25 +1882,14 @@ const openUserActivitiesDirDialog = () => {
 
 const toggleAdvancedExportOptions = () => {
   if (Menu.getApplicationMenu().getMenuItemById('showAdvancedExport').checked) {
-    config.showAdvancedExport = true
+    info.setConfig({ showAdvancedExport: true })
     if(debugMode){console.log('Show advanced export options is on')}
-  } else {
-    config.showAdvancedExport = false
+  } else {  
+    info.setConfig({ showAdvancedExport: false })
     if(debugMode){console.log('Show advanced export options is off')}
   }
   windows.main.window.webContents.send('configStore', config)
-  saveConfigFile();
-}
-
-const saveConfigFile = () => {
-  fs.writeFile(configFilePath, JSON.stringify(config), { encoding: 'utf8' }, (err) => {
-    if (err) {
-      if(debugMode){console.log(err)};
-    } else {
-      if(debugMode){console.log("Config file updated successfully.")}
-      if(debugMode){console.log(config)}
-    }
-  })
+ info.saveConfigFile();
 }
 
 const getReadyToExport = (type) => {
@@ -2448,57 +2462,6 @@ function activityFocused() {
   // return null;
 }
 
-let openConfigFile = function openConfigFilePromise(file) {
-  return new Promise((resolve, reject) => {
-    fs.readFile(file, 'utf-8', (err, data) => {
-      if (err) {
-        if(debugMode){console.log("An error ocurred reading the config file:" + err.message)};
-        reject("Error");
-      }
-      // console.log(data)
-      // configFile = data.toString()
-      resolve(data);
-    });
-  })
-}
-
-function getConfig() {
-  return new Promise((resolve, reject) => {
-    if (fs.existsSync(configFilePath)) { // look for config file
-      if(debugMode){console.log('Config file path found: ' + configFilePath)}
-    } else { // create the file if it doesn't exist
-      fs.writeFile(configFilePath, JSON.stringify(defaultConfig), { encoding: 'utf8' }, (err) => {
-        if (err) {
-          if(debugMode){console.log(err)};
-        } else {
-          if(debugMode){console.log("Config file create successfully.")}
-        }
-      })
-    }
-    openConfigFile(configFilePath).then(configFile => {
-      try {
-        currentConfig = JSON.parse(configFile)
-        // add in anything missing from the config
-        if (!currentConfig.hasOwnProperty('userActivitiesDir')) {
-          currentConfig.userActivitiesDir = defaultConfig.userActivitiesDir
-        }
-        if (!currentConfig.hasOwnProperty('showAdvancedExport')) {
-          currentConfig.showAdvancedExport = defaultConfig.showAdvancedExport
-        }
-        if (!currentConfig.hasOwnProperty('showScormInfo')) {
-          currentConfig.showScormInfo = defaultConfig.showScormInfo
-        }
-        resolve(currentConfig)
-      } catch (e) {
-        currentConfig = { error: e } // pass on error if there is a json formatting issue
-        resolve(currentConfig)
-      }
-      if(debugMode){console.log(currentConfig)}
-      // windows.main.window.webContents.send('setConfig', config); // not using this yet
-    })
-  });
-}
-
 function openProfileEditor(){
   if(windows['profileEditor']){
     windows.profileEditor.focus()
@@ -2545,7 +2508,7 @@ function askToDeleteUnusedCols() {
 }
 
 const aboutOptions = {
-  credits: 'Confetti animation by Patrik Svensson. Node.js version ${process.versions.node}, Chromium version ${process.versions.chrome}, Electron version ${process.versions.electron}',
+  credits: `Confetti animation by Patrik Svensson. Node.js version ${process.versions.node}, Chromium version ${process.versions.chrome}, Electron version ${process.versions.electron}`,
   website: 'https://github.com/mjhaxby/hex',
   iconPath: 'icon.png',
   authors: 'Morgan Haxby'
@@ -2626,9 +2589,10 @@ const applicationMenu = Menu.buildFromTemplate([
         accelerator: process.platform === 'darwin' ? 'Cmd+Shift+S' : 'Ctrl+Shift+S',
         click: () => { if (activityFocused() == null) { getReadyToExport() } else (exportFromActivity()) } 
       },
-      { label: 'Bulk Import/Export…',
-        click: () => { openBulkImportExportWindow() }
-      },
+      // TO DO: Finish bulk import/export window and uncomment this menu item
+      // { label: 'Bulk Import/Export…',
+      //   click: () => { openBulkImportExportWindow() }
+      // },
       { type: 'separator' },
       {
         label: 'Open Profile…',
@@ -2806,11 +2770,11 @@ const applicationMenu = Menu.buildFromTemplate([
       { type: 'separator' },
       {
         label: 'Reset Message Before SCORM Export',
-        click: () => { config.showScormInfo = true; saveConfigFile(); }
+        click: () => { info.setConfig({ showScormInfo: true }); info.saveConfigFile(); }
       },
       {
         label: 'Hot Potatoes Importer',
-        click: () => { config.showScormInfo = true; tools.openHotPotatoesDialog(); }
+        click: () => { tools.openHotPotatoesDialog(); }
       },
     ]
   },
