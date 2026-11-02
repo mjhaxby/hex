@@ -1,6 +1,6 @@
 {
   "name": "hex",
-  "version": "4.0.0-beta",
+  "version": "4.1.2",
   "description": "Learning activity creator.",
   "main": "main.js",
   "scripts": {
@@ -20,7 +20,7 @@
   "license": "ISC",
   "devDependencies": {
     "@electron/packager": "^19.1.0",
-    "electron": "^41.1.1",
+    "electron": "^43.8.6",
     "electron-builder": "^26.8.1"
   },
   "fontend": {
@@ -76,9 +76,27 @@
         }
       },
       "target": [
-        "AppImage",
-        "rpm",
-        "deb"
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "rpm",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ]
     },
     "deb": {
